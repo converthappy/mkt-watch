@@ -2,7 +2,7 @@ name: Update Market Data
 
 on:
   schedule:
-    - cron: '0 23 * * 1-5'   # 11 PM UTC ~ 6 PM ET, Mon-Fri
+    - cron: '0 22 * * 1-5'   # 10 PM UTC = 7 AM KST, Mon-Fri
   workflow_dispatch:           # Manual trigger button
     inputs:
       mode:
