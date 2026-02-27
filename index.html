@@ -1,0 +1,4039 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sector Relative Strength Dashboard</title>
+  <style>
+    /* ── Theme Variables ── */
+    :root {
+      /* Backgrounds */
+      --bg-primary: #0f1117;
+      --bg-secondary: #131722;
+      --bg-tertiary: #1a1d29;
+      --bg-quaternary: #1e222d;
+
+      /* Text */
+      --text-primary: #e8eaed;
+      --text-secondary: #d1d4dc;
+      --text-tertiary: #9598a1;
+      --text-quaternary: #5d606b;
+      --text-white: #ffffff;
+
+      /* Borders */
+      --border-subtle: #1e222d;
+      --border-medium: #2a2e39;
+      --border-emphasis: #363a45;
+
+      /* Interactive */
+      --interactive-bg: #2a2e39;
+      --interactive-bg-hover: #363a45;
+      --interactive-bg-active: #2962ff;
+      --interactive-border: #363a45;
+
+      /* Semantic */
+      --semantic-bullish: #26a69a;
+      --semantic-bearish: #ef5350;
+      --semantic-neutral: #ff9800;
+      --semantic-weakening: #5d606b;
+
+      /* Accent */
+      --accent-primary: #2962ff;
+      --accent-primary-light: #42a5f5;
+      --accent-hover: #1e4a7a;
+      --accent-bg: #1a3a5c;
+
+      /* Chart */
+      --chart-bg: #131722;
+      --chart-grid: rgba(42, 46, 57, 0.3);
+      --chart-grid-strong: rgba(60, 65, 80, 0.6);
+      --chart-crosshair: rgba(42, 46, 57, 0.8);
+      --chart-crosshair-center: rgba(150, 150, 160, 0.7);
+      --chart-axis-text: #9598a1;
+      --chart-axis-border: #2a2e39;
+
+      /* Surfaces */
+      --surface-hover: rgba(41, 98, 255, 0.08);
+      --surface-hover-strong: rgba(41, 98, 255, 0.15);
+      --surface-modal: #131722;
+      --overlay-backdrop: rgba(0, 0, 0, 0.85);
+
+      /* Quadrant tints */
+      --quadrant-leading: rgba(38, 166, 154, 0.12);
+      --quadrant-improving: rgba(255, 152, 0, 0.10);
+      --quadrant-lagging: rgba(239, 83, 80, 0.10);
+      --quadrant-weakening: rgba(93, 96, 107, 0.10);
+
+      /* Canvas label bg */
+      --canvas-label-bg: rgba(15, 17, 23, 0.7);
+
+      /* AI panel */
+      --ai-header-gradient: linear-gradient(135deg, rgba(41,98,255,0.08), rgba(66,165,245,0.04));
+      --ai-item-bg: rgba(42, 46, 57, 0.3);
+      --ai-bullish-bg: rgba(38,166,154,0.06);
+      --ai-bearish-bg: rgba(239,83,80,0.06);
+      --ai-neutral-bg: rgba(255,152,0,0.06);
+      --ai-ticker-bg: rgba(41,98,255,0.15);
+      --ai-blockquote-bg: rgba(41,98,255,0.06);
+
+      /* Drilldown */
+      --drilldown-bg: rgba(20, 22, 30, 0.97);
+      --drilldown-border-row: rgba(42, 46, 57, 0.3);
+
+      /* Legend */
+      --legend-bg: rgba(26, 29, 41, 0.92);
+
+      /* Typography */
+      --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", "Inter", Roboto, sans-serif;
+      --font-mono: ui-monospace, "SF Mono", Menlo, Monaco, "Cascadia Code", monospace;
+      --fs-xs: 9px;
+      --fs-sm: 10px;
+      --fs-base: 11px;
+      --fs-md: 13px;
+      --fs-lg: 15px;
+      --fs-xl: 17px;
+    }
+
+    /* ── Light Theme ── */
+    .light {
+      --bg-primary: #f8f9fa;
+      --bg-secondary: #ffffff;
+      --bg-tertiary: #f1f3f5;
+      --bg-quaternary: #e9ecef;
+
+      --text-primary: #1a202c;
+      --text-secondary: #2d3748;
+      --text-tertiary: #4a5568;
+      --text-quaternary: #718096;
+      --text-white: #1a202c;
+
+      --border-subtle: #e5e7eb;
+      --border-medium: #d1d5db;
+      --border-emphasis: #9ca3af;
+
+      --interactive-bg: #e5e7eb;
+      --interactive-bg-hover: #d1d5db;
+      --interactive-bg-active: #2563eb;
+      --interactive-border: #d1d5db;
+
+      --semantic-bullish: #10b981;
+      --semantic-bearish: #ef4444;
+      --semantic-neutral: #f59e0b;
+      --semantic-weakening: #9ca3af;
+
+      --accent-primary: #2563eb;
+      --accent-primary-light: #3b82f6;
+      --accent-hover: #dbeafe;
+      --accent-bg: #dbeafe;
+
+      --chart-bg: #ffffff;
+      --chart-grid: rgba(0, 0, 0, 0.06);
+      --chart-grid-strong: rgba(0, 0, 0, 0.10);
+      --chart-crosshair: rgba(0, 0, 0, 0.15);
+      --chart-crosshair-center: rgba(0, 0, 0, 0.25);
+      --chart-axis-text: #4a5568;
+      --chart-axis-border: #d1d5db;
+
+      --surface-hover: rgba(37, 99, 235, 0.06);
+      --surface-hover-strong: rgba(37, 99, 235, 0.12);
+      --surface-modal: #ffffff;
+      --overlay-backdrop: rgba(0, 0, 0, 0.5);
+
+      --quadrant-leading: rgba(16, 185, 129, 0.08);
+      --quadrant-improving: rgba(245, 158, 11, 0.08);
+      --quadrant-lagging: rgba(239, 68, 68, 0.08);
+      --quadrant-weakening: rgba(156, 163, 175, 0.08);
+
+      --canvas-label-bg: rgba(255, 255, 255, 0.85);
+
+      --ai-header-gradient: linear-gradient(135deg, rgba(37,99,235,0.06), rgba(59,130,246,0.03));
+      --ai-item-bg: rgba(0, 0, 0, 0.03);
+      --ai-bullish-bg: rgba(16,185,129,0.06);
+      --ai-bearish-bg: rgba(239,68,68,0.06);
+      --ai-neutral-bg: rgba(245,158,11,0.06);
+      --ai-ticker-bg: rgba(37,99,235,0.1);
+      --ai-blockquote-bg: rgba(37,99,235,0.04);
+
+      --drilldown-bg: rgba(255, 255, 255, 0.97);
+      --drilldown-border-row: rgba(0, 0, 0, 0.06);
+
+      --legend-bg: rgba(255, 255, 255, 0.95);
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background: var(--bg-primary);
+      font-family: var(--font-sans);
+      color: var(--text-secondary);
+      overflow: hidden;
+      height: 100vh;
+    }
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 4px 16px;
+      background: var(--bg-tertiary);
+      border-bottom: 1px solid var(--border-medium);
+      height: 32px;
+      flex-shrink: 0;
+    }
+    .topbar h1 { font-size: var(--fs-md); font-weight: 600; color: var(--text-primary); }
+    .topbar-controls { display: flex; gap: 6px; align-items: center; }
+    .btn-group { display: flex; align-items: center; gap: 4px; }
+    .btn-group .topbar-label { margin-right: 2px; }
+    .topbar-controls select {
+      background: var(--interactive-bg); color: var(--text-secondary); border: 1px solid var(--interactive-border);
+      padding: 3px 8px; border-radius: 4px; font-size: var(--fs-base); cursor: pointer;
+    }
+    .btn {
+      background: var(--interactive-bg); color: var(--text-secondary); border: 1px solid var(--interactive-border);
+      padding: 3px 10px; border-radius: 4px; cursor: pointer; font-size: var(--fs-base);
+      transition: background 0.15s;
+    }
+    .btn:hover { background: var(--interactive-bg-hover); }
+    .btn.active { background: var(--interactive-bg-active); border-color: var(--interactive-bg-active); color: #fff; }
+    .separator { width: 1px; background: var(--interactive-border); margin: 2px 4px; }
+    .topbar-label { font-size: var(--fs-sm); color: var(--text-quaternary); text-transform: uppercase; letter-spacing: 0.5px; }
+    .grid {
+      display: grid; gap: 1px; padding: 1px;
+      height: calc(100vh - 32px); overflow: auto;
+    }
+    .grid.g4x4 { grid-template-columns: repeat(4, 1fr); grid-template-rows: repeat(4, 1fr); }
+    .grid.g4x2 { grid-template-columns: repeat(4, 1fr); grid-template-rows: repeat(4, calc((100vh - 36px) / 2)); }
+    .grid.g2x1 { grid-template-columns: repeat(2, 1fr); grid-template-rows: repeat(8, calc(100vh - 36px)); }
+    .panel {
+      background: var(--bg-secondary); border: 1px solid var(--border-subtle); border-radius: 2px;
+      overflow: hidden; display: flex; flex-direction: column; min-height: 0;
+    }
+    .panel-title {
+      font-size: var(--fs-base); font-weight: 700; padding: 3px 8px;
+      background: var(--bg-quaternary); border-bottom: 1px solid var(--border-medium);
+      color: var(--text-secondary); letter-spacing: 0.3px; text-transform: uppercase; flex-shrink: 0;
+      display: flex; justify-content: space-between; align-items: center;
+    }
+    .stock-count { color: var(--text-quaternary); font-weight: 400; }
+    .chart-wrap { flex: 1; min-height: 0; position: relative; }
+    .expand-btn {
+      background: none; border: none; color: var(--text-quaternary); cursor: pointer;
+      font-size: var(--fs-md); padding: 0 2px; line-height: 1; transition: color 0.15s;
+    }
+    .expand-btn:hover { color: var(--text-secondary); }
+
+    /* Endpoint labels on right side of chart */
+    .endpoint-labels {
+      position: absolute; top: 0; right: 3px; width: 0; height: 100%;
+      z-index: 5; pointer-events: none;
+    }
+    .endpoint-label {
+      position: absolute; right: 0;
+      font-size: 9px; line-height: 1; font-weight: 300;
+      white-space: nowrap; transform: translateY(-50%);
+      padding: 1px 3px;
+      background: var(--canvas-label-bg);
+      border-radius: 2px;
+      font-family: var(--font-mono);
+      font-variant-numeric: tabular-nums;
+      letter-spacing: 0.3px;
+      opacity: 0.85;
+    }
+    .modal-chart .endpoint-labels { right: 6px; }
+    .modal-chart .endpoint-label { font-size: 10px; padding: 1px 3px; }
+
+    /* Sector label watermark on chart */
+    .chart-sector-label {
+      position: absolute; top: 6px; right: 60px; z-index: 10;
+      font-size: 12px; font-weight: 700; color: var(--text-quaternary); opacity: 0.4;
+      text-transform: uppercase; letter-spacing: 0.5px; pointer-events: none;
+      white-space: nowrap;
+    }
+
+    /* Legend overlay */
+    .chart-legend {
+      position: absolute; top: 4px; left: 6px; z-index: 10;
+      font-size: var(--fs-xs); line-height: 1.3; pointer-events: none;
+      max-height: calc(100% - 8px); overflow: hidden;
+    }
+    .chart-legend-item {
+      white-space: nowrap; display: flex; gap: 3px; align-items: center;
+    }
+    .chart-legend-dot {
+      width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0;
+    }
+    .chart-legend-sym { color: var(--text-white); }
+    .chart-legend-val { font-weight: 600; }
+
+    /* Modal overlay */
+    .modal-overlay {
+      display: none;
+      position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+      background: var(--overlay-backdrop);
+      z-index: 1000;
+      justify-content: center; align-items: center;
+      padding: 20px;
+    }
+    .modal-overlay.visible { display: flex; }
+    .modal-box {
+      width: 95vw; height: 92vh;
+      background: var(--surface-modal); border: 1px solid var(--border-medium); border-radius: 6px;
+      display: flex; flex-direction: column; overflow: hidden;
+    }
+    .modal-header {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 6px 12px; background: var(--bg-quaternary); border-bottom: 1px solid var(--border-medium);
+      gap: 12px; flex-wrap: wrap;
+    }
+    .modal-header .modal-title {
+      font-size: 12px; font-weight: 700; color: var(--text-secondary);
+      text-transform: uppercase; letter-spacing: 0.3px;
+      white-space: nowrap;
+    }
+    .modal-ranges { display: flex; gap: 4px; flex-shrink: 0; }
+    .modal-ranges .btn { font-size: var(--fs-base); padding: 2px 8px; white-space: nowrap; }
+    .modal-close {
+      background: var(--interactive-bg); border: 1px solid var(--interactive-border); color: var(--text-secondary);
+      padding: 3px 10px; border-radius: 4px; cursor: pointer; font-size: 12px;
+      transition: background 0.15s;
+    }
+    .modal-close:hover { background: #ff4444; border-color: #ff4444; color: #fff; }
+    .modal-chart { flex: 1; min-height: 0; position: relative; }
+
+    /* Modal legend */
+    .modal-legend {
+      position: absolute; top: 8px; left: 12px; z-index: 10;
+      font-size: var(--fs-base); line-height: 1.4; pointer-events: none;
+      max-height: calc(100% - 16px); overflow: hidden;
+      display: flex; flex-direction: column; gap: 1px;
+    }
+    .modal-legend .chart-legend-item { gap: 4px; }
+    .modal-legend .chart-legend-dot { width: 8px; height: 8px; }
+
+    /* Loading state */
+    .chart-loading {
+      display: flex; align-items: center; justify-content: center;
+      height: 100%; color: var(--text-quaternary); font-size: var(--fs-base);
+    }
+
+    /* ── Table Views ── */
+    .table-container {
+      display: none;
+      height: calc(100vh - 32px);
+      overflow: auto;
+      padding: 0;
+    }
+    .table-container.active { display: block; }
+    #grid.hidden { display: none; }
+
+    .sectors-table-wrap {
+      background: #000000; padding: 0 12px;
+    }
+    .light .sectors-table-wrap {
+      background: #f5f5f5;
+    }
+    .heatmap-table {
+      width: 100%;
+      max-width: 1000px;
+      border-collapse: collapse;
+      font-size: var(--fs-base);
+      font-variant-numeric: tabular-nums;
+    }
+    .heatmap-table th {
+      position: sticky; top: 0; z-index: 20;
+      background: #000000; color: var(--text-quaternary);
+      padding: 6px 16px; text-align: right;
+      font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px;
+      cursor: pointer; user-select: none;
+      white-space: nowrap;
+      border-bottom: 1px solid #222;
+    }
+    .light .heatmap-table th { background: #f5f5f5; border-bottom-color: #ddd; }
+    .heatmap-table th:hover { color: var(--text-secondary); }
+    .heatmap-table th:first-child { text-align: center; width: 36px; }
+    .heatmap-table th:nth-child(2) { width: 180px; text-align: left; }
+    .heatmap-table th .sort-arrow { font-size: 8px; margin-left: 2px; color: var(--text-quaternary); }
+    .heatmap-table th.sorted .sort-arrow { color: var(--accent-primary); }
+
+    .sector-header {
+      background: #111 !important;
+      cursor: pointer;
+      user-select: none;
+    }
+    .light .sector-header { background: #e8e8e8 !important; }
+    .sector-header td {
+      padding: 10px 16px;
+      font-weight: 600;
+      color: var(--text-secondary);
+      font-size: var(--fs-md);
+      letter-spacing: 0.3px;
+      border-bottom: 1px solid #222;
+    }
+    .light .sector-header td { border-bottom-color: #ddd; }
+    .sector-header:hover { background: #1a1a1a !important; }
+    .light .sector-header:hover { background: #ddd !important; }
+    .sector-header .collapse-icon {
+      display: inline-block; width: 14px; font-size: var(--fs-xs); color: var(--text-quaternary);
+      transition: transform 0.15s;
+    }
+    .sector-header.collapsed .collapse-icon { transform: rotate(-90deg); }
+
+    .stock-row:hover { background: #1a1a1a; }
+    .light .stock-row:hover { background: #eaeaea; }
+    .stock-row td {
+      padding: 8px 16px;
+      text-align: right;
+      font-variant-numeric: tabular-nums;
+      font-size: 14px;
+      font-weight: 300;
+      border-bottom: 1px solid #222;
+    }
+    .light .stock-row td { border-bottom-color: #e0e0e0; }
+    .stock-row td:first-child {
+      text-align: center; color: var(--text-quaternary); font-size: var(--fs-sm);
+    }
+    .stock-row td:nth-child(2) {
+      text-align: left; color: var(--text-secondary); font-weight: 500;
+      font-family: var(--font-mono); font-size: 13px;
+    }
+    .stock-row.base-row td:nth-child(2) {
+      color: var(--text-white); font-weight: 700;
+    }
+
+    .stock-row.hidden-row { display: none; }
+
+    /* Breadth bar */
+    .breadth-bar {
+      display: inline-block; height: 10px; border-radius: 2px;
+      background: var(--bg-quaternary); position: relative; width: 50px; vertical-align: middle;
+    }
+    .breadth-fill {
+      position: absolute; left: 0; top: 0; height: 100%; border-radius: 2px;
+      background: #4caf50;
+    }
+    .breadth-text { font-size: var(--fs-xs); margin-left: 4px; color: var(--text-tertiary); }
+
+    /* Momentum arrow */
+    .momentum-up { color: var(--semantic-bullish); }
+    .momentum-down { color: var(--semantic-bearish); }
+    .momentum-flat { color: var(--text-quaternary); }
+
+    /* vs SPY / vs Sector column */
+    .vs-col { font-size: 10px; }
+
+    /* ── Stocks Table (badge tickers, colored text, flat dark bg) ── */
+    .stocks-table-wrap {
+      background: #000000; padding: 0 12px;
+    }
+    .light .stocks-table-wrap {
+      background: #f5f5f5;
+    }
+    .stocks-table {
+      width: 100%;
+      max-width: 880px;
+      border-collapse: collapse;
+      font-variant-numeric: tabular-nums;
+    }
+    .stocks-table th {
+      position: sticky; top: 0; z-index: 20;
+      background: #000000; color: var(--text-quaternary);
+      padding: 6px 16px; text-align: right;
+      font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px;
+      cursor: pointer; user-select: none;
+      white-space: nowrap;
+      border-bottom: 1px solid #2a2a2a;
+    }
+    .light .stocks-table th { background: #f5f5f5; border-bottom-color: #ddd; color: var(--text-tertiary); }
+    .stocks-table th:hover { color: var(--text-secondary); }
+    .stocks-table th:first-child { text-align: left; width: 110px; }
+    .stocks-table th .sort-arrow { font-size: 8px; margin-left: 2px; color: var(--text-quaternary); }
+    .stocks-table th.sorted .sort-arrow { color: var(--accent-primary); }
+    .stocks-table tbody tr:hover { background: #1f1f1f; }
+    .light .stocks-table tbody tr:hover { background: #eaeaea; }
+    .stocks-table td {
+      padding: 8px 16px;
+      text-align: right;
+      font-variant-numeric: tabular-nums;
+      font-size: 14px;
+      font-weight: 300;
+      border-bottom: 1px solid #222;
+    }
+    .light .stocks-table td { border-bottom-color: #e0e0e0; }
+    .stocks-table td:first-child {
+      text-align: left;
+    }
+    .stock-badge {
+      display: inline-block;
+      padding: 4px 10px;
+      border: 1px solid #3a3a3a;
+      border-radius: 5px;
+      font-family: var(--font-mono);
+      font-size: 13px;
+      font-weight: 600;
+      color: #d1d4dc;
+      background: #252525;
+      white-space: nowrap;
+    }
+    .light .stock-badge {
+      border-color: #d1d5db;
+      color: #1f2937;
+      background: #e5e7eb;
+    }
+
+    /* ── Sector Tile Grid ── */
+    .sector-grid-toolbar {
+      display: flex; align-items: center; gap: 6px;
+      padding: 6px 12px; background: #000; border-bottom: 1px solid #222;
+    }
+    .light .sector-grid-toolbar { background: #f5f5f5; border-bottom-color: #ddd; }
+    .sector-grid-toolbar .topbar-label { margin-right: 4px; }
+    .sector-grid-toolbar .sort-btn {
+      background: #1a1a1a; color: var(--text-quaternary); border: 1px solid #333;
+      padding: 2px 8px; border-radius: 3px; cursor: pointer; font-size: 10px;
+      text-transform: uppercase; letter-spacing: 0.3px;
+    }
+    .light .sector-grid-toolbar .sort-btn { background: #e8e8e8; border-color: #ccc; }
+    .sector-grid-toolbar .sort-btn:hover { color: var(--text-secondary); }
+    .sector-grid-toolbar .sort-btn.active { background: var(--interactive-bg-active); border-color: var(--interactive-bg-active); color: #fff; }
+
+    .sector-grid {
+      display: grid; grid-template-columns: repeat(5, 1fr); gap: 1px;
+      background: #000; padding: 0;
+    }
+    .light .sector-grid { background: #ddd; }
+
+    .sector-tile {
+      display: flex; flex-direction: column; background: #0a0a0a;
+      cursor: pointer; transition: background 0.1s;
+    }
+    .light .sector-tile { background: #fff; }
+    .sector-tile:hover { background: #111; }
+    .light .sector-tile:hover { background: #f0f0f0; }
+
+    .sector-tile-header {
+      display: flex; align-items: center; gap: 6px;
+      padding: 6px 10px; border-bottom: 1px solid #1a1a1a;
+      font-size: 11px; white-space: nowrap; overflow: hidden;
+    }
+    .light .sector-tile-header { border-bottom-color: #eee; }
+    .sector-tile-header .tile-color {
+      width: 4px; height: 16px; border-radius: 2px; flex-shrink: 0;
+    }
+    .sector-tile-header .tile-name {
+      font-weight: 600; color: var(--text-secondary); overflow: hidden;
+      text-overflow: ellipsis; flex: 1; min-width: 0;
+    }
+    .sector-tile-header .tile-sym {
+      color: var(--text-quaternary); font-family: var(--font-mono);
+      font-size: 10px; flex-shrink: 0;
+    }
+    .sector-tile-header .tile-breadth {
+      display: flex; align-items: center; gap: 3px; flex-shrink: 0;
+    }
+    .sector-tile-header .tile-breadth-bar {
+      width: 28px; height: 6px; background: #222; border-radius: 2px;
+      overflow: hidden; position: relative;
+    }
+    .light .sector-tile-header .tile-breadth-bar { background: #ddd; }
+    .sector-tile-header .tile-breadth-fill {
+      position: absolute; left: 0; top: 0; height: 100%; border-radius: 2px;
+    }
+    .sector-tile-header .tile-breadth-pct {
+      font-size: 9px; color: var(--text-quaternary); min-width: 22px; text-align: right;
+    }
+    .sector-tile-header .tile-rs-tag {
+      font-size: 9px; font-family: var(--font-mono); font-weight: 600;
+      padding: 0 4px; border-radius: 8px; border: 1px solid;
+      flex-shrink: 0; line-height: 1.4; font-variant-numeric: tabular-nums;
+    }
+    .sector-tile-header .tile-mom {
+      font-size: 10px; flex-shrink: 0;
+    }
+
+    .sector-tile-body { padding: 4px 0; }
+    .tile-col-headers { opacity: 0.5 !important; padding-top: 0; padding-bottom: 0; }
+    .tile-col-headers .col-sub {
+      font-size: 8px; text-transform: uppercase; letter-spacing: 0.3px;
+      color: var(--text-quaternary); font-weight: 600;
+    }
+    .sector-tile-row {
+      display: flex; align-items: baseline; padding: 1px 10px;
+      font-variant-numeric: tabular-nums; font-size: 12px; font-weight: 300;
+      opacity: 0.7;
+    }
+    .sector-tile-row.active-sort { opacity: 1; background: rgba(255, 200, 50, 0.08); }
+    .light .sector-tile-row.active-sort { background: rgba(255, 180, 0, 0.06); }
+    .sector-tile-row .row-label {
+      width: 28px; flex-shrink: 0; color: var(--text-quaternary);
+      font-size: 9px; text-transform: uppercase;
+    }
+    .sector-tile-row .row-pct { flex: 1; text-align: right; }
+    .sector-tile-row .row-vs {
+      width: 48px; text-align: right; font-size: 10px; color: var(--text-quaternary);
+      flex-shrink: 0; margin-left: 6px;
+    }
+
+    .sector-tile-etfs {
+      padding: 4px 10px 6px; border-top: 1px solid #1a1a1a;
+      font-size: 10px; font-family: var(--font-mono);
+    }
+    .light .sector-tile-etfs { border-top-color: #eee; }
+    .sector-tile-etfs .etf-line {
+      display: flex; justify-content: space-between; padding: 1px 0;
+    }
+    .sector-tile-etfs .etf-sym { color: var(--text-tertiary); font-weight: 500; }
+    .sector-tile-etfs .etf-pct { font-weight: 300; }
+    .sector-tile-etfs .etf-expand-hint {
+      color: var(--text-quaternary); font-size: 9px; font-family: var(--font-sans);
+      font-style: italic; margin-top: 2px;
+    }
+
+    /* Market Health Card */
+    .market-health-card {
+      margin: 0; padding: 10px 16px 12px; background: #060608;
+      border-bottom: 2px solid #222;
+      display: flex; flex-direction: column; align-items: center;
+    }
+    .light .market-health-card { background: #fafbfc; border-bottom: 2px solid #ddd; }
+    .market-health-header {
+      display: flex; align-items: center; gap: 12px; margin-bottom: 8px;
+    }
+    .market-health-header .mh-title {
+      font-size: 12px; font-weight: 700; text-transform: uppercase;
+      letter-spacing: 0.6px; color: var(--text-tertiary);
+    }
+    .market-health-risk {
+      font-size: 11px; font-weight: 700; padding: 2px 10px;
+      border-radius: 3px; letter-spacing: 0.4px;
+    }
+    .risk-on { background: rgba(38, 166, 154, 0.18); color: var(--semantic-bullish); }
+    .risk-off { background: rgba(239, 83, 80, 0.18); color: var(--semantic-bearish); }
+    .risk-mixed { background: rgba(255, 152, 0, 0.18); color: var(--semantic-neutral); }
+    .risk-neutral { background: rgba(93, 96, 107, 0.18); color: var(--text-quaternary); }
+    .market-health-table {
+      border-collapse: collapse; font-variant-numeric: tabular-nums;
+    }
+    .market-health-table th {
+      font-size: 9px; text-transform: uppercase; letter-spacing: 0.3px;
+      color: var(--text-quaternary); padding: 4px 8px; text-align: right;
+      font-weight: 600; white-space: nowrap;
+    }
+    .market-health-table th:first-child { text-align: left; padding-right: 12px; }
+    .market-health-table td {
+      font-size: 13px; padding: 5px 8px; text-align: right;
+      font-weight: 300; white-space: nowrap;
+    }
+    .market-health-table td:first-child {
+      text-align: left; font-weight: 700; font-family: var(--font-mono);
+      font-size: 12px; color: var(--text-secondary); padding-right: 12px;
+    }
+    .market-health-table tr { border-bottom: 1px solid #1a1a1a; }
+    .light .market-health-table tr { border-bottom-color: #eee; }
+    .market-health-table tbody tr:last-child { border-bottom: none; }
+    .market-health-table .mh-active-col { background: rgba(255, 200, 50, 0.08); }
+    .light .market-health-table .mh-active-col { background: rgba(255, 180, 0, 0.06); }
+    .mh-categories {
+      display: flex; gap: 12px; margin-top: 12px;
+    }
+    .mh-cat-box {
+      flex: 1; padding: 10px 14px; border-radius: 5px;
+      border: 1px solid #222; background: #0c0c0e;
+    }
+    .light .mh-cat-box { border-color: #ddd; background: #f5f6f7; }
+    .mh-cat-header {
+      display: flex; align-items: center; justify-content: space-between;
+      gap: 10px; margin-bottom: 8px;
+    }
+    .mh-cat-label {
+      font-size: 11px; font-weight: 700; text-transform: uppercase;
+      letter-spacing: 0.4px; color: var(--text-tertiary);
+    }
+    .mh-cat-badge {
+      font-size: 10px; font-weight: 700; padding: 2px 8px;
+      border-radius: 3px; letter-spacing: 0.3px;
+    }
+    .mh-cat-signals { display: flex; flex-direction: column; gap: 4px; }
+    .mh-signal-row {
+      display: flex; align-items: center; justify-content: space-between;
+      font-size: 11px; color: var(--text-quaternary);
+    }
+    .mh-signal-row .mh-sig-label { font-weight: 400; white-space: nowrap; }
+    .mh-sig-right { display: flex; align-items: center; gap: 5px; flex-shrink: 0; }
+    .mh-sig-detail { font-size: 9px; opacity: 0.5; font-family: var(--font-mono); }
+    .mh-sig-arrow { font-size: 10px; font-weight: 700; }
+    .mh-sig-bull { color: var(--semantic-bullish); }
+    .mh-sig-bear { color: var(--semantic-bearish); }
+    .mh-sig-na { color: var(--text-quaternary); opacity: 0.3; }
+    .regime-trending { background: rgba(38, 166, 154, 0.18); color: var(--semantic-bullish); }
+    .regime-choppy { background: rgba(255, 152, 0, 0.18); color: var(--semantic-neutral); }
+    .regime-unclear { background: rgba(93, 96, 107, 0.18); color: var(--text-quaternary); }
+
+    /* Sector filter for stocks view */
+    .table-toolbar {
+      display: flex; align-items: center; gap: 8px;
+      padding: 6px 12px; background: var(--bg-tertiary); border-bottom: 1px solid var(--border-medium);
+    }
+    .table-toolbar select {
+      background: var(--interactive-bg); color: var(--text-secondary); border: 1px solid var(--interactive-border);
+      padding: 3px 8px; border-radius: 4px; font-size: var(--fs-base);
+    }
+    .table-toolbar .topbar-label { margin-right: 4px; }
+
+    /* ── RRG View ── */
+    #rrg-view, #stock-rrg-view {
+      display: none;
+      height: calc(100vh - 32px);
+      position: relative;
+      background: var(--bg-primary);
+    }
+    #rrg-view.active, #stock-rrg-view.active { display: block; }
+    #rrg-canvas {
+      width: 100%; height: 100%;
+      cursor: crosshair;
+    }
+    .rrg-toolbar {
+      position: absolute; top: 8px; left: 12px; z-index: 10;
+      display: flex; gap: 6px; align-items: center;
+    }
+    .rrg-toolbar select {
+      background: var(--interactive-bg); color: var(--text-secondary); border: 1px solid var(--interactive-border);
+      padding: 3px 8px; border-radius: 4px; font-size: var(--fs-base);
+    }
+    .rrg-quadrant-label {
+      position: absolute; z-index: 5; font-size: 14px; font-weight: 700;
+      text-transform: uppercase; letter-spacing: 1px; pointer-events: none;
+      opacity: 0.4;
+    }
+    .rrg-legend {
+      position: absolute; bottom: 12px; right: 12px; z-index: 10;
+      background: var(--legend-bg);
+      border: 1px solid var(--border-medium); border-radius: 6px;
+      padding: 8px 0; min-width: 180px;
+      max-height: calc(100% - 80px); overflow-y: auto;
+    }
+    .rrg-legend-title {
+      font-size: var(--fs-xs); color: var(--text-quaternary); text-transform: uppercase; letter-spacing: 0.5px;
+      padding: 0 10px 4px; border-bottom: 1px solid var(--border-medium); margin-bottom: 2px;
+    }
+    .rrg-legend-item {
+      display: flex; align-items: center; gap: 6px;
+      padding: 3px 10px; cursor: pointer; transition: background 0.1s;
+      font-size: var(--fs-base);
+    }
+    .rrg-legend-item:hover { background: var(--surface-hover-strong); }
+    .rrg-legend-item.dimmed { opacity: 0.25; }
+    .rrg-legend-item.highlighted { background: var(--surface-hover-strong); }
+    .rrg-legend-dot {
+      width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0;
+    }
+    .rrg-legend-sym {
+      color: var(--text-secondary); font-weight: 600; min-width: 40px;
+      font-family: var(--font-mono);
+    }
+    .rrg-legend-name {
+      color: var(--text-tertiary); font-size: var(--fs-sm); flex: 1;
+    }
+    .rrg-legend-quadrant {
+      font-size: 8px; font-weight: 700; padding: 1px 4px; border-radius: 2px;
+      text-transform: uppercase;
+    }
+    /* Sector drilldown popup */
+    .rrg-drilldown {
+      display: none; position: absolute; top: 40px; left: 12px; bottom: 12px; z-index: 20;
+      background: var(--drilldown-bg); border: 1px solid var(--border-medium); border-radius: 6px;
+      width: 640px; flex-direction: column; overflow: hidden;
+    }
+    .rrg-drilldown.visible { display: flex; }
+    .rrg-drilldown-header {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 8px 12px; border-bottom: 1px solid var(--border-medium); flex-shrink: 0;
+    }
+    .rrg-drilldown-title {
+      font-size: 12px; font-weight: 700; color: var(--text-secondary);
+      text-transform: uppercase; letter-spacing: 0.3px;
+    }
+    .rrg-drilldown-close {
+      background: none; border: none; color: var(--text-quaternary); cursor: pointer;
+      font-size: 16px; line-height: 1; padding: 0 4px;
+    }
+    .rrg-drilldown-close:hover { color: var(--semantic-bearish); }
+    .rrg-drilldown-body {
+      overflow-y: auto; flex: 1;
+    }
+    .drilldown-table {
+      width: 100%; border-collapse: collapse; font-size: var(--fs-base);
+      font-variant-numeric: tabular-nums;
+    }
+    .drilldown-table th {
+      position: sticky; top: 0; z-index: 2;
+      background: var(--bg-tertiary); color: var(--text-tertiary); padding: 5px 6px;
+      text-align: right; font-size: var(--fs-xs); text-transform: uppercase;
+      letter-spacing: 0.3px; border-bottom: 1px solid var(--border-medium);
+      cursor: pointer; user-select: none; white-space: nowrap;
+    }
+    .drilldown-table th:first-child { text-align: left; width: 56px; }
+    .drilldown-table th:hover { color: var(--text-secondary); }
+    .drilldown-table th .dd-sort { font-size: 7px; margin-left: 2px; color: var(--text-quaternary); }
+    .drilldown-table th.dd-sorted .dd-sort { color: var(--accent-primary); }
+    .drilldown-table td {
+      padding: 3px 6px; text-align: right; font-variant-numeric: tabular-nums;
+      border-bottom: 1px solid var(--drilldown-border-row);
+    }
+    .drilldown-table td:first-child {
+      text-align: left; color: var(--text-secondary); font-weight: 600;
+      font-family: var(--font-mono);
+    }
+    .drilldown-table tr:hover { background: var(--surface-hover); }
+    .rs-bars-wrap {
+      display: inline-flex; align-items: flex-end; height: 32px; gap: 1px;
+    }
+    .rs-bar-fill {
+      width: 4px; min-height: 1px; border-radius: 1px 1px 0 0;
+    }
+    /* AI Analysis */
+    .ai-analyze-btn {
+      background: var(--accent-bg) !important; color: var(--accent-primary-light) !important;
+      border: 1px solid var(--accent-primary) !important;
+    }
+    .ai-analyze-btn:hover { background: var(--accent-hover) !important; }
+    .ai-analyze-btn.loading {
+      opacity: 0.6; pointer-events: none;
+    }
+    .ai-panel {
+      display: none; position: fixed; top: 0; right: 0; bottom: 0; width: 520px; z-index: 100;
+      background: var(--bg-primary); border-left: 1px solid var(--border-medium);
+      flex-direction: column; box-shadow: -8px 0 30px rgba(0,0,0,0.6);
+    }
+    .ai-panel.visible { display: flex; }
+    .ai-panel-header {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 14px 20px; border-bottom: 1px solid var(--border-medium); flex-shrink: 0;
+      background: var(--ai-header-gradient);
+    }
+    .ai-panel-title {
+      font-size: var(--fs-md); font-weight: 700; color: var(--accent-primary-light);
+      text-transform: uppercase; letter-spacing: 0.5px;
+    }
+    .ai-panel-close {
+      background: none; border: none; color: var(--text-quaternary); cursor: pointer;
+      font-size: 20px; line-height: 1; padding: 0 4px;
+    }
+    .ai-panel-close:hover { color: var(--semantic-bearish); }
+    .ai-panel-body {
+      flex: 1; overflow-y: auto; padding: 20px 24px;
+      font-size: var(--fs-md); line-height: 1.7; color: var(--text-tertiary);
+      font-family: var(--font-sans);
+    }
+    .ai-panel-body h1 {
+      font-size: var(--fs-xl); color: var(--text-primary); margin: 24px 0 12px 0;
+      padding-bottom: 8px; border-bottom: 1px solid var(--border-medium);
+    }
+    .ai-panel-body h1:first-child { margin-top: 0; }
+    .ai-panel-body h2 {
+      font-size: 14px; color: var(--accent-primary-light); margin: 20px 0 10px 0;
+      text-transform: uppercase; letter-spacing: 0.3px;
+    }
+    .ai-panel-body h3 {
+      font-size: var(--fs-md); color: var(--text-secondary); margin: 16px 0 8px 0; font-weight: 600;
+    }
+    .ai-panel-body p { margin: 8px 0; }
+    .ai-panel-body ul, .ai-panel-body ol {
+      padding-left: 0; margin: 10px 0; list-style: none;
+    }
+    .ai-panel-body li {
+      margin: 6px 0; padding: 8px 12px; border-radius: 6px;
+      background: var(--ai-item-bg); border-left: 3px solid var(--accent-primary);
+      font-size: 12.5px; line-height: 1.6;
+    }
+    .ai-panel-body li.bullish { border-left-color: var(--semantic-bullish); background: var(--ai-bullish-bg); }
+    .ai-panel-body li.bearish { border-left-color: var(--semantic-bearish); background: var(--ai-bearish-bg); }
+    .ai-panel-body li.neutral { border-left-color: var(--semantic-neutral); background: var(--ai-neutral-bg); }
+    .ai-panel-body strong { color: var(--text-primary); }
+    .ai-panel-body em { color: var(--text-tertiary); font-style: italic; }
+    .ai-panel-body .ticker {
+      display: inline-block; background: var(--ai-ticker-bg); color: var(--accent-primary-light);
+      padding: 1px 6px; border-radius: 3px; font-size: var(--fs-base); font-weight: 700;
+      letter-spacing: 0.3px; font-family: var(--font-mono);
+    }
+    .ai-panel-body code {
+      background: var(--bg-tertiary); color: var(--accent-primary-light); padding: 2px 6px;
+      border-radius: 3px; font-size: 11.5px; font-family: var(--font-mono);
+    }
+    .ai-panel-body hr {
+      border: none; border-top: 1px solid var(--border-medium); margin: 16px 0;
+    }
+    .ai-panel-body blockquote {
+      margin: 12px 0; padding: 10px 16px;
+      background: var(--ai-blockquote-bg); border-left: 3px solid var(--accent-primary);
+      border-radius: 0 6px 6px 0; color: var(--text-secondary);
+    }
+    .ai-panel-body .ai-loading {
+      display: flex; align-items: center; justify-content: center;
+      gap: 10px; color: var(--text-quaternary); font-size: 14px; padding: 40px 0;
+    }
+    .ai-panel-body .ai-loading::before {
+      content: ''; width: 20px; height: 20px; border: 2px solid var(--accent-primary);
+      border-top-color: transparent; border-radius: 50%;
+      animation: aispin 0.8s linear infinite;
+    }
+    @keyframes aispin { to { transform: rotate(360deg); } }
+    .ai-panel-body .ai-error {
+      color: var(--semantic-bearish); background: var(--ai-bearish-bg);
+      padding: 12px 16px; border-radius: 6px; border-left: 3px solid var(--semantic-bearish);
+    }
+
+    /* AI Settings */
+    .ai-settings-btn {
+      background: none; border: none; color: var(--text-quaternary); cursor: pointer;
+      font-size: 16px; line-height: 1; padding: 0 8px 0 0;
+    }
+    .ai-settings-btn:hover { color: var(--accent-primary-light); }
+    .ai-key-form {
+      display: none; padding: 12px 20px; border-bottom: 1px solid var(--border-medium);
+      background: var(--bg-secondary); gap: 8px; align-items: center;
+    }
+    .ai-key-form.visible { display: flex; }
+    .ai-key-form input {
+      flex: 1; background: var(--bg-primary); border: 1px solid var(--border-medium);
+      border-radius: 4px; padding: 6px 10px; color: var(--text-primary);
+      font-size: var(--fs-base); font-family: var(--font-mono);
+    }
+    .ai-key-form input::placeholder { color: var(--text-quaternary); }
+    .ai-key-form button {
+      background: var(--accent-bg); color: var(--accent-primary-light);
+      border: 1px solid var(--accent-primary); border-radius: 4px;
+      padding: 6px 12px; cursor: pointer; font-size: var(--fs-base); white-space: nowrap;
+    }
+    .ai-key-form button:hover { background: var(--accent-hover); }
+
+    /* Theme toggle button */
+    .theme-toggle-btn {
+      font-size: 14px !important;
+      padding: 2px 8px !important;
+      line-height: 1;
+    }
+  </style>
+</head>
+<body>
+  <div class="topbar">
+    <h1>Sector Relative Strength Dashboard</h1>
+    <div class="topbar-controls">
+      <div class="btn-group">
+        <span class="topbar-label">View</span>
+        <button class="btn active" data-view onclick="setView('spaghetti', this)">Spaghetti</button>
+        <button class="btn" data-view onclick="setView('sectors', this)">Sectors</button>
+        <button class="btn" data-view onclick="setView('stocks', this)">Stocks</button>
+        <button class="btn" data-view onclick="setView('rrg', this)">RRG</button>
+        <button class="btn" data-view onclick="setView('stockrrg', this)">Stock RRG</button>
+      </div>
+      <div class="separator"></div>
+      <button class="btn active" data-layout onclick="setLayout('g4x4', this)">4 x 4</button>
+      <button class="btn" data-layout onclick="setLayout('g4x2', this)">4 x 2</button>
+      <button class="btn" data-layout onclick="setLayout('g2x1', this)">2 x 1</button>
+      <div class="separator"></div>
+      <div class="btn-group">
+        <span class="topbar-label">Range</span>
+        <button class="btn" data-range="1D" onclick="setRange('1D', this)">1D</button>
+        <button class="btn" data-range="5D" onclick="setRange('5D', this)">5D</button>
+        <button class="btn" data-range="1M" onclick="setRange('1M', this)">1M</button>
+        <button class="btn active" data-range="3M" onclick="setRange('3M', this)">3M</button>
+        <button class="btn" data-range="6M" onclick="setRange('6M', this)">6M</button>
+        <button class="btn" data-range="YTD" onclick="setRange('YTD', this)">YTD</button>
+        <button class="btn" data-range="12M" onclick="setRange('12M', this)">1Y</button>
+        <button class="btn" data-range="60M" onclick="setRange('60M', this)">5Y</button>
+      </div>
+      <div class="separator"></div>
+      <div class="btn-group">
+        <span class="topbar-label">Vs</span>
+        <select id="spaghetti-mode" onchange="setSpaghettiMode(this.value)">
+          <option value="absolute">% Change</option>
+          <option value="sector">vs Sector ETF</option>
+          <option value="equalweight">Equal Weight</option>
+          <option value="vsSpy">vs SPY</option>
+          <option value="vsRsp">vs RSP</option>
+          <option value="rsRating">RS Rating</option>
+        </select>
+      </div>
+      <div class="separator"></div>
+      <button class="btn ai-analyze-btn" onclick="runAIAnalysis()">Analyze</button>
+      <div class="separator"></div>
+      <button class="btn theme-toggle-btn" onclick="toggleTheme()" title="Toggle light/dark theme" id="theme-toggle">&#9790;</button>
+    </div>
+  </div>
+  <!-- AI Analysis Panel -->
+  <div class="ai-panel" id="ai-panel">
+    <div class="ai-panel-header">
+      <span class="ai-panel-title">AI Analysis</span>
+      <div style="display:flex;align-items:center;gap:4px;">
+        <button class="ai-settings-btn" onclick="toggleAISettings()" title="API Key Settings">&#9881;</button>
+        <button class="ai-panel-close" onclick="closeAIPanel()">&times;</button>
+      </div>
+    </div>
+    <div class="ai-key-form" id="ai-key-form">
+      <input type="password" id="ai-key-input" placeholder="Enter xAI API key" value="">
+      <button onclick="saveAIKey()">Save</button>
+    </div>
+    <div class="ai-panel-body" id="ai-panel-body"></div>
+  </div>
+  <div class="grid g4x4" id="grid"></div>
+  <div class="table-container" id="sectors-view"></div>
+  <div class="table-container" id="stocks-view"></div>
+
+  <div id="rrg-view">
+    <canvas id="rrg-canvas"></canvas>
+    <div class="rrg-toolbar">
+      <span class="topbar-label">Period</span>
+      <select id="rrg-period" onchange="updateRRGDefaults(); drawRRG()">
+        <option value="daily">Daily (Swing)</option>
+        <option value="weekly" selected>Weekly (Position)</option>
+      </select>
+      <span class="topbar-label" style="margin-left:8px">ETFs</span>
+      <select id="rrg-etf-type" onchange="drawRRG()">
+        <option value="cap" selected>Cap-Weight (X)</option>
+        <option value="equal">Equal-Weight (R)</option>
+      </select>
+      <span class="topbar-label" style="margin-left:8px">Benchmark</span>
+      <select id="rrg-benchmark" onchange="drawRRG()">
+        <option value="SPY" selected>SPY</option>
+        <option value="RSP">RSP</option>
+      </select>
+      <span class="topbar-label" style="margin-left:8px">Tail</span>
+      <select id="rrg-tail" onchange="drawRRG()">
+        <option value="5">5</option>
+        <option value="10">10</option>
+        <option value="20" selected>20</option>
+        <option value="40">40</option>
+      </select>
+      <span class="topbar-label" style="margin-left:8px">Smooth</span>
+      <select id="rrg-window" onchange="drawRRG()">
+        <option value="1" selected>Off</option>
+        <option value="3">3</option>
+        <option value="5">5</option>
+        <option value="10">10</option>
+      </select>
+    </div>
+    <div class="rrg-quadrant-label" style="top:15%;right:15%;color:var(--semantic-bullish)">Leading</div>
+    <div class="rrg-quadrant-label" style="top:15%;left:15%;color:var(--semantic-neutral)">Improving</div>
+    <div class="rrg-quadrant-label" style="bottom:15%;left:15%;color:var(--semantic-bearish)">Lagging</div>
+    <div class="rrg-quadrant-label" style="bottom:15%;right:15%;color:var(--semantic-weakening)">Weakening</div>
+    <div class="rrg-drilldown" id="rrg-drilldown">
+      <div class="rrg-drilldown-header">
+        <span class="rrg-drilldown-title" id="rrg-drilldown-title"></span>
+        <button class="rrg-drilldown-close" onclick="closeRRGDrilldown()">&times;</button>
+      </div>
+      <div class="rrg-drilldown-body" id="rrg-drilldown-body"></div>
+    </div>
+    <div class="rrg-legend" id="rrg-legend"></div>
+  </div>
+
+  <div id="stock-rrg-view">
+    <canvas id="stock-rrg-canvas" style="width:100%;height:100%;cursor:crosshair;"></canvas>
+    <div class="rrg-toolbar" id="stock-rrg-toolbar">
+      <span class="topbar-label">Sector</span>
+      <select id="srrg-sector" onchange="drawStockRRG()"></select>
+      <span class="topbar-label" style="margin-left:8px">Period</span>
+      <select id="srrg-period" onchange="drawStockRRG()">
+        <option value="daily">Daily (Swing)</option>
+        <option value="weekly" selected>Weekly (Position)</option>
+      </select>
+      <span class="topbar-label" style="margin-left:8px">Benchmark</span>
+      <select id="srrg-benchmark" onchange="drawStockRRG()">
+        <option value="sector" selected>Sector ETF</option>
+        <option value="SPY">SPY</option>
+        <option value="RSP">RSP</option>
+      </select>
+      <span class="topbar-label" style="margin-left:8px">Tail</span>
+      <select id="srrg-tail" onchange="drawStockRRG()">
+        <option value="5">5</option>
+        <option value="10">10</option>
+        <option value="20" selected>20</option>
+        <option value="40">40</option>
+      </select>
+      <span class="topbar-label" style="margin-left:8px">Smooth</span>
+      <select id="srrg-smooth" onchange="drawStockRRG()">
+        <option value="1" selected>Off</option>
+        <option value="3">3</option>
+        <option value="5">5</option>
+        <option value="10">10</option>
+      </select>
+    </div>
+    <div class="rrg-quadrant-label" style="top:15%;right:15%;color:var(--semantic-bullish)">Leading</div>
+    <div class="rrg-quadrant-label" style="top:15%;left:15%;color:var(--semantic-neutral)">Improving</div>
+    <div class="rrg-quadrant-label" style="bottom:15%;left:15%;color:var(--semantic-bearish)">Lagging</div>
+    <div class="rrg-quadrant-label" style="bottom:15%;right:15%;color:var(--semantic-weakening)">Weakening</div>
+    <div class="rrg-legend" id="stock-rrg-legend"></div>
+  </div>
+
+  <div class="modal-overlay" id="modal" onclick="closeModal(event)">
+    <div class="modal-box" onclick="event.stopPropagation()">
+      <div class="modal-header">
+        <span class="modal-title" id="modal-title"></span>
+        <div class="btn-group">
+          <span class="topbar-label">Range</span>
+          <div class="modal-ranges" id="modal-ranges"></div>
+        </div>
+        <button class="modal-close" onclick="closeModal()">Close (Esc)</button>
+      </div>
+      <div class="modal-chart" id="modal-chart"></div>
+    </div>
+  </div>
+
+  <script src="https://unpkg.com/lightweight-charts@4.2.0/dist/lightweight-charts.standalone.production.js"></script>
+  <script>
+    // ── Theme Management ──
+    let currentThemeColors = {};
+
+    function getThemeColors() {
+      const s = getComputedStyle(document.documentElement);
+      return {
+        bgPrimary: s.getPropertyValue('--bg-primary').trim(),
+        bgSecondary: s.getPropertyValue('--bg-secondary').trim(),
+        bgTertiary: s.getPropertyValue('--bg-tertiary').trim(),
+        bgQuaternary: s.getPropertyValue('--bg-quaternary').trim(),
+        textPrimary: s.getPropertyValue('--text-primary').trim(),
+        textSecondary: s.getPropertyValue('--text-secondary').trim(),
+        textTertiary: s.getPropertyValue('--text-tertiary').trim(),
+        textQuaternary: s.getPropertyValue('--text-quaternary').trim(),
+        textWhite: s.getPropertyValue('--text-white').trim(),
+        borderSubtle: s.getPropertyValue('--border-subtle').trim(),
+        borderMedium: s.getPropertyValue('--border-medium').trim(),
+        borderEmphasis: s.getPropertyValue('--border-emphasis').trim(),
+        interactiveBg: s.getPropertyValue('--interactive-bg').trim(),
+        interactiveBgHover: s.getPropertyValue('--interactive-bg-hover').trim(),
+        interactiveBgActive: s.getPropertyValue('--interactive-bg-active').trim(),
+        semanticBullish: s.getPropertyValue('--semantic-bullish').trim(),
+        semanticBearish: s.getPropertyValue('--semantic-bearish').trim(),
+        semanticNeutral: s.getPropertyValue('--semantic-neutral').trim(),
+        semanticWeakening: s.getPropertyValue('--semantic-weakening').trim(),
+        accentPrimary: s.getPropertyValue('--accent-primary').trim(),
+        accentPrimaryLight: s.getPropertyValue('--accent-primary-light').trim(),
+        chartBg: s.getPropertyValue('--chart-bg').trim(),
+        chartGrid: s.getPropertyValue('--chart-grid').trim(),
+        chartGridStrong: s.getPropertyValue('--chart-grid-strong').trim(),
+        chartCrosshair: s.getPropertyValue('--chart-crosshair').trim(),
+        chartCrosshairCenter: s.getPropertyValue('--chart-crosshair-center').trim(),
+        chartAxisText: s.getPropertyValue('--chart-axis-text').trim(),
+        chartAxisBorder: s.getPropertyValue('--chart-axis-border').trim(),
+        surfaceHover: s.getPropertyValue('--surface-hover').trim(),
+        surfaceModal: s.getPropertyValue('--surface-modal').trim(),
+        overlayBackdrop: s.getPropertyValue('--overlay-backdrop').trim(),
+        quadrantLeading: s.getPropertyValue('--quadrant-leading').trim(),
+        quadrantImproving: s.getPropertyValue('--quadrant-improving').trim(),
+        quadrantLagging: s.getPropertyValue('--quadrant-lagging').trim(),
+        quadrantWeakening: s.getPropertyValue('--quadrant-weakening').trim(),
+        canvasLabelBg: s.getPropertyValue('--canvas-label-bg').trim(),
+        legendBg: s.getPropertyValue('--legend-bg').trim(),
+        drilldownBg: s.getPropertyValue('--drilldown-bg').trim(),
+        drilldownBorderRow: s.getPropertyValue('--drilldown-border-row').trim(),
+      };
+    }
+
+    function initTheme() {
+      const saved = localStorage.getItem('theme');
+      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+      const theme = saved || (prefersDark ? 'dark' : 'dark'); // default dark
+      if (theme === 'light') {
+        document.documentElement.classList.add('light');
+      }
+      currentThemeColors = getThemeColors();
+      updateThemeToggleIcon();
+    }
+
+    function toggleTheme() {
+      document.documentElement.classList.toggle('light');
+      const isLight = document.documentElement.classList.contains('light');
+      localStorage.setItem('theme', isLight ? 'light' : 'dark');
+      currentThemeColors = getThemeColors();
+      updateThemeToggleIcon();
+      refreshAllVisuals();
+    }
+
+    function updateThemeToggleIcon() {
+      const btn = document.getElementById('theme-toggle');
+      if (!btn) return;
+      const isLight = document.documentElement.classList.contains('light');
+      btn.innerHTML = isLight ? '&#9728;' : '&#9790;';
+      btn.title = isLight ? 'Switch to dark theme' : 'Switch to light theme';
+    }
+
+    function refreshAllVisuals() {
+      // Re-render all panel charts
+      for (let i = 0; i < PANEL_COUNT; i++) {
+        if (panelDataCache[i]) loadPanel(i);
+      }
+      // Redraw canvas views
+      if (currentView === 'rrg') drawRRG();
+      if (currentView === 'stockrrg') drawStockRRG();
+      // Rebuild table views
+      if (currentView === 'sectors') buildSectorsView();
+      if (currentView === 'stocks') buildStocksView();
+      // Rebuild modal if open
+      if (document.getElementById('modal').classList.contains('visible')) {
+        buildModalChart();
+      }
+    }
+
+    // Initialize theme before any rendering
+    initTheme();
+
+    // ── Panel metadata (titles, symbols, counts) ──
+    const PANEL_COUNT = 16;
+    const STAGGER_DELAY = 100;
+
+    // Store loaded panel data, chart instances, and stock names
+    const panelDataCache = {};
+    const panelCharts = {};
+    let stockNamesMap = {};
+    fetch('data/stock_names.json').then(r => r.json()).then(d => { stockNamesMap = d; }).catch(() => {});
+    let currentRange = '3M';
+    let spaghettiMode = 'absolute';
+    let rsRatingCache = null;
+    let staggerTimers = [];
+
+    // One muted color per sector panel
+    const SECTOR_COLORS = [
+      '#5b86b8', // 1. Market ETFs
+      '#8b6cb8', // 2. Tech Software
+      '#5898c0', // 3. Tech Hardware
+      '#4ea89a', // 4. Financials
+      '#c08060', // 5. Producer Mfg
+      '#988070', // 6. Non-Energy Minerals
+      '#b86868', // 7. Consumer Services
+      '#5a90b8', // 8. Retail Trade
+      '#609878', // 9. Commercial Services
+      '#98a050', // 10. Consumer Staples
+      '#c89048', // 11. Industrial Services
+      '#4898a8', // 12. Transportation
+      '#886888', // 13. Process Industries
+      '#c07048', // 14. Energy
+      '#70a060', // 15. Consumer Durables
+      '#a06080', // 16. Comms/Utilities
+    ];
+
+    function hexToRgba(hex, alpha) {
+      const r = parseInt(hex.slice(1,3), 16);
+      const g = parseInt(hex.slice(3,5), 16);
+      const b = parseInt(hex.slice(5,7), 16);
+      return `rgba(${r},${g},${b},${alpha})`;
+    }
+
+    // ── Range → start date calculation ──
+    function getRangeStartDate(range, dates) {
+      const lastDateStr = dates[dates.length - 1];
+      const last = new Date(lastDateStr + 'T00:00:00');
+      let start;
+      switch (range) {
+        case '1D':  start = new Date(last); start.setDate(start.getDate() - 1); break;
+        case '5D':  start = new Date(last); start.setDate(start.getDate() - 5); break;
+        case '1M':  start = new Date(last); start.setMonth(start.getMonth() - 1); break;
+        case '3M':  start = new Date(last); start.setMonth(start.getMonth() - 3); break;
+        case '6M':  start = new Date(last); start.setMonth(start.getMonth() - 6); break;
+        case 'YTD': start = new Date(last.getFullYear(), 0, 1); break;
+        case '12M': start = new Date(last); start.setFullYear(start.getFullYear() - 1); break;
+        case '60M': start = new Date(last); start.setFullYear(start.getFullYear() - 5); break;
+        default:    start = new Date(last); start.setMonth(start.getMonth() - 3); break;
+      }
+      return start;
+    }
+
+    // Find the index in the dates array that is >= the start date
+    function findStartIndex(dates, startDate) {
+      const startStr = startDate.toISOString().slice(0, 10);
+      for (let i = 0; i < dates.length; i++) {
+        if (dates[i] >= startStr) return i;
+      }
+      return 0;
+    }
+
+    // Normalize prices to % change from a given start index
+    function normalizeToPercent(prices, startIdx) {
+      const basePrice = prices[startIdx];
+      if (!basePrice || basePrice === 0) return prices.map(() => null);
+      return prices.map((p, i) => {
+        if (i < startIdx || p == null) return null;
+        return ((p - basePrice) / basePrice) * 100;
+      });
+    }
+
+    // ── Get benchmark prices for a panel based on spaghetti mode ──
+    function getBenchmarkPrices(panelIndex, data) {
+      switch (spaghettiMode) {
+        case 'absolute':
+          return null;
+        case 'sector': {
+          if (panelIndex === 0) {
+            // Panel 0 (Market ETFs): benchmark is SPY
+            const p0 = panelDataCache[0];
+            return p0 ? p0.prices['SPY'] : null;
+          }
+          // Panels 1+: benchmark is the sector's base ETF
+          return data.prices[data.baseSymbol] || null;
+        }
+        case 'equalweight': {
+          if (panelIndex === 0) {
+            // Panel 0: benchmark is RSP
+            const p0 = panelDataCache[0];
+            return p0 ? p0.prices['RSP'] : null;
+          }
+          // Panels 1+: EW ETF from CAP_TO_EQUAL, fallback to baseSymbol
+          const ewSym = CAP_TO_EQUAL[data.baseSymbol];
+          if (ewSym && ewSym !== data.baseSymbol) {
+            // Try to find EW ETF prices: first in this panel's data, then in panel 0
+            if (data.prices[ewSym]) return data.prices[ewSym];
+            const p0 = panelDataCache[0];
+            if (p0 && p0.prices[ewSym]) return p0.prices[ewSym];
+          }
+          // Fallback to base ETF
+          return data.prices[data.baseSymbol] || null;
+        }
+        case 'vsSpy': {
+          const p0 = panelDataCache[0];
+          return p0 ? p0.prices['SPY'] : null;
+        }
+        case 'vsRsp': {
+          const p0 = panelDataCache[0];
+          return p0 ? p0.prices['RSP'] : null;
+        }
+        case 'rsRating':
+          return null; // RS Rating uses special handling
+        default:
+          return null;
+      }
+    }
+
+    // ── Compute RS Ratings for all symbols across all panels ──
+    function computeAllRSRatings(range) {
+      // Lookback periods in trading days (approx)
+      const LOOKBACKS = [
+        { days: 21, weight: 0.4 },   // ~1 month
+        { days: 63, weight: 0.3 },   // ~3 months
+        { days: 126, weight: 0.2 },  // ~6 months
+        { days: 252, weight: 0.1 },  // ~12 months
+      ];
+
+      // Collect all symbols and their prices across all panels
+      const allSymbols = [];
+      const seenSyms = new Set();
+      for (let pi = 0; pi < PANEL_COUNT; pi++) {
+        const pData = panelDataCache[pi];
+        if (!pData) continue;
+        pData.symbols.forEach(sym => {
+          if (!seenSyms.has(sym)) {
+            seenSyms.add(sym);
+            allSymbols.push({ sym, prices: pData.prices[sym], dates: pData.dates });
+          }
+        });
+      }
+
+      if (allSymbols.length === 0) { rsRatingCache = {}; return; }
+
+      // Use the dates from panel 0 as the master timeline
+      const masterDates = panelDataCache[0] ? panelDataCache[0].dates : allSymbols[0].dates;
+      const startDate = getRangeStartDate(range, masterDates);
+      const startIdx = findStartIndex(masterDates, startDate);
+
+      // Build direct index-based price arrays (all panels share the same dates)
+      const priceArrays = {};
+      allSymbols.forEach(({ sym, prices }) => {
+        priceArrays[sym] = prices || [];
+      });
+
+      // For each date in the visible range, compute weighted performance for each symbol, then rank
+      const cache = {};
+      allSymbols.forEach(({ sym }) => {
+        cache[sym] = new Array(masterDates.length).fill(null);
+      });
+
+      for (let d = startIdx; d < masterDates.length; d++) {
+        const scores = []; // { sym, score }
+
+        allSymbols.forEach(({ sym }) => {
+          const prices = priceArrays[sym];
+          const currentPrice = prices[d];
+          if (currentPrice == null) return;
+
+          let weightedScore = 0;
+          let totalWeight = 0;
+
+          LOOKBACKS.forEach(({ days, weight }) => {
+            const lookbackIdx = d - days;
+            const pastIdx = lookbackIdx < 0 ? 0 : lookbackIdx;
+            if (pastIdx >= d) return; // no lookback available
+            const pastPrice = prices[pastIdx];
+            if (pastPrice != null && pastPrice !== 0) {
+              weightedScore += ((currentPrice / pastPrice - 1) * 100) * weight;
+              totalWeight += weight;
+            }
+          });
+
+          if (totalWeight > 0) {
+            scores.push({ sym, score: weightedScore / totalWeight });
+          }
+        });
+
+        if (scores.length === 0) continue;
+
+        // Sort by score ascending, then assign percentile rank
+        scores.sort((a, b) => a.score - b.score);
+        const n = scores.length;
+        scores.forEach((entry, rank) => {
+          // Percentile: 0 = worst, 100 = best
+          cache[entry.sym][d] = (rank / (n - 1)) * 100;
+        });
+
+        // Handle edge case: only 1 symbol
+        if (n === 1) cache[scores[0].sym][d] = 50;
+      }
+
+      rsRatingCache = cache;
+    }
+
+    // ── Build chart for a panel ──
+    function buildPanelChart(panelIndex, container, legendEl, data, range, isModal) {
+      const tc = currentThemeColors;
+      const chart = LightweightCharts.createChart(container, {
+        layout: {
+          background: { type: 'solid', color: tc.chartBg },
+          textColor: tc.textQuaternary,
+          fontSize: isModal ? 11 : 9,
+        },
+        grid: {
+          vertLines: { color: tc.chartGrid },
+          horzLines: { color: tc.chartGrid },
+        },
+        crosshair: {
+          mode: LightweightCharts.CrosshairMode.Normal,
+          vertLine: { color: tc.chartCrosshair, width: 1, style: 0 },
+          horzLine: { color: tc.chartCrosshair, width: 1, style: 0 },
+        },
+        rightPriceScale: {
+          borderColor: tc.chartAxisBorder,
+          scaleMargins: { top: 0.1, bottom: 0.1 },
+        },
+        timeScale: {
+          borderColor: tc.chartAxisBorder,
+          timeVisible: false,
+        },
+        handleScale: { axisPressedMouseMove: true },
+        handleScroll: { vertTouchDrag: false },
+      });
+
+      const startDate = getRangeStartDate(range, data.dates);
+      const startIdx = findStartIndex(data.dates, startDate);
+
+      const isRsRating = spaghettiMode === 'rsRating';
+      const benchmarkPrices = getBenchmarkPrices(panelIndex, data);
+      const benchNorm = benchmarkPrices ? normalizeToPercent(benchmarkPrices, startIdx) : null;
+
+      // For RS Rating, ensure cache is computed
+      if (isRsRating && !rsRatingCache) {
+        computeAllRSRatings(range);
+      }
+
+      const seriesList = [];
+      const symbolColors = {};
+
+      // Determine which symbol should be the bold "base" line based on mode
+      const ewModeSwap = spaghettiMode === 'equalweight' && panelIndex > 0;
+      const ewBaseSym = ewModeSwap ? CAP_TO_EQUAL[data.baseSymbol] : null;
+      const benchSym = spaghettiMode === 'vsSpy' ? 'SPY'
+                     : spaghettiMode === 'vsRsp' ? 'RSP'
+                     : spaghettiMode === 'equalweight' && panelIndex === 0 ? 'RSP'
+                     : ewModeSwap ? ewBaseSym
+                     : null;
+
+      data.symbols.forEach((sym, si) => {
+        const isOrigBase = sym === data.baseSymbol;
+        // In benchmark modes: promote the benchmark symbol to base
+        const isBase = benchSym ? (sym === benchSym) : isOrigBase;
+        const sectorColor = SECTOR_COLORS[panelIndex % SECTOR_COLORS.length];
+        const color = isBase ? sectorColor : hexToRgba(sectorColor, 0.35);
+        symbolColors[sym] = sectorColor;
+
+        let lineData = [];
+
+        if (isRsRating) {
+          // RS Rating mode: use precomputed percentile data
+          const ratings = rsRatingCache ? rsRatingCache[sym] : null;
+          if (!ratings) return;
+          for (let i = startIdx; i < data.dates.length; i++) {
+            if (ratings[i] != null) {
+              lineData.push({ time: data.dates[i], value: ratings[i] });
+            }
+          }
+        } else {
+          const rawPrices = data.prices[sym];
+          if (!rawPrices) return;
+          const normalized = normalizeToPercent(rawPrices, startIdx);
+
+          if (benchNorm) {
+            // Subtraction mode: symbol% - benchmark%
+            for (let i = startIdx; i < data.dates.length; i++) {
+              if (normalized[i] != null && benchNorm[i] != null) {
+                lineData.push({ time: data.dates[i], value: normalized[i] - benchNorm[i] });
+              }
+            }
+          } else {
+            // Absolute mode
+            for (let i = startIdx; i < data.dates.length; i++) {
+              if (normalized[i] != null) {
+                lineData.push({ time: data.dates[i], value: normalized[i] });
+              }
+            }
+          }
+        }
+
+        if (lineData.length === 0) return;
+
+        const series = chart.addLineSeries({
+          color: color,
+          lineWidth: isBase ? 2 : 1,
+          priceLineVisible: false,
+          lastValueVisible: false,
+          crosshairMarkerVisible: isModal,
+        });
+        series.setData(lineData);
+        seriesList.push({ sym, series, color, isBase });
+      });
+
+      // Add benchmark symbol as a bold flat-zero line if it's not already in the panel
+      if (benchSym && benchSym !== data.baseSymbol && !data.symbols.includes(benchSym) && seriesList.length > 0) {
+        const sectorColor = SECTOR_COLORS[panelIndex % SECTOR_COLORS.length];
+        const zeroLineData = [];
+        for (let i = startIdx; i < data.dates.length; i++) {
+          if (benchNorm && benchNorm[i] != null) {
+            zeroLineData.push({ time: data.dates[i], value: 0 });
+          }
+        }
+        if (zeroLineData.length > 0) {
+          const bSeries = chart.addLineSeries({
+            color: sectorColor,
+            lineWidth: 2,
+            priceLineVisible: false,
+            lastValueVisible: false,
+            crosshairMarkerVisible: isModal,
+          });
+          bSeries.setData(zeroLineData);
+          seriesList.push({ sym: benchSym, series: bSeries, color: sectorColor, isBase: true, lastValue: 0 });
+        }
+      }
+      // Also handle vsSpy/vsRsp where benchmark IS the baseSymbol (panel 0)
+      if (benchSym && benchSym === data.baseSymbol && data.symbols.includes(benchSym)) {
+        // Already drawn in the loop above with isBase: true — no action needed
+      }
+
+      chart.timeScale().fitContent();
+
+      // Reference lines
+      if (seriesList.length > 0) {
+        if (isRsRating) {
+          // RS Rating: add reference line at 50
+          [50].forEach(level => {
+            const refSeries = chart.addLineSeries({
+              color: 'rgba(100, 100, 100, 0.4)',
+              lineWidth: 1,
+              lineStyle: 2,
+              priceLineVisible: false,
+              lastValueVisible: false,
+              crosshairMarkerVisible: false,
+            });
+            const refData = [];
+            for (let i = startIdx; i < data.dates.length; i++) {
+              refData.push({ time: data.dates[i], value: level });
+            }
+            refSeries.setData(refData);
+          });
+        } else {
+          // Zero line for absolute and subtraction modes
+          const zeroSeries = chart.addLineSeries({
+            color: 'rgba(100, 100, 100, 0.4)',
+            lineWidth: 1,
+            lineStyle: 2,
+            priceLineVisible: false,
+            lastValueVisible: false,
+            crosshairMarkerVisible: false,
+          });
+          const zeroData = [];
+          for (let i = startIdx; i < data.dates.length; i++) {
+            zeroData.push({ time: data.dates[i], value: 0 });
+          }
+          zeroSeries.setData(zeroData);
+        }
+      }
+
+      // Store last value for each series (mode-aware) — must be before legend
+      seriesList.forEach(entry => {
+        if (isRsRating) {
+          const ratings = rsRatingCache ? rsRatingCache[entry.sym] : null;
+          if (ratings) {
+            for (let i = ratings.length - 1; i >= startIdx; i--) {
+              if (ratings[i] != null) { entry.lastValue = ratings[i]; break; }
+            }
+          }
+        } else {
+          const rawPrices = data.prices[entry.sym];
+          if (rawPrices) {
+            const normalized = normalizeToPercent(rawPrices, startIdx);
+            if (benchNorm) {
+              for (let i = normalized.length - 1; i >= startIdx; i--) {
+                if (normalized[i] != null && benchNorm[i] != null) {
+                  entry.lastValue = normalized[i] - benchNorm[i]; break;
+                }
+              }
+            } else {
+              for (let i = normalized.length - 1; i >= startIdx; i--) {
+                if (normalized[i] != null) { entry.lastValue = normalized[i]; break; }
+              }
+            }
+          }
+        }
+      });
+
+      // Crosshair legend
+      chart.subscribeCrosshairMove(param => {
+        if (!param.time || !legendEl) {
+          // Show default legend (latest values)
+          updateLegend(legendEl, seriesList, null, data, startIdx, isModal);
+          return;
+        }
+        updateLegend(legendEl, seriesList, param, data, startIdx, isModal);
+      });
+
+      // Show default legend
+      updateLegend(legendEl, seriesList, null, data, startIdx, isModal);
+
+      // ── Endpoint labels on the right side ──
+      const labelsEl = document.createElement('div');
+      labelsEl.className = 'endpoint-labels';
+      container.parentElement.appendChild(labelsEl);
+
+      function updateEndpoints() {
+        labelsEl.innerHTML = '';
+        seriesList.forEach(({ sym, series, color, isBase, lastValue }) => {
+          if (lastValue == null) return;
+          const y = series.priceToCoordinate(lastValue);
+          if (y == null || y < 0) return;
+          const label = document.createElement('div');
+          label.className = 'endpoint-label';
+          label.style.top = y + 'px';
+          label.style.color = currentThemeColors.textPrimary;
+          if (isBase) label.style.fontWeight = '500';
+          if (isRsRating) {
+            label.textContent = `${sym} ${lastValue.toFixed(0)}`;
+          } else {
+            const sign = lastValue >= 0 ? '+' : '';
+            label.textContent = `${sym} ${sign}${lastValue.toFixed(1)}%`;
+          }
+          labelsEl.appendChild(label);
+        });
+      }
+
+      setTimeout(updateEndpoints, 100);
+      chart.timeScale().subscribeVisibleLogicalRangeChange(() => {
+        requestAnimationFrame(updateEndpoints);
+      });
+
+      return chart;
+    }
+
+    function updateLegend(legendEl, seriesList, param, data, startIdx, isModal) {
+      if (!legendEl) return;
+      const isRsMode = spaghettiMode === 'rsRating';
+
+      const items = [];
+      seriesList.forEach(({ sym, series, color, isBase }) => {
+        let val = null;
+        if (param && param.seriesData) {
+          const d = param.seriesData.get(series);
+          if (d && d.value !== undefined) val = d.value;
+        } else {
+          // Use the stored lastValue from series entry (already mode-aware)
+          const entry = seriesList.find(e => e.sym === sym);
+          if (entry && entry.lastValue != null) val = entry.lastValue;
+        }
+        if (val != null) {
+          items.push({ sym, color, val, isBase });
+        }
+      });
+
+      // Sort by value descending
+      items.sort((a, b) => b.val - a.val);
+
+      // Top 10 + always include the sector ETF
+      const maxItems = isModal ? 30 : 10;
+      let shown = items.slice(0, maxItems);
+      // Ensure base symbol (sector ETF) is always in the legend
+      const baseItem = items.find(i => i.isBase);
+      if (baseItem && !shown.includes(baseItem)) {
+        shown.push(baseItem);
+      }
+
+      legendEl.innerHTML = shown.map(item => {
+        const weight = item.isBase ? 'font-weight:700;' : '';
+        if (isRsMode) {
+          const valColor = item.val >= 50 ? currentThemeColors.semanticBullish : currentThemeColors.semanticBearish;
+          return `<div class="chart-legend-item" style="${weight}">
+            <span class="chart-legend-dot" style="background:${item.color}"></span>
+            <span class="chart-legend-sym">${item.sym}</span>
+            <span class="chart-legend-val" style="color:${valColor}">${item.val.toFixed(0)}</span>
+          </div>`;
+        }
+        const sign = item.val >= 0 ? '+' : '';
+        const valColor = item.val >= 0 ? currentThemeColors.semanticBullish : currentThemeColors.semanticBearish;
+        return `<div class="chart-legend-item" style="${weight}">
+          <span class="chart-legend-dot" style="background:${item.color}"></span>
+          <span class="chart-legend-sym">${item.sym}</span>
+          <span class="chart-legend-val" style="color:${valColor}">${sign}${item.val.toFixed(1)}%</span>
+        </div>`;
+      }).join('');
+    }
+
+    // ── Load panel data and build chart ──
+    async function loadPanel(panelIndex) {
+      const panelDiv = document.getElementById('panel-' + panelIndex);
+      if (!panelDiv) return;
+
+      const chartWrap = panelDiv.querySelector('.chart-wrap');
+
+      // Check cache
+      let data = panelDataCache[panelIndex];
+      if (!data) {
+        const filename = `data/panel_${String(panelIndex + 1).padStart(2, '0')}.json`;
+        try {
+          const resp = await fetch(filename);
+          if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+          data = await resp.json();
+          panelDataCache[panelIndex] = data;
+        } catch (e) {
+          chartWrap.innerHTML = `<div class="chart-loading">Failed to load data</div>`;
+          console.error(`Panel ${panelIndex + 1}: ${e.message}`);
+          return;
+        }
+      }
+
+      // Update title bar with actual data
+      const titleEl = panelDiv.querySelector('.panel-title span:first-child');
+      if (titleEl) titleEl.innerHTML = `${data.title} <span class="stock-count">(${data.symbols.length} symbols)</span>`;
+
+      // Clear and create chart container
+      chartWrap.innerHTML = '';
+      const chartContainer = document.createElement('div');
+      chartContainer.style.cssText = 'width:100%;height:100%;';
+      chartWrap.appendChild(chartContainer);
+
+      // Sector label watermark on chart area
+      const sectorLabel = document.createElement('div');
+      sectorLabel.className = 'chart-sector-label';
+      sectorLabel.textContent = data.title;
+      chartWrap.appendChild(sectorLabel);
+
+      const legendEl = document.createElement('div');
+      legendEl.className = 'chart-legend';
+      chartWrap.appendChild(legendEl);
+
+      // Destroy old chart if exists
+      if (panelCharts[panelIndex]) {
+        try { panelCharts[panelIndex].remove(); } catch (e) {}
+      }
+
+      panelCharts[panelIndex] = buildPanelChart(panelIndex, chartContainer, legendEl, data, currentRange, false);
+    }
+
+    // ── Build all panels ──
+    function buildWidgets() {
+      staggerTimers.forEach(t => clearTimeout(t));
+      staggerTimers = [];
+
+      const grid = document.getElementById('grid');
+      grid.innerHTML = '';
+
+      for (let i = 0; i < PANEL_COUNT; i++) {
+        const panelDiv = document.createElement('div');
+        panelDiv.className = 'panel';
+        panelDiv.id = 'panel-' + i;
+
+        const cached = panelDataCache[i];
+        const title = cached ? cached.title : `Panel ${i + 1}`;
+        const count = cached ? cached.symbols.length : '...';
+
+        panelDiv.innerHTML = `
+          <div class="panel-title">
+            <span>${title} <span class="stock-count">(${count} symbols)</span></span>
+            <button class="expand-btn" onclick="openModal(${i})" title="Expand">&#x26F6;</button>
+          </div>
+          <div class="chart-wrap">
+            <div class="chart-loading">Loading...</div>
+          </div>
+        `;
+        grid.appendChild(panelDiv);
+
+        const timer = setTimeout(() => loadPanel(i), i * STAGGER_DELAY);
+        staggerTimers.push(timer);
+      }
+    }
+
+    // ── Range selection ──
+    function setRange(range, btn) {
+      currentRange = range;
+      rsRatingCache = null; // invalidate RS cache on range change
+      document.querySelectorAll('.topbar-controls .btn[data-range]').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      // Re-render all panels with new range (no refetch)
+      for (let i = 0; i < PANEL_COUNT; i++) {
+        if (panelDataCache[i]) {
+          loadPanel(i);
+        }
+      }
+    }
+
+    // ── Spaghetti mode selection ──
+    async function setSpaghettiMode(mode) {
+      spaghettiMode = mode;
+      rsRatingCache = null; // invalidate RS cache on mode change
+      // For RS Rating, ensure all panels are loaded first
+      if (mode === 'rsRating') {
+        const loadPromises = [];
+        for (let i = 0; i < PANEL_COUNT; i++) {
+          if (!panelDataCache[i]) {
+            const filename = `data/panel_${String(i + 1).padStart(2, '0')}.json`;
+            loadPromises.push(
+              fetch(filename).then(r => r.json()).then(d => { panelDataCache[i] = d; }).catch(() => {})
+            );
+          }
+        }
+        if (loadPromises.length > 0) await Promise.all(loadPromises);
+      }
+      for (let i = 0; i < PANEL_COUNT; i++) {
+        if (panelDataCache[i]) {
+          loadPanel(i);
+        }
+      }
+      // Re-render modal if open
+      if (document.getElementById('modal').classList.contains('visible')) {
+        buildModalChart();
+      }
+    }
+
+    // ── Layout selection ──
+    function setLayout(cls, btn) {
+      const grid = document.getElementById('grid');
+      grid.className = 'grid ' + cls;
+      document.querySelectorAll('.topbar-controls .btn[data-layout]').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      // Resize charts
+      Object.values(panelCharts).forEach(chart => {
+        try { chart.applyOptions({}); } catch (e) {}
+      });
+      // Use ResizeObserver or just trigger resize after layout change
+      setTimeout(() => {
+        Object.entries(panelCharts).forEach(([idx, chart]) => {
+          try {
+            const container = document.querySelector(`#panel-${idx} .chart-wrap div`);
+            if (container) {
+              chart.resize(container.clientWidth, container.clientHeight);
+            }
+          } catch (e) {}
+        });
+      }, 50);
+    }
+
+    // ── Modal ──
+    let modalPanelIndex = null;
+    let modalRange = null;
+    let modalChart = null;
+
+    function openModal(panelIndex) {
+      modalPanelIndex = panelIndex;
+      modalRange = currentRange;
+      const modal = document.getElementById('modal');
+      const data = panelDataCache[panelIndex];
+      const title = data ? data.title : `Panel ${panelIndex + 1}`;
+      document.getElementById('modal-title').textContent = title;
+
+      // Build range buttons
+      const ranges = [
+        ['1D', '1D'], ['5D', '5D'], ['1M', '1M'], ['3M', '3M'],
+        ['6M', '6M'], ['YTD', 'YTD'], ['12M', '1Y'], ['60M', '5Y']
+      ];
+      const rangesContainer = document.getElementById('modal-ranges');
+      rangesContainer.innerHTML = ranges.map(([val, label]) =>
+        `<button class="btn${val === modalRange ? ' active' : ''}" data-modal-range="${val}" onclick="setModalRange('${val}', this)">${label}</button>`
+      ).join('');
+
+      modal.classList.add('visible');
+      // Delay chart build so the modal has dimensions for Lightweight Charts
+      requestAnimationFrame(() => buildModalChart());
+    }
+
+    function buildModalChart() {
+      const data = panelDataCache[modalPanelIndex];
+      if (!data) return;
+
+      const chartContainer = document.getElementById('modal-chart');
+      chartContainer.innerHTML = '';
+
+      const chartDiv = document.createElement('div');
+      chartDiv.style.cssText = 'width:100%;height:100%;';
+      chartContainer.appendChild(chartDiv);
+
+      // Sector label watermark in modal
+      const sectorLabel = document.createElement('div');
+      sectorLabel.className = 'chart-sector-label';
+      sectorLabel.style.fontSize = '18px';
+      sectorLabel.style.top = '12px';
+      sectorLabel.textContent = data.title;
+      chartContainer.appendChild(sectorLabel);
+
+      const legendEl = document.createElement('div');
+      legendEl.className = 'modal-legend';
+      chartContainer.appendChild(legendEl);
+
+      if (modalChart) {
+        try { modalChart.remove(); } catch (e) {}
+      }
+
+      modalChart = buildPanelChart(modalPanelIndex, chartDiv, legendEl, data, modalRange, true);
+    }
+
+    function setModalRange(range, btn) {
+      modalRange = range;
+      document.querySelectorAll('#modal-ranges .btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      buildModalChart();
+    }
+
+    function closeModal(event) {
+      if (event && event.target !== document.getElementById('modal')) return;
+      const modal = document.getElementById('modal');
+      modal.classList.remove('visible');
+      if (modalChart) {
+        try { modalChart.remove(); } catch (e) {}
+        modalChart = null;
+      }
+      document.getElementById('modal-chart').innerHTML = '';
+    }
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') closeModal();
+    });
+
+    // Handle window resize
+    window.addEventListener('resize', () => {
+      Object.entries(panelCharts).forEach(([idx, chart]) => {
+        try {
+          const container = document.querySelector(`#panel-${idx} .chart-wrap div`);
+          if (container) {
+            chart.resize(container.clientWidth, container.clientHeight);
+          }
+        } catch (e) {}
+      });
+      if (modalChart) {
+        try {
+          const container = document.querySelector('#modal-chart div');
+          if (container) {
+            modalChart.resize(container.clientWidth, container.clientHeight);
+          }
+        } catch (e) {}
+      }
+    });
+
+    // ── View toggle ──
+    let currentView = 'spaghetti';
+
+    function setView(view, btn) {
+      currentView = view;
+      document.querySelectorAll('.topbar-controls .btn[data-view]').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+
+      document.getElementById('grid').classList.toggle('hidden', view !== 'spaghetti');
+      document.getElementById('sectors-view').classList.toggle('active', view === 'sectors');
+      document.getElementById('stocks-view').classList.toggle('active', view === 'stocks');
+      document.getElementById('rrg-view').classList.toggle('active', view === 'rrg');
+      document.getElementById('stock-rrg-view').classList.toggle('active', view === 'stockrrg');
+
+      if (view === 'sectors') loadAllPanelsThen(buildSectorsView);
+      if (view === 'stocks') loadAllPanelsThen(buildStocksView);
+      if (view === 'rrg') loadAllPanelsThen(drawRRG);
+      if (view === 'stockrrg') loadAllPanelsThen(() => { populateSectorDropdown(); drawStockRRG(); });
+    }
+
+    // ── Shared table utilities ──
+    const RANGE_KEYS = [
+      { key: '1D',  label: '1D' },
+      { key: '5D',  label: '5D' },
+      { key: '1M',  label: '1M' },
+      { key: '3M',  label: '3M' },
+      { key: '6M',  label: '6M' },
+      { key: 'YTD', label: 'YTD' },
+      { key: '12M', label: '1Y' },
+    ];
+
+    let sectorsSortCol = 3;
+    let sectorsSortAsc = false;
+    let stocksSortCol = 3;
+    let stocksSortAsc = false;
+    let stocksFilterSector = -1; // -1 = all
+
+    function computePctChange(prices, dates, rangeKey) {
+      if (!prices || prices.length === 0) return null;
+      const startDate = getRangeStartDate(rangeKey, dates);
+      const startIdx = findStartIndex(dates, startDate);
+      let startPrice = null;
+      for (let i = startIdx; i < prices.length; i++) {
+        if (prices[i] != null) { startPrice = prices[i]; break; }
+      }
+      if (!startPrice) return null;
+      let endPrice = null;
+      for (let i = prices.length - 1; i >= startIdx; i--) {
+        if (prices[i] != null) { endPrice = prices[i]; break; }
+      }
+      if (!endPrice) return null;
+      return ((endPrice - startPrice) / startPrice) * 100;
+    }
+
+    function heatmapColor(pct) {
+      const isLight = document.documentElement.classList.contains('light');
+      if (pct == null) return { bg: 'transparent', text: currentThemeColors.textQuaternary };
+      const clamped = Math.max(-50, Math.min(100, pct));
+      let r, g, b;
+      if (isLight) {
+        if (clamped >= 0) {
+          const t = Math.min(clamped / 40, 1);
+          r = Math.round(220 - t * 100);
+          g = Math.round(240 - t * 40);
+          b = Math.round(220 - t * 90);
+        } else {
+          const t = Math.min(Math.abs(clamped) / 30, 1);
+          r = Math.round(240 - t * 20);
+          g = Math.round(220 - t * 100);
+          b = Math.round(220 - t * 100);
+        }
+        return { bg: `rgba(${r},${g},${b},0.7)`, text: currentThemeColors.textPrimary };
+      } else {
+        if (clamped >= 0) {
+          const t = Math.min(clamped / 40, 1);
+          r = Math.round(20 + t * 0);
+          g = Math.round(40 + t * 140);
+          b = Math.round(30 + t * 20);
+        } else {
+          const t = Math.min(Math.abs(clamped) / 30, 1);
+          r = Math.round(60 + t * 150);
+          g = Math.round(30 - t * 10);
+          b = Math.round(30 - t * 5);
+        }
+        return { bg: `rgba(${r},${g},${b},0.6)`, text: currentThemeColors.textSecondary };
+      }
+    }
+
+    function formatPct(pct) {
+      if (pct == null) return '--';
+      const sign = pct >= 0 ? '+' : '';
+      return `${sign}${pct.toFixed(1)}%`;
+    }
+
+    function sortHeader(label, colIdx, activeCol, asc, fnName) {
+      const sorted = colIdx === activeCol;
+      const arrow = sorted ? (asc ? '&#9650;' : '&#9660;') : '&#9660;';
+      return `<th class="${sorted ? 'sorted' : ''}" onclick="${fnName}(${colIdx})">
+        ${label} <span class="sort-arrow">${arrow}</span></th>`;
+    }
+
+    function heatCell(pct) {
+      const color = heatmapColor(pct);
+      return `<td class="heatmap-cell" style="background:${color.bg};color:${color.text}">${formatPct(pct)}</td>`;
+    }
+
+    function pctTextColor(pct) {
+      if (pct == null) return currentThemeColors.textQuaternary;
+      if (pct > 0.5) return currentThemeColors.semanticBullish;
+      if (pct < -0.5) return currentThemeColors.semanticBearish;
+      return currentThemeColors.textQuaternary;
+    }
+
+    // Brighter colors for stocks table on black background
+    function pctTextColorBright(pct) {
+      const isLight = document.documentElement.classList.contains('light');
+      if (pct == null) return isLight ? '#9ca3af' : '#555';
+      if (pct > 0.5) return isLight ? '#059669' : '#4dd8b4';
+      if (pct < -0.5) return isLight ? '#dc2626' : '#f0616d';
+      return isLight ? '#9ca3af' : '#555';
+    }
+
+    async function loadAllPanelsThen(callback) {
+      let allLoaded = true;
+      for (let i = 0; i < PANEL_COUNT; i++) {
+        if (!panelDataCache[i]) { allLoaded = false; break; }
+      }
+      if (!allLoaded) {
+        for (let i = 0; i < PANEL_COUNT; i++) {
+          if (!panelDataCache[i]) {
+            const filename = `data/panel_${String(i + 1).padStart(2, '0')}.json`;
+            try {
+              const resp = await fetch(filename);
+              if (resp.ok) panelDataCache[i] = await resp.json();
+            } catch (e) {}
+          }
+        }
+      }
+      callback();
+    }
+
+    // Get SPY pct changes (from panel 0)
+    function getSpyPcts() {
+      const data = panelDataCache[0];
+      if (!data || !data.prices['SPY']) return RANGE_KEYS.map(() => null);
+      return RANGE_KEYS.map(rk => computePctChange(data.prices['SPY'], data.dates, rk.key));
+    }
+
+    // Known ETFs - base symbols + equal-weight counterparts
+    const ETF_TICKERS = new Set([
+      'SPY','RSP','QQQ','DIA','IWM',
+      'XLK','RYT','XLV','RYH','XLF','RYF','XLY','RCD',
+      'XLP','RHS','XLE','RYE','XLI','RGI','XLB','RTM',
+      'XLC','RSPC','XLU','RYU','XLRE','EWRE',
+      'SMH','SOXX','XRT','XHB','IYT','XTN',
+      'QQQE',
+    ]);
+
+    // ── Sectors View (ETFs + breadth + vs SPY) ──
+    function buildSectorsView() {
+      const container = document.getElementById('sectors-view');
+      const spyPcts = getSpyPcts();
+
+      const rows = [];
+      for (let pi = 1; pi < PANEL_COUNT; pi++) { // skip panel 0 (Market ETFs Overview)
+        const data = panelDataCache[pi];
+        if (!data) continue;
+
+        const basePrices = data.prices[data.baseSymbol];
+        const basePcts = basePrices
+          ? RANGE_KEYS.map(rk => computePctChange(basePrices, data.dates, rk.key))
+          : RANGE_KEYS.map(() => null);
+
+        // vs SPY for the selected sort column
+        const vsSpy = RANGE_KEYS.map((rk, ci) =>
+          (basePcts[ci] != null && spyPcts[ci] != null) ? basePcts[ci] - spyPcts[ci] : null
+        );
+
+        // Equal-weight ETF pcts
+        const ewSym = CAP_TO_EQUAL[data.baseSymbol];
+        let ewPcts = RANGE_KEYS.map(() => null);
+        if (ewSym && ewSym !== data.baseSymbol) {
+          let ewPrices = data.prices[ewSym];
+          if (!ewPrices && panelDataCache[0]) ewPrices = panelDataCache[0].prices[ewSym];
+          if (ewPrices) {
+            const ewDates = data.prices[ewSym] ? data.dates : panelDataCache[0].dates;
+            ewPcts = RANGE_KEYS.map(rk => computePctChange(ewPrices, ewDates, rk.key));
+          }
+        }
+
+        // Breadth: % of stocks in sector that are positive for selected timeframe
+        let positiveCount = 0, totalCount = 0;
+        data.symbols.forEach(sym => {
+          if (ETF_TICKERS.has(sym)) return; // skip ETFs for breadth
+          const prices = data.prices[sym];
+          if (!prices) return;
+          const pct = computePctChange(prices, data.dates, RANGE_KEYS[sectorsSortCol].key);
+          if (pct != null) { totalCount++; if (pct > 0) positiveCount++; }
+        });
+        const breadth = totalCount > 0 ? (positiveCount / totalCount) * 100 : null;
+
+        // Momentum: compare short-term rank direction (1M vs 3M performance)
+        const pct1M = computePctChange(basePrices, data.dates, '1M');
+        const pct3M = computePctChange(basePrices, data.dates, '3M');
+        let momentum = 'flat';
+        if (pct1M != null && pct3M != null) {
+          // normalize 3M to monthly rate for comparison
+          const monthly3M = pct3M / 3;
+          if (pct1M > monthly3M + 1) momentum = 'up';
+          else if (pct1M < monthly3M - 1) momentum = 'down';
+        }
+
+        // Collect ETF symbols in this sector
+        const etfRows = [];
+        data.symbols.forEach(sym => {
+          if (!ETF_TICKERS.has(sym)) return;
+          const prices = data.prices[sym];
+          if (!prices) return;
+          const pcts = RANGE_KEYS.map(rk => computePctChange(prices, data.dates, rk.key));
+          const vsSpyPcts = RANGE_KEYS.map((rk, ci) =>
+            (pcts[ci] != null && spyPcts[ci] != null) ? pcts[ci] - spyPcts[ci] : null
+          );
+          etfRows.push({ sym, pcts, vsSpy: vsSpyPcts, isBase: sym === data.baseSymbol });
+        });
+
+        etfRows.sort((a, b) => {
+          const aVal = a.pcts[sectorsSortCol] ?? -Infinity;
+          const bVal = b.pcts[sectorsSortCol] ?? -Infinity;
+          return sectorsSortAsc ? aVal - bVal : bVal - aVal;
+        });
+
+        rows.push({
+          panelIndex: pi, title: data.title, baseSymbol: data.baseSymbol,
+          sectorColor: SECTOR_COLORS[pi % SECTOR_COLORS.length],
+          basePcts, vsSpy, ewPcts, breadth, momentum, etfRows,
+        });
+      }
+
+      // Sort sectors
+      rows.sort((a, b) => {
+        const aVal = a.basePcts[sectorsSortCol] ?? -Infinity;
+        const bVal = b.basePcts[sectorsSortCol] ?? -Infinity;
+        return sectorsSortAsc ? aVal - bVal : bVal - aVal;
+      });
+
+      // Sort toolbar
+      let html = '<div class="sector-grid-toolbar">';
+      html += '<span class="topbar-label">Sort</span>';
+      RANGE_KEYS.forEach((rk, ci) => {
+        const active = ci === sectorsSortCol ? ' active' : '';
+        const arrow = ci === sectorsSortCol ? (sectorsSortAsc ? ' &#9650;' : ' &#9660;') : '';
+        html += `<button class="sort-btn${active}" onclick="sortSectors(${ci})">${rk.label}${arrow}</button>`;
+      });
+      html += '</div>';
+
+      // Market Health card
+      const p0 = panelDataCache[0];
+      if (p0) {
+        const mhTickers = ['SPY', 'RSP', 'QQQ', 'QQQE'];
+        const mhPctsMap = {};
+        const mhSignalsMap = {};
+        mhTickers.forEach(tk => {
+          const prices = p0.prices[tk];
+          if (prices) {
+            mhPctsMap[tk] = RANGE_KEYS.map(rk => computePctChange(prices, p0.dates, rk.key));
+            mhSignalsMap[tk] = computeMASignals(prices);
+          } else {
+            mhPctsMap[tk] = RANGE_KEYS.map(() => null);
+            mhSignalsMap[tk] = { dEma8: null, dEma21: null, dMa50: null, dMa200: null, goldenCross: null, wEma8: null, wEma21: null, wMa50: null };
+          }
+        });
+
+        const riskCats = computeRiskCategories(
+          mhSignalsMap['SPY'], mhSignalsMap['RSP'],
+          mhPctsMap['SPY'], mhPctsMap['RSP']
+        );
+
+        html += '<div class="market-health-card">';
+        html += '<div class="market-health-header">';
+        html += '<span class="mh-title">Market Health</span>';
+        html += `<span class="market-health-risk ${riskCats.overall.cls}">${riskCats.overall.label}</span>`;
+        html += '</div>';
+
+        // Returns table
+        html += '<table class="market-health-table"><thead><tr>';
+        html += '<th></th>';
+        RANGE_KEYS.forEach((rk, ci) => {
+          const ac = ci === sectorsSortCol ? ' class="mh-active-col"' : '';
+          html += `<th${ac}>${rk.label}</th>`;
+        });
+        html += '</tr></thead><tbody>';
+        mhTickers.forEach(tk => {
+          const pcts = mhPctsMap[tk];
+          html += `<tr><td>${tk}</td>`;
+          pcts.forEach((p, ci) => {
+            const ac = ci === sectorsSortCol ? ' mh-active-col' : '';
+            html += `<td class="${ac}" style="color:${pctTextColorBright(p)}">${formatPct(p)}</td>`;
+          });
+          html += '</tr>';
+        });
+        html += '</tbody></table>';
+
+        // Category boxes
+        function renderCatBox(name, cat) {
+          let h = `<div class="mh-cat-box">`;
+          h += `<div class="mh-cat-header">`;
+          h += `<span class="mh-cat-label">${name}</span>`;
+          h += `<span class="mh-cat-badge ${cat.cls}">${cat.label}</span>`;
+          h += `</div><div class="mh-cat-signals">`;
+          cat.signals.forEach(s => {
+            const cls = s.value == null ? 'mh-sig-na' : s.value ? 'mh-sig-bull' : 'mh-sig-bear';
+            const arrow = s.value == null ? '&#8211;' : s.value ? '&#9650;' : '&#9660;';
+            const detail = s.detail ? `<span class="mh-sig-detail">${s.detail}</span>` : '';
+            h += `<div class="mh-signal-row"><span class="mh-sig-label">${s.label}</span><span class="mh-sig-right">${detail}<span class="mh-sig-arrow ${cls}">${arrow}</span></span></div>`;
+          });
+          h += `</div></div>`;
+          return h;
+        }
+
+        html += '<div class="mh-categories">';
+        html += renderCatBox('Trend', riskCats.trend);
+        html += renderCatBox('Breadth', riskCats.breadth);
+        html += renderCatBox('Momentum', riskCats.momentum);
+        html += renderCatBox('Regime', riskCats.regime);
+        html += '</div>';
+
+        html += '</div>'; // end market-health-card
+      }
+
+      // Tile grid
+      html += '<div class="sector-grid">';
+      rows.forEach(sector => {
+        // Strip leading number + dot from title (e.g. "2. Tech - Software" → "Tech - Software")
+        const shortTitle = sector.title.replace(/^\d+\.\s*/, '');
+        const momClass = sector.momentum === 'up' ? 'momentum-up' : sector.momentum === 'down' ? 'momentum-down' : 'momentum-flat';
+        const momArrow = sector.momentum === 'up' ? '&#9650;' : sector.momentum === 'down' ? '&#9660;' : '&#9644;';
+        const bPct = sector.breadth != null ? sector.breadth.toFixed(0) : '--';
+        const bWidth = sector.breadth != null ? sector.breadth : 0;
+        const bColor = bWidth >= 60 ? currentThemeColors.semanticBullish : bWidth >= 40 ? currentThemeColors.semanticNeutral : currentThemeColors.semanticBearish;
+
+        html += `<div class="sector-tile">`;
+
+        // Header: color bar, name, symbol, breadth, momentum
+        html += `<div class="sector-tile-header">`;
+        html += `<div class="tile-color" style="background:${sector.sectorColor}"></div>`;
+        html += `<span class="tile-name" style="color:${sector.sectorColor}">${shortTitle}</span>`;
+        html += `<span class="tile-sym">${sector.baseSymbol}</span>`;
+        const rsVal = sector.vsSpy[sectorsSortCol];
+        const rsColor = pctTextColorBright(rsVal);
+        html += `<span class="tile-rs-tag" style="color:${rsColor};border-color:${rsColor}">${formatPct(rsVal)}</span>`;
+        html += `<span class="tile-breadth"><span class="tile-breadth-bar"><span class="tile-breadth-fill" style="width:${bWidth}%;background:${bColor}"></span></span><span class="tile-breadth-pct">${bPct}%</span></span>`;
+        html += `<span class="tile-mom ${momClass}">${momArrow}</span>`;
+        html += `</div>`;
+
+        // Body: sub-headers + 7 timeframe rows
+        html += `<div class="sector-tile-body">`;
+        html += `<div class="sector-tile-row tile-col-headers"><span class="row-label"></span><span class="row-pct col-sub">CW</span><span class="row-vs col-sub">EW</span></div>`;
+        RANGE_KEYS.forEach((rk, ci) => {
+          const pct = sector.basePcts[ci];
+          const ew = sector.ewPcts[ci];
+          const activeClass = ci === sectorsSortCol ? ' active-sort' : '';
+          html += `<div class="sector-tile-row${activeClass}">`;
+          html += `<span class="row-label">${rk.label}</span>`;
+          html += `<span class="row-pct" style="color:${pctTextColorBright(pct)}">${formatPct(pct)}</span>`;
+          html += `<span class="row-vs" style="color:${pctTextColorBright(ew)}">${formatPct(ew)}</span>`;
+          html += `</div>`;
+        });
+        html += `</div>`;
+
+        // Collapsible ETF detail
+        html += `<div class="sector-tile-etfs">`;
+        sector.etfRows.forEach(etf => {
+          const ePct = etf.pcts[sectorsSortCol];
+          html += `<div class="etf-line">`;
+          html += `<span class="etf-sym">${etf.sym}</span>`;
+          html += `<span class="etf-pct" style="color:${pctTextColorBright(ePct)}">${formatPct(ePct)}</span>`;
+          html += `</div>`;
+        });
+        html += `</div>`;
+
+        html += `</div>`; // end .sector-tile
+      });
+      html += '</div>'; // end .sector-grid
+
+      container.innerHTML = html;
+    }
+
+    function sortSectors(colIndex) {
+      if (sectorsSortCol === colIndex) sectorsSortAsc = !sectorsSortAsc;
+      else { sectorsSortCol = colIndex; sectorsSortAsc = false; }
+      buildSectorsView();
+    }
+
+    // ── Stocks View (individual stocks, vs sector ETF) ──
+    function buildStocksView() {
+      const container = document.getElementById('stocks-view');
+      const spyPcts = getSpyPcts();
+
+      // Collect all individual stocks across all panels
+      const allStocks = [];
+      for (let pi = 0; pi < PANEL_COUNT; pi++) {
+        const data = panelDataCache[pi];
+        if (!data) continue;
+
+        // Compute base ETF pcts for "vs Sector" column
+        const basePrices = data.prices[data.baseSymbol];
+        const basePcts = basePrices
+          ? RANGE_KEYS.map(rk => computePctChange(basePrices, data.dates, rk.key))
+          : RANGE_KEYS.map(() => null);
+
+        data.symbols.forEach(sym => {
+          if (ETF_TICKERS.has(sym)) return; // skip ETFs
+          const prices = data.prices[sym];
+          if (!prices) return;
+          const pcts = RANGE_KEYS.map(rk => computePctChange(prices, data.dates, rk.key));
+
+          // vs Sector: stock performance minus sector ETF performance
+          const vsSector = RANGE_KEYS.map((rk, ci) =>
+            (pcts[ci] != null && basePcts[ci] != null) ? pcts[ci] - basePcts[ci] : null
+          );
+          // vs SPY
+          const vsSpy = RANGE_KEYS.map((rk, ci) =>
+            (pcts[ci] != null && spyPcts[ci] != null) ? pcts[ci] - spyPcts[ci] : null
+          );
+
+          allStocks.push({
+            sym, pcts, vsSector, vsSpy,
+            panelIndex: pi,
+            sectorTitle: data.title,
+            sectorColor: SECTOR_COLORS[pi % SECTOR_COLORS.length],
+            baseSymbol: data.baseSymbol,
+          });
+        });
+      }
+
+      // Filter by sector
+      const filtered = stocksFilterSector === -1
+        ? allStocks
+        : allStocks.filter(s => s.panelIndex === stocksFilterSector);
+
+      // Sort
+      filtered.sort((a, b) => {
+        const aVal = a.pcts[stocksSortCol] ?? -Infinity;
+        const bVal = b.pcts[stocksSortCol] ?? -Infinity;
+        return stocksSortAsc ? aVal - bVal : bVal - aVal;
+      });
+
+      // Toolbar with sector filter
+      let html = '<div class="table-toolbar">';
+      html += '<span class="topbar-label">Sector</span>';
+      html += '<select onchange="filterStocksBySector(this.value)">';
+      html += `<option value="-1" ${stocksFilterSector === -1 ? 'selected' : ''}>All Sectors (${allStocks.length} stocks)</option>`;
+      for (let pi = 0; pi < PANEL_COUNT; pi++) {
+        const data = panelDataCache[pi];
+        if (!data) continue;
+        const count = allStocks.filter(s => s.panelIndex === pi).length;
+        html += `<option value="${pi}" ${stocksFilterSector === pi ? 'selected' : ''}>${data.title} (${count})</option>`;
+      }
+      html += '</select>';
+      html += `<span class="topbar-label" style="margin-left:12px">Showing ${filtered.length} stocks</span>`;
+      html += '</div>';
+
+      // Table
+      html += '<div class="stocks-table-wrap"><table class="stocks-table"><thead><tr>';
+      html += '<th>Symbol</th>';
+      RANGE_KEYS.forEach((rk, ci) => { html += sortHeader(rk.label, ci, stocksSortCol, stocksSortAsc, 'sortStocks'); });
+      html += '<th>vs Sect</th><th>vs SPY</th>';
+      html += '</tr></thead><tbody>';
+
+      filtered.forEach((stock, i) => {
+        const vsSecVal = stock.vsSector[stocksSortCol];
+        const vsSpyVal = stock.vsSpy[stocksSortCol];
+
+        html += `<tr>`;
+        html += `<td><span class="stock-badge">${stock.sym}</span></td>`;
+        RANGE_KEYS.forEach((rk, ci) => {
+          const pct = stock.pcts[ci];
+          html += `<td style="color:${pctTextColorBright(pct)}">${formatPct(pct)}</td>`;
+        });
+        html += `<td style="color:${pctTextColorBright(vsSecVal)}">${formatPct(vsSecVal)}</td>`;
+        html += `<td style="color:${pctTextColorBright(vsSpyVal)}">${formatPct(vsSpyVal)}</td>`;
+        html += '</tr>';
+      });
+
+      html += '</tbody></table></div>';
+      container.innerHTML = html;
+    }
+
+    function sortStocks(colIndex) {
+      if (stocksSortCol === colIndex) stocksSortAsc = !stocksSortAsc;
+      else { stocksSortCol = colIndex; stocksSortAsc = false; }
+      buildStocksView();
+    }
+
+    function filterStocksBySector(val) {
+      stocksFilterSector = parseInt(val);
+      buildStocksView();
+    }
+
+    function toggleSector(headerRow, viewType) {
+      const sectorId = headerRow.dataset.sector;
+      const isCollapsed = headerRow.classList.toggle('collapsed');
+      const selector = `.stock-row[data-sector="${sectorId}"][data-view="${viewType}"]`;
+      document.querySelectorAll(selector).forEach(r => r.classList.toggle('hidden-row', isCollapsed));
+    }
+
+    // ── Relative Rotation Graph (RRG) ──
+    // RS-Ratio: rolling relative strength of sector vs benchmark, normalized to 100
+    // RS-Momentum: rate of change of RS-Ratio
+    // Sectors rotate clockwise: Leading → Weakening → Lagging → Improving
+
+    // Cap-weight (X) → Equal-weight (R) ETF mapping per sector panel
+    const CAP_TO_EQUAL = {
+      'XLK': 'RYT',   // Tech Software
+      'SMH': 'SOXX',  // Tech Hardware (closest EW alternative)
+      'XLF': 'RYF',   // Financials
+      'XLI': 'RGI',   // Producer Mfg / Industrial Services
+      'XLB': 'RTM',   // Non-Energy Minerals / Process Industries
+      'XLY': 'RCD',   // Consumer Services
+      'XRT': 'XRT',   // Retail (no EW counterpart, keep same)
+      'SPGI': 'SPGI', // Commercial Services (no ETF counterpart)
+      'XLP': 'RHS',   // Consumer Staples
+      'IYT': 'XTN',   // Transportation (XTN is EW transport)
+      'XLE': 'RYE',   // Energy
+      'XHB': 'XHB',   // Consumer Durables (no EW counterpart)
+      'XLC': 'RSPC',  // Comms
+      'XLU': 'RYU',   // Utilities (in panel 16 combo)
+      'QQQ': 'QQQE',  // Nasdaq 100
+    };
+
+    // Short sector names for the legend
+    const SECTOR_SHORT_NAMES = {
+      'XLK': 'Technology', 'RYT': 'Technology (EW)',
+      'SMH': 'Semiconductors', 'SOXX': 'Semis (EW)',
+      'XLF': 'Financials', 'RYF': 'Financials (EW)',
+      'XLI': 'Industrials', 'RGI': 'Industrials (EW)',
+      'XLB': 'Materials', 'RTM': 'Materials (EW)',
+      'XLY': 'Cons. Discretionary', 'RCD': 'Cons. Disc. (EW)',
+      'XRT': 'Retail',
+      'SPGI': 'Comm. Services',
+      'XLP': 'Cons. Staples', 'RHS': 'Cons. Staples (EW)',
+      'IYT': 'Transportation', 'XTN': 'Transport (EW)',
+      'XLE': 'Energy', 'RYE': 'Energy (EW)',
+      'XHB': 'Homebuilders',
+      'XLC': 'Communication', 'RSPC': 'Comms (EW)',
+      'XLU': 'Utilities', 'RYU': 'Utilities (EW)',
+      'QQQE': 'Nasdaq 100 (EW)',
+    };
+
+    function updateRRGDefaults() {
+      const period = document.getElementById('rrg-period').value;
+      const tailSel = document.getElementById('rrg-tail');
+      const windowSel = document.getElementById('rrg-window');
+      if (period === 'daily') {
+        tailSel.value = '20';
+        windowSel.value = '1';
+      } else {
+        tailSel.value = '20';
+        windowSel.value = '1';
+      }
+    }
+
+    // EMA helper
+    function emaSmooth(arr, span) {
+      if (span <= 1) return arr;
+      const k = 2 / (span + 1);
+      const result = [];
+      let prev = null;
+      for (let i = 0; i < arr.length; i++) {
+        if (arr[i] == null) { result.push(null); continue; }
+        if (prev == null) { prev = arr[i]; result.push(arr[i]); continue; }
+        prev = arr[i] * k + prev * (1 - k);
+        result.push(prev);
+      }
+      return result;
+    }
+
+    // SMA helper: simple moving average of last N values
+    function computeSMA(arr, period) {
+      if (!arr || arr.length < period) return null;
+      let sum = 0, count = 0;
+      for (let i = arr.length - period; i < arr.length; i++) {
+        if (arr[i] == null) return null;
+        sum += arr[i]; count++;
+      }
+      return count === period ? sum / count : null;
+    }
+
+    // EMA of last value given full array (for MA signal checks)
+    function computeEMALast(arr, period) {
+      const smoothed = emaSmooth(arr, period);
+      for (let i = smoothed.length - 1; i >= 0; i--) {
+        if (smoothed[i] != null) return smoothed[i];
+      }
+      return null;
+    }
+
+    // Sample every 5th trading day to get weekly prices
+    function getWeeklyPrices(dailyPrices) {
+      if (!dailyPrices) return [];
+      const weekly = [];
+      for (let i = 0; i < dailyPrices.length; i += 5) {
+        weekly.push(dailyPrices[i]);
+      }
+      // Always include last price
+      if (dailyPrices.length > 0 && (dailyPrices.length - 1) % 5 !== 0) {
+        weekly.push(dailyPrices[dailyPrices.length - 1]);
+      }
+      return weekly;
+    }
+
+    // Compute MA signals: above/below EMA8, EMA21, MA50, MA200 for daily and weekly
+    function computeMASignals(dailyPrices) {
+      const signals = { dEma8: null, dEma21: null, dMa50: null, dMa200: null, goldenCross: null, wEma8: null, wEma21: null, wMa50: null };
+      if (!dailyPrices || dailyPrices.length < 50) return signals;
+
+      const lastPrice = dailyPrices[dailyPrices.length - 1];
+      if (lastPrice == null) return signals;
+
+      // Daily signals
+      const dEma8 = computeEMALast(dailyPrices, 8);
+      const dEma21 = computeEMALast(dailyPrices, 21);
+      const dMa50 = computeSMA(dailyPrices, 50);
+      if (dEma8 != null) signals.dEma8 = lastPrice > dEma8;
+      if (dEma21 != null) signals.dEma21 = lastPrice > dEma21;
+      if (dMa50 != null) signals.dMa50 = lastPrice > dMa50;
+
+      // 200-day MA & golden cross
+      if (dailyPrices.length >= 200) {
+        const dMa200 = computeSMA(dailyPrices, 200);
+        if (dMa200 != null) signals.dMa200 = lastPrice > dMa200;
+        if (dMa50 != null && dMa200 != null) signals.goldenCross = dMa50 > dMa200;
+      }
+
+      // Weekly signals
+      const weekly = getWeeklyPrices(dailyPrices);
+      if (weekly.length >= 50) {
+        const wEma8 = computeEMALast(weekly, 8);
+        const wEma21 = computeEMALast(weekly, 21);
+        const wMa50 = computeSMA(weekly, 50);
+        const lastW = weekly[weekly.length - 1];
+        if (wEma8 != null && lastW != null) signals.wEma8 = lastW > wEma8;
+        if (wEma21 != null && lastW != null) signals.wEma21 = lastW > wEma21;
+        if (wMa50 != null && lastW != null) signals.wMa50 = lastW > wMa50;
+      }
+
+      return signals;
+    }
+
+    // Category-based weighted risk signal
+    function computeRiskCategories(spySignals, rspSignals, spyPcts, rspPcts) {
+      function catScore(signals) {
+        let bull = 0, total = 0;
+        signals.forEach(s => { if (s != null) { total++; if (s) bull++; } });
+        if (total === 0) return { score: null, cls: 'risk-neutral', label: '--' };
+        const pct = bull / total;
+        if (pct >= 0.6) return { score: pct, cls: 'risk-on', label: 'Bullish' };
+        if (pct <= 0.4) return { score: pct, cls: 'risk-off', label: 'Bearish' };
+        return { score: pct, cls: 'risk-mixed', label: 'Mixed' };
+      }
+
+      // Trend Structure (weight 3): regime-defining signals
+      const trendSignals = [
+        { label: 'SPY > W-EMA21', value: spySignals.wEma21 },
+        { label: 'SPY > D-EMA21', value: spySignals.dEma21 },
+        { label: 'SPY > D-MA50', value: spySignals.dMa50 },
+        { label: 'SPY > D-MA200', value: spySignals.dMa200 },
+      ];
+      const trend = catScore(trendSignals.map(s => s.value));
+      trend.signals = trendSignals;
+      trend.weight = 3;
+
+      // Breadth (weight 2): market participation
+      const rspImproving = (rspPcts[2] != null && spyPcts[2] != null) ? rspPcts[2] > spyPcts[2] : null;
+      const breadthSignals = [
+        { label: 'RSP > SPY (1M)', value: rspImproving },
+        { label: 'RSP > D-MA50', value: rspSignals.dMa50 },
+      ];
+      const breadth = catScore(breadthSignals.map(s => s.value));
+      breadth.signals = breadthSignals;
+      breadth.weight = 2;
+
+      // Momentum (weight 1): short-term direction
+      const emaStack = (spySignals.dEma8 != null && spySignals.dEma21 != null)
+        ? (computeEMALast(panelDataCache[0].prices['SPY'], 8) > computeEMALast(panelDataCache[0].prices['SPY'], 21))
+        : null;
+      const momentumSignals = [
+        { label: 'EMA8 > EMA21', value: emaStack },
+        { label: 'SPY > D-EMA8', value: spySignals.dEma8 },
+      ];
+      const momentum = catScore(momentumSignals.map(s => s.value));
+      momentum.signals = momentumSignals;
+      momentum.weight = 1;
+
+      // Regime / Conditions: chop detection
+      const spyPrices = panelDataCache[0] && panelDataCache[0].prices['SPY'];
+      let regime = { score: null, cls: 'regime-unclear', label: 'Unclear', signals: [] };
+      if (spyPrices && spyPrices.length >= 60) {
+        // EMA21 crosses in last 20 days
+        const ema21Arr = emaSmooth(spyPrices, 21);
+        const lookback = 20;
+        const start = Math.max(0, spyPrices.length - lookback);
+        let crosses = 0;
+        for (let i = start + 1; i < spyPrices.length; i++) {
+          if (spyPrices[i] == null || spyPrices[i-1] == null || ema21Arr[i] == null || ema21Arr[i-1] == null) continue;
+          const prevAbove = spyPrices[i-1] > ema21Arr[i-1];
+          const currAbove = spyPrices[i] > ema21Arr[i];
+          if (prevAbove !== currAbove) crosses++;
+        }
+
+        // MA50 slope: % change over 20 days
+        const ma50Now = computeSMA(spyPrices, 50);
+        const slice40 = spyPrices.slice(0, spyPrices.length - 20);
+        const ma50Prev = slice40.length >= 50 ? computeSMA(slice40, 50) : null;
+        let ma50Slope = null;
+        let slopeFlat = null;
+        if (ma50Now != null && ma50Prev != null) {
+          ma50Slope = ((ma50Now - ma50Prev) / ma50Prev) * 100;
+          slopeFlat = Math.abs(ma50Slope) < 1.0; // < 1% move in 20 days = flat
+        }
+
+        // 20-day range vs 60-day range
+        const recent20 = spyPrices.slice(-20).filter(p => p != null);
+        const recent60 = spyPrices.slice(-60).filter(p => p != null);
+        let rangeCompressed = null;
+        if (recent20.length >= 15 && recent60.length >= 40) {
+          const range20 = Math.max(...recent20) - Math.min(...recent20);
+          const range60 = Math.max(...recent60) - Math.min(...recent60);
+          rangeCompressed = range60 > 0 ? (range20 / range60) < 0.4 : null;
+        }
+
+        const regimeSignals = [
+          { label: 'EMA21 crosses', value: crosses <= 1, detail: `${crosses}` },
+          { label: 'MA50 slope', value: slopeFlat != null ? !slopeFlat : null, detail: ma50Slope != null ? `${ma50Slope >= 0 ? '+' : ''}${ma50Slope.toFixed(1)}%` : null },
+          { label: 'Range', value: rangeCompressed != null ? !rangeCompressed : null },
+        ];
+
+        // Trending: low crosses + directional slope + no compression
+        // Choppy: high crosses OR (flat slope + compressed range)
+        let trendingCount = 0, totalR = 0;
+        regimeSignals.forEach(s => { if (s.value != null) { totalR++; if (s.value) trendingCount++; } });
+
+        if (totalR > 0) {
+          const rPct = trendingCount / totalR;
+          if (rPct >= 0.6) regime = { score: rPct, cls: 'regime-trending', label: 'Trending', signals: regimeSignals };
+          else if (rPct <= 0.3) regime = { score: rPct, cls: 'regime-choppy', label: 'Choppy', signals: regimeSignals };
+          else regime = { score: rPct, cls: 'regime-unclear', label: 'Unclear', signals: regimeSignals };
+        } else {
+          regime.signals = regimeSignals;
+        }
+      }
+
+      // Weighted composite (regime excluded — it's informational, not directional)
+      const cats = [trend, breadth, momentum];
+      let weightedBull = 0, weightedTotal = 0;
+      cats.forEach(c => {
+        if (c.score != null) {
+          weightedBull += c.score * c.weight;
+          weightedTotal += c.weight;
+        }
+      });
+      let overall;
+      if (weightedTotal === 0) {
+        overall = { label: '--', cls: 'risk-neutral' };
+      } else {
+        const pct = weightedBull / weightedTotal;
+        if (pct >= 0.6) overall = { label: 'RISK ON', cls: 'risk-on' };
+        else if (pct <= 0.35) overall = { label: 'RISK OFF', cls: 'risk-off' };
+        else overall = { label: 'MIXED', cls: 'risk-mixed' };
+      }
+
+      return { overall, trend, breadth, momentum, regime };
+    }
+
+    // Standard RRG method:
+    // 1. RS Line = sector price / benchmark price (a ratio at each point in time)
+    // 2. RS-Ratio = RS Line / SMA(RS Line) * 100 — where the sector IS right now vs its own average
+    // 3. RS-Momentum = RS-Ratio / prior RS-Ratio * 100 — whether RS-Ratio is rising or falling
+    //
+    // This means the current dot position is always the same regardless of settings.
+    // Period (daily/weekly) = granularity. Smooth = noise reduction. Tail = trail length.
+    function computeRRGData() {
+      const benchmark = document.getElementById('rrg-benchmark').value;
+      const tailLen = parseInt(document.getElementById('rrg-tail').value);
+      const smoothLen = parseInt(document.getElementById('rrg-window').value);
+      const period = document.getElementById('rrg-period').value;
+      const etfType = document.getElementById('rrg-etf-type').value;
+
+      const benchData = panelDataCache[0];
+      if (!benchData || !benchData.prices[benchmark]) return [];
+
+      const benchPrices = benchData.prices[benchmark];
+      const dates = benchData.dates;
+
+      // Sample: daily = every day, weekly = every 5 trading days
+      const sampleIndices = [];
+      const step = period === 'daily' ? 1 : 5;
+      for (let i = 0; i < dates.length; i += step) {
+        sampleIndices.push(i);
+      }
+      if (sampleIndices[sampleIndices.length - 1] !== dates.length - 1) {
+        sampleIndices.push(dates.length - 1);
+      }
+
+      const results = [];
+
+      // Build sector list, applying ETF type swap — deduplicate by symbol
+      const sectors = [];
+      const seenSyms = new Set();
+      for (let pi = 1; pi < PANEL_COUNT; pi++) {
+        const data = panelDataCache[pi];
+        if (!data) continue;
+        let sym = data.baseSymbol;
+        if (etfType === 'equal' && CAP_TO_EQUAL[sym]) {
+          sym = CAP_TO_EQUAL[sym];
+        }
+        if (seenSyms.has(sym)) continue;
+        seenSyms.add(sym);
+        sectors.push({ panelIndex: pi, sym, baseSym: data.baseSymbol, title: data.title });
+      }
+
+      // SMA window for normalizing RS Line — fixed internally
+      // Daily: 50-day SMA (~10 weeks), Weekly: 10-week SMA (~2.5 months)
+      const smaWindow = period === 'daily' ? 50 : 10;
+
+      sectors.forEach(sector => {
+        let sectorPrices = null;
+        for (let pi = 0; pi < PANEL_COUNT; pi++) {
+          const data = panelDataCache[pi];
+          if (data && data.prices[sector.sym]) {
+            sectorPrices = data.prices[sector.sym];
+            break;
+          }
+        }
+        if (!sectorPrices) return;
+
+        // Step 1: RS Line = sector / benchmark at each sample point
+        const rsLine = sampleIndices.map(idx => {
+          const sp = sectorPrices[idx];
+          const bp = benchPrices[idx];
+          if (sp == null || bp == null || bp === 0) return null;
+          return sp / bp;
+        });
+
+        // Step 2: RS-Ratio = (RS Line / SMA(RS Line, smaWindow)) * 100
+        const rawRsRatio = [];
+        for (let i = 0; i < rsLine.length; i++) {
+          if (i < smaWindow - 1 || rsLine[i] == null) { rawRsRatio.push(null); continue; }
+          let sum = 0, count = 0;
+          for (let j = i - smaWindow + 1; j <= i; j++) {
+            if (rsLine[j] != null) { sum += rsLine[j]; count++; }
+          }
+          if (count === 0) { rawRsRatio.push(null); continue; }
+          rawRsRatio.push((rsLine[i] / (sum / count)) * 100);
+        }
+
+        // Smooth RS-Ratio
+        const rsRatio = emaSmooth(rawRsRatio, smoothLen);
+
+        // Step 3: RS-Momentum = (RS-Ratio / SMA(RS-Ratio, momWindow)) * 100
+        // Same technique as RS-Ratio itself — normalize against its own moving average
+        // This measures whether RS-Ratio is above or below its recent trend
+        const momWindow = period === 'daily' ? 10 : 5;
+        const rawMomentum = [];
+        for (let i = 0; i < rsRatio.length; i++) {
+          if (i < momWindow - 1 || rsRatio[i] == null) { rawMomentum.push(null); continue; }
+          let sum = 0, count = 0;
+          for (let j = i - momWindow + 1; j <= i; j++) {
+            if (rsRatio[j] != null) { sum += rsRatio[j]; count++; }
+          }
+          if (count === 0) { rawMomentum.push(null); continue; }
+          rawMomentum.push((rsRatio[i] / (sum / count)) * 100);
+        }
+
+        // Smooth momentum
+        const rsMomentum = emaSmooth(rawMomentum, smoothLen);
+
+        // Extract trail
+        const trail = [];
+        let added = 0;
+        for (let i = rsRatio.length - 1; i >= 0 && added < tailLen; i--) {
+          if (rsRatio[i] != null && rsMomentum[i] != null) {
+            trail.unshift({ x: rsRatio[i], y: rsMomentum[i] });
+            added++;
+          }
+        }
+
+        if (trail.length > 0) {
+          results.push({
+            sym: sector.sym,
+            title: sector.title,
+            panelIndex: sector.panelIndex,
+            color: SECTOR_COLORS[sector.panelIndex % SECTOR_COLORS.length],
+            trail,
+          });
+        }
+      });
+
+      return results;
+    }
+
+    let rrg_hoveredSector = null;
+
+    function drawRRG() {
+      const canvas = document.getElementById('rrg-canvas');
+      if (!canvas) return;
+      const tc = currentThemeColors;
+      const ctx = canvas.getContext('2d');
+      const dpr = window.devicePixelRatio || 1;
+
+      // Size canvas to container
+      const rect = canvas.parentElement.getBoundingClientRect();
+      canvas.width = rect.width * dpr;
+      canvas.height = rect.height * dpr;
+      canvas.style.width = rect.width + 'px';
+      canvas.style.height = rect.height + 'px';
+      ctx.scale(dpr, dpr);
+
+      const W = rect.width;
+      const H = rect.height;
+
+      // Compute RRG data
+      const sectors = computeRRGData();
+      if (sectors.length === 0) {
+        ctx.fillStyle = tc.textQuaternary;
+        ctx.font = '14px ' + getComputedStyle(document.body).fontFamily;
+        ctx.textAlign = 'center';
+        ctx.fillText('Loading data...', W / 2, H / 2);
+        return;
+      }
+
+      // Find data bounds
+      let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+      sectors.forEach(s => {
+        s.trail.forEach(p => {
+          minX = Math.min(minX, p.x); maxX = Math.max(maxX, p.x);
+          minY = Math.min(minY, p.y); maxY = Math.max(maxY, p.y);
+        });
+      });
+
+      // Pad and center around 100
+      const rangeX = Math.max(maxX - 100, 100 - minX, 1) * 1.3;
+      const rangeY = Math.max(maxY - 100, 100 - minY, 1) * 1.3;
+      const range = Math.max(rangeX, rangeY); // make it square
+      minX = 100 - range; maxX = 100 + range;
+      minY = 100 - range; maxY = 100 + range;
+
+      // Margins
+      const margin = { top: 50, right: 30, bottom: 30, left: 50 };
+      const plotW = W - margin.left - margin.right;
+      const plotH = H - margin.top - margin.bottom;
+
+      function toScreenX(v) { return margin.left + ((v - minX) / (maxX - minX)) * plotW; }
+      function toScreenY(v) { return margin.top + ((maxY - v) / (maxY - minY)) * plotH; }
+
+      // Clear
+      ctx.fillStyle = tc.bgPrimary;
+      ctx.fillRect(0, 0, W, H);
+
+      // Draw quadrant backgrounds
+      const cx = toScreenX(100), cy = toScreenY(100);
+
+      ctx.fillStyle = tc.quadrantLeading;
+      ctx.fillRect(cx, margin.top, margin.left + plotW - cx, cy - margin.top);
+      ctx.fillStyle = tc.quadrantImproving;
+      ctx.fillRect(margin.left, margin.top, cx - margin.left, cy - margin.top);
+      ctx.fillStyle = tc.quadrantLagging;
+      ctx.fillRect(margin.left, cy, cx - margin.left, margin.top + plotH - cy);
+      ctx.fillStyle = tc.quadrantWeakening;
+      ctx.fillRect(cx, cy, margin.left + plotW - cx, margin.top + plotH - cy);
+
+      // Grid lines
+      ctx.strokeStyle = tc.chartGridStrong;
+      ctx.lineWidth = 0.5;
+      const gridStep = range > 3 ? 1 : 0.5;
+      for (let v = Math.ceil(minX); v <= maxX; v += gridStep) {
+        const x = toScreenX(v);
+        ctx.beginPath(); ctx.moveTo(x, margin.top); ctx.lineTo(x, margin.top + plotH); ctx.stroke();
+      }
+      for (let v = Math.ceil(minY); v <= maxY; v += gridStep) {
+        const y = toScreenY(v);
+        ctx.beginPath(); ctx.moveTo(margin.left, y); ctx.lineTo(margin.left + plotW, y); ctx.stroke();
+      }
+
+      // Center crosshair (100, 100)
+      ctx.strokeStyle = tc.chartCrosshairCenter;
+      ctx.lineWidth = 1.5;
+      ctx.setLineDash([4, 4]);
+      ctx.beginPath(); ctx.moveTo(cx, margin.top); ctx.lineTo(cx, margin.top + plotH); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(margin.left, cy); ctx.lineTo(margin.left + plotW, cy); ctx.stroke();
+      ctx.setLineDash([]);
+
+      // Period label in top center
+      const period = document.getElementById('rrg-period').value;
+      const etfType = document.getElementById('rrg-etf-type').value;
+      const periodLabel = period === 'daily' ? 'Daily' : 'Weekly';
+      const etfLabel = etfType === 'equal' ? 'Equal-Weight ETFs' : 'Cap-Weight ETFs';
+      ctx.fillStyle = tc.textQuaternary;
+      ctx.font = 'bold 13px ' + getComputedStyle(document.body).fontFamily;
+      ctx.textAlign = 'center';
+      ctx.fillText(`${periodLabel}  \u00b7  ${etfLabel}`, W / 2, margin.top - 12);
+
+      // Axis labels
+      ctx.fillStyle = tc.chartAxisText;
+      ctx.font = 'bold 11px ' + getComputedStyle(document.body).fontFamily;
+      ctx.textAlign = 'center';
+      ctx.fillText('RS-Ratio \u2192', W / 2, H - 8);
+      ctx.save();
+      ctx.translate(14, H / 2);
+      ctx.rotate(-Math.PI / 2);
+      ctx.fillText('RS-Momentum \u2192', 0, 0);
+      ctx.restore();
+
+      // Axis tick labels
+      ctx.font = '9px ' + getComputedStyle(document.body).fontFamily;
+      ctx.fillStyle = tc.chartAxisText;
+      ctx.textAlign = 'center';
+      for (let v = Math.ceil(minX); v <= maxX; v += gridStep) {
+        if (Math.abs(v - 100) < 0.01) continue; // skip center
+        ctx.fillText(v.toFixed(v % 1 === 0 ? 0 : 1), toScreenX(v), margin.top + plotH + 14);
+      }
+      ctx.textAlign = 'right';
+      for (let v = Math.ceil(minY); v <= maxY; v += gridStep) {
+        if (Math.abs(v - 100) < 0.01) continue;
+        ctx.fillText(v.toFixed(v % 1 === 0 ? 0 : 1), margin.left - 6, toScreenY(v) + 3);
+      }
+
+      // "100" labels at center
+      ctx.fillStyle = tc.textSecondary;
+      ctx.font = 'bold 11px ' + getComputedStyle(document.body).fontFamily;
+      ctx.textAlign = 'center';
+      ctx.fillText('100', cx, margin.top + plotH + 14);
+      ctx.textAlign = 'right';
+      ctx.fillText('100', margin.left - 6, cy + 3);
+
+      // Store sector positions for hover detection
+      const sectorPositions = [];
+
+      // Draw trails and dots
+      sectors.forEach(s => {
+        const isHovered = rrg_hoveredSector === s.sym;
+        const alpha = rrg_hoveredSector && !isHovered ? 0.2 : 1;
+
+        // Draw trail
+        if (s.trail.length > 1) {
+          for (let i = 1; i < s.trail.length; i++) {
+            const t = i / s.trail.length; // older=thin/faint, newer=thick/bright
+            ctx.strokeStyle = hexToRgba(s.color, (0.6 + t * 0.4) * alpha);
+            ctx.lineWidth = 2 + t * 2.5;
+            ctx.beginPath();
+            ctx.moveTo(toScreenX(s.trail[i - 1].x), toScreenY(s.trail[i - 1].y));
+            ctx.lineTo(toScreenX(s.trail[i].x), toScreenY(s.trail[i].y));
+            ctx.stroke();
+          }
+
+          // Small dots along trail
+          for (let i = 0; i < s.trail.length - 1; i++) {
+            const t = i / s.trail.length;
+            ctx.fillStyle = hexToRgba(s.color, (0.7 + t * 0.3) * alpha);
+            ctx.beginPath();
+            ctx.arc(toScreenX(s.trail[i].x), toScreenY(s.trail[i].y), 3.5, 0, Math.PI * 2);
+            ctx.fill();
+          }
+        }
+
+        // Current position (last point) - big dot
+        const last = s.trail[s.trail.length - 1];
+        const sx = toScreenX(last.x);
+        const sy = toScreenY(last.y);
+
+        ctx.fillStyle = hexToRgba(s.color, alpha);
+        ctx.beginPath();
+        ctx.arc(sx, sy, isHovered ? 9 : 6, 0, Math.PI * 2);
+        ctx.fill();
+
+        // White border on dot
+        ctx.strokeStyle = hexToRgba(tc.textWhite, 0.7 * alpha);
+        ctx.lineWidth = 1.5;
+        ctx.stroke();
+
+        // Label with background for readability
+        const labelText = s.sym;
+        const fontFamily = getComputedStyle(document.body).fontFamily;
+        ctx.font = isHovered ? 'bold 13px ' + fontFamily : 'bold 11px ' + fontFamily;
+        ctx.textAlign = 'left';
+        const labelW = ctx.measureText(labelText).width;
+        ctx.fillStyle = tc.canvasLabelBg;
+        ctx.fillRect(sx + 8, sy - 7, labelW + 6, 16);
+        ctx.fillStyle = hexToRgba(tc.textWhite, alpha);
+        ctx.fillText(labelText, sx + 11, sy + 5);
+
+        sectorPositions.push({ sym: s.sym, title: s.title, x: sx, y: sy, color: s.color, last });
+      });
+
+      // Store for mouse events
+      canvas._sectorPositions = sectorPositions;
+
+      // Build legend (skip if just redrawing chart for hover)
+      if (!drawRRG._skipLegend) buildRRGLegend(sectors);
+      drawRRG._skipLegend = false;
+    }
+
+    function buildRRGLegend(sectors) {
+      const legendEl = document.getElementById('rrg-legend');
+      if (!legendEl) return;
+
+      // Sort by RS-Ratio descending (strongest first)
+      const sorted = [...sectors].sort((a, b) => {
+        const aLast = a.trail[a.trail.length - 1];
+        const bLast = b.trail[b.trail.length - 1];
+        return bLast.x - aLast.x;
+      });
+
+      let html = '<div class="rrg-legend-title">Sector ETFs</div>';
+      sorted.forEach(s => {
+        const last = s.trail[s.trail.length - 1];
+        const shortName = SECTOR_SHORT_NAMES[s.sym] || s.title.replace(/^\d+\.\s*/, '');
+
+        // Determine quadrant
+        const tc = currentThemeColors;
+        let quadrant, qColor;
+        if (last.x >= 100 && last.y >= 100) { quadrant = 'Lead'; qColor = tc.semanticBullish; }
+        else if (last.x < 100 && last.y >= 100) { quadrant = 'Impr'; qColor = tc.semanticNeutral; }
+        else if (last.x < 100 && last.y < 100) { quadrant = 'Lag'; qColor = tc.semanticBearish; }
+        else { quadrant = 'Weak'; qColor = tc.semanticWeakening; }
+
+        const isHighlighted = rrg_hoveredSector === s.sym;
+        const isDimmed = rrg_hoveredSector && !isHighlighted;
+        const cls = isHighlighted ? 'highlighted' : isDimmed ? 'dimmed' : '';
+
+        html += `<div class="rrg-legend-item ${cls}" data-sym="${s.sym}" data-panel="${s.panelIndex}">
+          <span class="rrg-legend-dot" style="background:${s.color}"></span>
+          <span class="rrg-legend-sym">${s.sym}</span>
+          <span class="rrg-legend-name">${shortName}</span>
+          <span class="rrg-legend-quadrant" style="color:${qColor}">${quadrant}</span>
+        </div>`;
+      });
+
+      legendEl.innerHTML = html;
+    }
+
+    // ── RRG Sector Drilldown ──
+    let rrg_drilldownOpen = null;
+
+    function openRRGDrilldown(sym, panelIndex) {
+      // If clicking the same one, close it
+      if (rrg_drilldownOpen === sym) { closeRRGDrilldown(); return; }
+      rrg_drilldownOpen = sym;
+
+      const data = panelDataCache[panelIndex];
+      if (!data) return;
+
+      const popup = document.getElementById('rrg-drilldown');
+      const titleEl = document.getElementById('rrg-drilldown-title');
+      const bodyEl = document.getElementById('rrg-drilldown-body');
+
+      const shortName = SECTOR_SHORT_NAMES[sym] || data.title.replace(/^\d+\.\s*/, '');
+      const stockCount = data.symbols.filter(s => !ETF_TICKERS.has(s)).length;
+      titleEl.textContent = `${shortName} — ${stockCount} stocks`;
+
+      // Store for re-sorting
+      rrg_drilldownPanelIndex = panelIndex;
+      rrg_drilldownSym = sym;
+
+      renderDrilldownTable();
+      popup.classList.add('visible');
+    }
+
+    let rrg_drilldownSortCol = 2; // default sort by 1M
+    let rrg_drilldownSortAsc = false;
+    let rrg_drilldownPanelIndex = null;
+    let rrg_drilldownSym = null;
+
+    function renderDrilldownTable() {
+      const data = panelDataCache[rrg_drilldownPanelIndex];
+      if (!data) return;
+
+      const bodyEl = document.getElementById('rrg-drilldown-body');
+      const benchmark = document.getElementById('rrg-benchmark').value;
+      const benchData = panelDataCache[0];
+      const benchPrices = benchData ? benchData.prices[benchmark] : null;
+      const dates = data.dates;
+
+      // Compute benchmark pcts
+      const benchPcts = {};
+      ['5D', '1M', '3M'].forEach(rk => {
+        benchPcts[rk] = benchPrices ? computePctChange(benchPrices, dates, rk) : null;
+      });
+
+      const stocks = [];
+      data.symbols.forEach(s => {
+        if (ETF_TICKERS.has(s)) return;
+        const prices = data.prices[s];
+        if (!prices) return;
+
+        const pct1W = computePctChange(prices, dates, '5D');
+        const pct1M = computePctChange(prices, dates, '1M');
+        const pct3M = computePctChange(prices, dates, '3M');
+
+        const vs1M = (pct1M != null && benchPcts['1M'] != null) ? pct1M - benchPcts['1M'] : null;
+
+        // Rolling cumulative excess return — 40 bars
+        // Daily mode: 40 daily bars. Weekly mode: 40 weekly bars (step every 5 days)
+        const rsBars = [];
+        const period = document.getElementById('rrg-period').value;
+        const step = period === 'daily' ? 1 : 5;
+        const barsWanted = 30;
+        const rsN = barsWanted * step; // how many raw data points we need
+        if (benchPrices && dates.length > rsN) {
+          const startI = dates.length - rsN;
+          const sp0 = prices[startI], bp0 = benchPrices[startI];
+          if (sp0 && bp0 && sp0 !== 0 && bp0 !== 0) {
+            for (let i = startI; i < dates.length; i += step) {
+              const sp = prices[i], bp = benchPrices[i];
+              if (sp == null || bp == null) { rsBars.push(0); continue; }
+              const stockRet = (sp - sp0) / sp0 * 100;
+              const benchRet = (bp - bp0) / bp0 * 100;
+              rsBars.push(stockRet - benchRet);
+            }
+          }
+        }
+
+        stocks.push({ sym: s, pct1W, pct1M, pct3M, vs1M, rsBars });
+      });
+
+      // RS rank for sorting: based on 1M vs benchmark
+      stocks.forEach(s => { s.rsRank = s.vs1M ?? 0; });
+
+      // Per-stock: shift bars so min=0, then scale by per-stock max for clear shape
+      // This shows the *shape* of each stock's RS trajectory (rising vs falling)
+      stocks.forEach(s => {
+        if (s.rsBars.length === 0) return;
+        const mn = Math.min(...s.rsBars);
+        const shifted = s.rsBars.map(v => v - mn);
+        const mx = Math.max(...shifted);
+        s.rsBarsNorm = mx > 0 ? shifted.map(v => v / mx) : shifted.map(() => 0.5);
+      });
+
+      // Sort
+      const cols = ['sym', 'pct1W', 'pct1M', 'pct3M', 'vs1M', 'rsRank'];
+      const sortKey = cols[rrg_drilldownSortCol] || 'pct1M';
+      stocks.sort((a, b) => {
+        if (sortKey === 'sym') {
+          return rrg_drilldownSortAsc ? a.sym.localeCompare(b.sym) : b.sym.localeCompare(a.sym);
+        }
+        const av = a[sortKey] ?? -Infinity;
+        const bv = b[sortKey] ?? -Infinity;
+        return rrg_drilldownSortAsc ? av - bv : bv - av;
+      });
+
+      const period = document.getElementById('rrg-period').value;
+      const rsLabel = period === 'daily' ? 'RS 30D' : 'RS 30W';
+      const colHeaders = ['Symbol', '1W', '1M', '3M', 'vs ' + benchmark + ' 1M', rsLabel];
+
+      let html = '<table class="drilldown-table"><thead><tr>';
+      colHeaders.forEach((label, ci) => {
+        const sorted = ci === rrg_drilldownSortCol;
+        const arrow = sorted ? (rrg_drilldownSortAsc ? '&#9650;' : '&#9660;') : '&#9660;';
+        html += `<th class="${sorted ? 'dd-sorted' : ''}" onclick="sortDrilldown(${ci})">${label} <span class="dd-sort">${arrow}</span></th>`;
+      });
+      html += '</tr></thead><tbody>';
+
+      stocks.forEach((stock, i) => {
+        html += '<tr>';
+        html += `<td>${stock.sym}</td>`;
+
+        // 1W
+        html += ddPctCell(stock.pct1W);
+        // 1M
+        html += ddPctCell(stock.pct1M);
+        // 3M
+        html += ddPctCell(stock.pct3M);
+        // vs benchmark
+        html += ddPctCell(stock.vs1M);
+
+        // RS 40D — per-stock normalized bars showing RS shape
+        let barsHtml = '<div class="rs-bars-wrap">';
+        const norm = stock.rsBarsNorm || [];
+        if (norm.length > 0) {
+          norm.forEach(v => {
+            const hPct = Math.max(v * 100, 3); // 0-100%, min 3% so bars are visible
+            // Brighter green for taller bars (stronger RS)
+            const g = Math.round(140 + v * 115); // 140..255
+            const color = `rgb(34,${g},80)`;
+            barsHtml += `<div class="rs-bar-fill" style="height:${hPct}%;background:${color}"></div>`;
+          });
+        }
+        barsHtml += '</div>';
+        html += `<td style="padding:4px 6px;min-width:200px;">${barsHtml}</td>`;
+
+        html += '</tr>';
+      });
+
+      html += '</tbody></table>';
+      bodyEl.innerHTML = html;
+    }
+
+    function ddPctCell(pct) {
+      const color = heatmapColor(pct);
+      const sign = pct != null && pct >= 0 ? '+' : '';
+      const text = pct != null ? `${sign}${pct.toFixed(1)}%` : '--';
+      return `<td class="heatmap-cell" style="background:${color.bg};color:${color.text}">${text}</td>`;
+    }
+
+    function sortDrilldown(colIndex) {
+      if (rrg_drilldownSortCol === colIndex) rrg_drilldownSortAsc = !rrg_drilldownSortAsc;
+      else { rrg_drilldownSortCol = colIndex; rrg_drilldownSortAsc = false; }
+      renderDrilldownTable();
+    }
+
+    function closeRRGDrilldown() {
+      rrg_drilldownOpen = null;
+      document.getElementById('rrg-drilldown').classList.remove('visible');
+    }
+
+    // ── Stock RRG View ──
+    let srrg_hoveredStock = null;
+    let srrg_lockedStock = null;
+    let srrg_legendOrder = []; // sorted sym list for arrow key navigation
+
+    function populateSectorDropdown() {
+      const sel = document.getElementById('srrg-sector');
+      if (sel.options.length > 1) return; // already populated
+      sel.innerHTML = '';
+      const seenSyms = new Set();
+      for (let pi = 1; pi < PANEL_COUNT; pi++) {
+        const data = panelDataCache[pi];
+        if (!data) continue;
+        const sym = data.baseSymbol;
+        if (seenSyms.has(sym)) continue;
+        seenSyms.add(sym);
+        const name = SECTOR_SHORT_NAMES[sym] || data.title.replace(/^\d+\.\s*/, '');
+        const opt = document.createElement('option');
+        opt.value = pi;
+        opt.textContent = `${sym} — ${name}`;
+        sel.appendChild(opt);
+      }
+    }
+
+    function computeStockRRGData() {
+      const panelIndex = parseInt(document.getElementById('srrg-sector').value);
+      const data = panelDataCache[panelIndex];
+      if (!data) return { stocks: [], sectorSym: '', panelIndex };
+
+      const period = document.getElementById('srrg-period').value;
+      const tailLen = parseInt(document.getElementById('srrg-tail').value);
+      const smoothLen = parseInt(document.getElementById('srrg-smooth').value);
+      const benchChoice = document.getElementById('srrg-benchmark').value;
+
+      const sectorSym = data.baseSymbol;
+
+      // Find benchmark prices
+      let benchPrices;
+      if (benchChoice === 'sector') {
+        benchPrices = data.prices[sectorSym];
+        if (!benchPrices) {
+          for (let pi = 0; pi < PANEL_COUNT; pi++) {
+            const d = panelDataCache[pi];
+            if (d && d.prices[sectorSym]) { benchPrices = d.prices[sectorSym]; break; }
+          }
+        }
+      } else {
+        const p0 = panelDataCache[0];
+        benchPrices = p0 ? p0.prices[benchChoice] : null;
+      }
+      if (!benchPrices) return { stocks: [], sectorSym, panelIndex };
+
+      const dates = data.dates;
+      const step = period === 'daily' ? 1 : 5;
+      const sampleIndices = [];
+      for (let i = 0; i < dates.length; i += step) sampleIndices.push(i);
+      if (sampleIndices[sampleIndices.length - 1] !== dates.length - 1) sampleIndices.push(dates.length - 1);
+
+      const smaWindow = period === 'daily' ? 50 : 10;
+      const momWindow = period === 'daily' ? 10 : 5;
+      const results = [];
+      const stockColors = [
+        '#2962ff','#26a69a','#ef5350','#ff9800','#ab47bc','#42a5f5',
+        '#66bb6a','#ffa726','#ec407a','#7e57c2','#29b6f6','#d4e157',
+        '#26c6da','#8d6e63','#78909c','#f06292','#4db6ac','#aed581',
+        '#ffb74d','#ba68c8','#4fc3f7','#fff176','#81c784','#e57373',
+      ];
+      let colorIdx = 0;
+
+      data.symbols.forEach(s => {
+        if (ETF_TICKERS.has(s)) return;
+        const prices = data.prices[s];
+        if (!prices) return;
+
+        const rsLine = sampleIndices.map(idx => {
+          const sp = prices[idx], bp = benchPrices[idx];
+          if (sp == null || bp == null || bp === 0) return null;
+          return sp / bp;
+        });
+
+        const rawRsRatio = [];
+        for (let i = 0; i < rsLine.length; i++) {
+          if (i < smaWindow - 1 || rsLine[i] == null) { rawRsRatio.push(null); continue; }
+          let sum = 0, count = 0;
+          for (let j = i - smaWindow + 1; j <= i; j++) {
+            if (rsLine[j] != null) { sum += rsLine[j]; count++; }
+          }
+          if (count === 0) { rawRsRatio.push(null); continue; }
+          rawRsRatio.push((rsLine[i] / (sum / count)) * 100);
+        }
+        const rsRatio = emaSmooth(rawRsRatio, smoothLen);
+
+        const rawMomentum = [];
+        for (let i = 0; i < rsRatio.length; i++) {
+          if (i < momWindow - 1 || rsRatio[i] == null) { rawMomentum.push(null); continue; }
+          let sum = 0, count = 0;
+          for (let j = i - momWindow + 1; j <= i; j++) {
+            if (rsRatio[j] != null) { sum += rsRatio[j]; count++; }
+          }
+          if (count === 0) { rawMomentum.push(null); continue; }
+          rawMomentum.push((rsRatio[i] / (sum / count)) * 100);
+        }
+        const rsMomentum = emaSmooth(rawMomentum, smoothLen);
+
+        const trail = [];
+        let added = 0;
+        for (let i = rsRatio.length - 1; i >= 0 && added < tailLen; i--) {
+          if (rsRatio[i] != null && rsMomentum[i] != null) {
+            trail.unshift({ x: rsRatio[i], y: rsMomentum[i] });
+            added++;
+          }
+        }
+
+        if (trail.length > 0) {
+          results.push({
+            sym: s,
+            color: stockColors[colorIdx % stockColors.length],
+            trail,
+          });
+          colorIdx++;
+        }
+      });
+
+      const benchLabel = benchChoice === 'sector' ? sectorSym : benchChoice;
+      return { stocks: results, sectorSym, benchLabel, panelIndex };
+    }
+
+    function drawStockRRG() {
+      const canvas = document.getElementById('stock-rrg-canvas');
+      if (!canvas) return;
+      const tc = currentThemeColors;
+      const ctx = canvas.getContext('2d');
+      const dpr = window.devicePixelRatio || 1;
+
+      const rect = canvas.parentElement.getBoundingClientRect();
+      canvas.width = rect.width * dpr;
+      canvas.height = rect.height * dpr;
+      canvas.style.width = rect.width + 'px';
+      canvas.style.height = rect.height + 'px';
+      ctx.scale(dpr, dpr);
+
+      const W = rect.width, H = rect.height;
+
+      const { stocks, sectorSym, benchLabel } = computeStockRRGData();
+      if (stocks.length === 0) {
+        ctx.fillStyle = tc.bgPrimary; ctx.fillRect(0, 0, W, H);
+        ctx.fillStyle = tc.textQuaternary; ctx.font = '14px ' + getComputedStyle(document.body).fontFamily;
+        ctx.textAlign = 'center'; ctx.fillText('Loading data...', W / 2, H / 2);
+        return;
+      }
+
+      // Bounds
+      let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+      stocks.forEach(s => s.trail.forEach(p => {
+        minX = Math.min(minX, p.x); maxX = Math.max(maxX, p.x);
+        minY = Math.min(minY, p.y); maxY = Math.max(maxY, p.y);
+      }));
+
+      const rangeX = Math.max(maxX - 100, 100 - minX, 1) * 1.3;
+      const rangeY = Math.max(maxY - 100, 100 - minY, 1) * 1.3;
+      const range = Math.max(rangeX, rangeY);
+      minX = 100 - range; maxX = 100 + range;
+      minY = 100 - range; maxY = 100 + range;
+
+      const margin = { top: 50, right: 30, bottom: 30, left: 50 };
+      const plotW = W - margin.left - margin.right;
+      const plotH = H - margin.top - margin.bottom;
+
+      function toScreenX(v) { return margin.left + ((v - minX) / (maxX - minX)) * plotW; }
+      function toScreenY(v) { return margin.top + ((maxY - v) / (maxY - minY)) * plotH; }
+
+      // Clear
+      ctx.fillStyle = tc.bgPrimary; ctx.fillRect(0, 0, W, H);
+
+      // Quadrant backgrounds
+      const cx = toScreenX(100), cy = toScreenY(100);
+      ctx.fillStyle = tc.quadrantLeading;
+      ctx.fillRect(cx, margin.top, margin.left + plotW - cx, cy - margin.top);
+      ctx.fillStyle = tc.quadrantImproving;
+      ctx.fillRect(margin.left, margin.top, cx - margin.left, cy - margin.top);
+      ctx.fillStyle = tc.quadrantLagging;
+      ctx.fillRect(margin.left, cy, cx - margin.left, margin.top + plotH - cy);
+      ctx.fillStyle = tc.quadrantWeakening;
+      ctx.fillRect(cx, cy, margin.left + plotW - cx, margin.top + plotH - cy);
+
+      // Grid
+      ctx.strokeStyle = tc.chartGridStrong; ctx.lineWidth = 0.5;
+      const gridStep = range > 3 ? 1 : 0.5;
+      for (let v = Math.ceil(minX); v <= maxX; v += gridStep) {
+        const x = toScreenX(v);
+        ctx.beginPath(); ctx.moveTo(x, margin.top); ctx.lineTo(x, margin.top + plotH); ctx.stroke();
+      }
+      for (let v = Math.ceil(minY); v <= maxY; v += gridStep) {
+        const y = toScreenY(v);
+        ctx.beginPath(); ctx.moveTo(margin.left, y); ctx.lineTo(margin.left + plotW, y); ctx.stroke();
+      }
+
+      // Center crosshair
+      ctx.strokeStyle = tc.chartCrosshairCenter; ctx.lineWidth = 1.5;
+      ctx.setLineDash([4, 4]);
+      ctx.beginPath(); ctx.moveTo(cx, margin.top); ctx.lineTo(cx, margin.top + plotH); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(margin.left, cy); ctx.lineTo(margin.left + plotW, cy); ctx.stroke();
+      ctx.setLineDash([]);
+
+      // Title
+      const period = document.getElementById('srrg-period').value;
+      const periodLabel = period === 'daily' ? 'Daily' : 'Weekly';
+      const shortName = SECTOR_SHORT_NAMES[sectorSym] || sectorSym;
+      const fontFamily = getComputedStyle(document.body).fontFamily;
+      ctx.fillStyle = tc.textQuaternary;
+      ctx.font = 'bold 13px ' + fontFamily;
+      ctx.textAlign = 'center';
+      ctx.fillText(`${shortName} Stocks  \u00b7  ${periodLabel}  \u00b7  vs ${benchLabel}`, W / 2, margin.top - 12);
+
+      // Axis labels
+      ctx.fillStyle = tc.chartAxisText; ctx.font = 'bold 11px ' + fontFamily;
+      ctx.textAlign = 'center';
+      ctx.fillText('RS-Ratio \u2192', W / 2, H - 8);
+      ctx.save(); ctx.translate(14, H / 2); ctx.rotate(-Math.PI / 2);
+      ctx.fillText('RS-Momentum \u2192', 0, 0); ctx.restore();
+
+      // Axis tick labels
+      ctx.font = '9px ' + fontFamily; ctx.fillStyle = tc.chartAxisText;
+      ctx.textAlign = 'center';
+      for (let v = Math.ceil(minX); v <= maxX; v += gridStep) {
+        if (Math.abs(v - 100) < 0.01) continue;
+        ctx.fillText(v.toFixed(v % 1 === 0 ? 0 : 1), toScreenX(v), margin.top + plotH + 14);
+      }
+      ctx.textAlign = 'right';
+      for (let v = Math.ceil(minY); v <= maxY; v += gridStep) {
+        if (Math.abs(v - 100) < 0.01) continue;
+        ctx.fillText(v.toFixed(v % 1 === 0 ? 0 : 1), margin.left - 6, toScreenY(v) + 3);
+      }
+      ctx.fillStyle = tc.textSecondary; ctx.font = 'bold 11px ' + fontFamily;
+      ctx.textAlign = 'center'; ctx.fillText('100', cx, margin.top + plotH + 14);
+      ctx.textAlign = 'right'; ctx.fillText('100', margin.left - 6, cy + 3);
+
+      // Store positions for hover
+      const stockPositions = [];
+
+      // Draw trails and dots
+      const activeSym = srrg_lockedStock || srrg_hoveredStock;
+      stocks.forEach(s => {
+        const isActive = activeSym === s.sym;
+        const alpha = activeSym && !isActive ? 0 : 1;
+        if (alpha === 0) return;
+
+        if (s.trail.length > 1) {
+          for (let i = 1; i < s.trail.length; i++) {
+            const t = i / s.trail.length;
+            ctx.strokeStyle = hexToRgba(s.color, (0.4 + t * 0.6) * alpha);
+            ctx.lineWidth = 1.5 + t * 2;
+            ctx.beginPath();
+            ctx.moveTo(toScreenX(s.trail[i - 1].x), toScreenY(s.trail[i - 1].y));
+            ctx.lineTo(toScreenX(s.trail[i].x), toScreenY(s.trail[i].y));
+            ctx.stroke();
+          }
+          for (let i = 0; i < s.trail.length - 1; i++) {
+            const t = i / s.trail.length;
+            ctx.fillStyle = hexToRgba(s.color, (0.5 + t * 0.5) * alpha);
+            ctx.beginPath();
+            ctx.arc(toScreenX(s.trail[i].x), toScreenY(s.trail[i].y), 2.5, 0, Math.PI * 2);
+            ctx.fill();
+          }
+        }
+
+        // Current dot
+        const last = s.trail[s.trail.length - 1];
+        const sx = toScreenX(last.x), sy = toScreenY(last.y);
+        ctx.fillStyle = hexToRgba(s.color, alpha);
+        ctx.beginPath();
+        ctx.arc(sx, sy, isActive ? 8 : 5, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.strokeStyle = hexToRgba(tc.textWhite, 0.6 * alpha);
+        ctx.lineWidth = 1.5; ctx.stroke();
+
+        // Label — show when active, or always if few stocks
+        if (isActive || stocks.length <= 25) {
+          const labelText = s.sym;
+          const fontFamily = getComputedStyle(document.body).fontFamily;
+          ctx.font = isActive ? 'bold 12px ' + fontFamily : 'bold 10px ' + fontFamily;
+          ctx.textAlign = 'left';
+          const lw = ctx.measureText(labelText).width;
+          ctx.fillStyle = tc.canvasLabelBg;
+          ctx.fillRect(sx + 7, sy - 7, lw + 6, 14);
+          ctx.fillStyle = hexToRgba(tc.textWhite, alpha);
+          ctx.fillText(labelText, sx + 10, sy + 4);
+        }
+
+        stockPositions.push({ sym: s.sym, x: sx, y: sy, color: s.color, last });
+      });
+
+      canvas._stockPositions = stockPositions;
+
+      // Build legend
+      if (!drawStockRRG._skipLegend) buildStockRRGLegend(stocks);
+      drawStockRRG._skipLegend = false;
+    }
+
+    function buildStockRRGLegend(stocks) {
+      const legendEl = document.getElementById('stock-rrg-legend');
+      if (!legendEl) return;
+
+      const sorted = [...stocks].sort((a, b) => {
+        const aLast = a.trail[a.trail.length - 1];
+        const bLast = b.trail[b.trail.length - 1];
+        return bLast.x - aLast.x;
+      });
+
+      // Store sorted order for arrow key navigation
+      srrg_legendOrder = sorted.map(s => s.sym);
+
+      const activeSym = srrg_lockedStock || srrg_hoveredStock;
+      const tc = currentThemeColors;
+      let html = '<div class="rrg-legend-title">Stocks' + (srrg_lockedStock ? ' (Esc to unlock)' : '') + '</div>';
+      sorted.forEach(s => {
+        const last = s.trail[s.trail.length - 1];
+        let quadrant, qColor;
+        if (last.x >= 100 && last.y >= 100) { quadrant = 'Lead'; qColor = tc.semanticBullish; }
+        else if (last.x < 100 && last.y >= 100) { quadrant = 'Impr'; qColor = tc.semanticNeutral; }
+        else if (last.x < 100 && last.y < 100) { quadrant = 'Lag'; qColor = tc.semanticBearish; }
+        else { quadrant = 'Weak'; qColor = tc.semanticWeakening; }
+
+        const isActive = activeSym === s.sym;
+        const isDimmed = activeSym && !isActive;
+        const cls = isActive ? 'highlighted' : isDimmed ? 'dimmed' : '';
+
+        html += `<div class="rrg-legend-item ${cls}" data-sym="${s.sym}">
+          <span class="rrg-legend-dot" style="background:${s.color}"></span>
+          <span class="rrg-legend-sym">${s.sym}</span>
+          <span class="rrg-legend-quadrant" style="color:${qColor}">${quadrant}</span>
+        </div>`;
+      });
+
+      legendEl.innerHTML = html;
+
+      // Scroll the active item into view
+      if (activeSym) {
+        const activeEl = legendEl.querySelector(`.rrg-legend-item[data-sym="${activeSym}"]`);
+        if (activeEl) activeEl.scrollIntoView({ block: 'nearest' });
+      }
+    }
+
+    // Stock RRG canvas mouse events
+    const stockRRGCanvas = document.getElementById('stock-rrg-canvas');
+    if (stockRRGCanvas) {
+      stockRRGCanvas.addEventListener('mousemove', function(e) {
+        if (srrg_lockedStock) return; // don't hover when locked
+        const rect = this.getBoundingClientRect();
+        const mx = e.clientX - rect.left, my = e.clientY - rect.top;
+        const positions = this._stockPositions || [];
+        let closest = null, closestDist = 20;
+        positions.forEach(p => {
+          const d = Math.sqrt((p.x - mx) ** 2 + (p.y - my) ** 2);
+          if (d < closestDist) { closest = p.sym; closestDist = d; }
+        });
+        if (closest !== srrg_hoveredStock) {
+          srrg_hoveredStock = closest;
+          drawStockRRG();
+        }
+      });
+      stockRRGCanvas.addEventListener('mouseleave', function() {
+        if (srrg_lockedStock) return;
+        if (srrg_hoveredStock) {
+          srrg_hoveredStock = null;
+          drawStockRRG();
+        }
+      });
+    }
+
+    // Stock RRG legend events (hover, click, keyboard)
+    const stockRRGLegendEl = document.getElementById('stock-rrg-legend');
+    if (stockRRGLegendEl) {
+      stockRRGLegendEl.addEventListener('mouseenter', (e) => {
+        if (srrg_lockedStock) return; // don't hover-change when locked
+        const item = e.target.closest('.rrg-legend-item');
+        if (!item) return;
+        const sym = item.dataset.sym;
+        if (sym && sym !== srrg_hoveredStock) {
+          srrg_hoveredStock = sym;
+          drawStockRRG();
+        }
+      }, true);
+      stockRRGLegendEl.addEventListener('mouseleave', () => {
+        if (srrg_lockedStock) return; // stay locked
+        if (srrg_hoveredStock) {
+          srrg_hoveredStock = null;
+          drawStockRRG();
+        }
+      });
+      stockRRGLegendEl.addEventListener('click', (e) => {
+        const item = e.target.closest('.rrg-legend-item');
+        if (!item) return;
+        const sym = item.dataset.sym;
+        if (sym) {
+          // Toggle lock: click same to unlock, click different to switch
+          if (srrg_lockedStock === sym) {
+            srrg_lockedStock = null;
+          } else {
+            srrg_lockedStock = sym;
+          }
+          srrg_hoveredStock = null;
+          drawStockRRG();
+        }
+      });
+    }
+
+    // Arrow key navigation + Escape to unlock
+    document.addEventListener('keydown', (e) => {
+      if (currentView !== 'stockrrg') return;
+      if (e.target.tagName === 'SELECT' || e.target.tagName === 'INPUT') return;
+
+      if (e.key === 'Escape') {
+        if (srrg_lockedStock) {
+          srrg_lockedStock = null;
+          srrg_hoveredStock = null;
+          drawStockRRG();
+        }
+        return;
+      }
+
+      if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+        e.preventDefault();
+        if (srrg_legendOrder.length === 0) return;
+        const current = srrg_lockedStock || srrg_hoveredStock;
+        let idx = current ? srrg_legendOrder.indexOf(current) : -1;
+        if (e.key === 'ArrowDown') {
+          idx = idx < srrg_legendOrder.length - 1 ? idx + 1 : 0;
+        } else {
+          idx = idx > 0 ? idx - 1 : srrg_legendOrder.length - 1;
+        }
+        srrg_lockedStock = srrg_legendOrder[idx];
+        srrg_hoveredStock = null;
+        drawStockRRG();
+      }
+    });
+
+    // Legend event delegation (hover + click)
+    const rrgLegendEl = document.getElementById('rrg-legend');
+    if (rrgLegendEl) {
+      let legendHoverTimer = null;
+
+      rrgLegendEl.addEventListener('mouseenter', (e) => {
+        const item = e.target.closest('.rrg-legend-item');
+        if (!item) return;
+        const sym = item.dataset.sym;
+        if (sym && sym !== rrg_hoveredSector) {
+          rrg_hoveredSector = sym;
+          // Redraw chart but NOT the legend (to avoid killing hover state)
+          drawRRGChartOnly();
+        }
+      }, true);
+
+      rrgLegendEl.addEventListener('mouseleave', (e) => {
+        // Small delay so click can fire before we clear
+        clearTimeout(legendHoverTimer);
+        legendHoverTimer = setTimeout(() => {
+          if (rrg_hoveredSector) {
+            rrg_hoveredSector = null;
+            drawRRGChartOnly();
+          }
+        }, 50);
+      });
+
+      rrgLegendEl.addEventListener('click', (e) => {
+        const item = e.target.closest('.rrg-legend-item');
+        if (!item) return;
+        const sym = item.dataset.sym;
+        const panelIndex = parseInt(item.dataset.panel);
+        if (sym) openRRGDrilldown(sym, panelIndex);
+      });
+    }
+
+    // Draw only the canvas without rebuilding legend (avoids killing hover/click state)
+    function drawRRGChartOnly() {
+      drawRRG._skipLegend = true;
+      drawRRG();
+    }
+
+    // Mouse hover for RRG canvas
+    const rrgCanvas = document.getElementById('rrg-canvas');
+    if (rrgCanvas) {
+      rrgCanvas.addEventListener('mousemove', (e) => {
+        const rect = rrgCanvas.getBoundingClientRect();
+        const mx = e.clientX - rect.left;
+        const my = e.clientY - rect.top;
+        const positions = rrgCanvas._sectorPositions || [];
+
+        let found = null;
+        for (const p of positions) {
+          const dist = Math.sqrt((mx - p.x) ** 2 + (my - p.y) ** 2);
+          if (dist < 20) { found = p.sym; break; }
+        }
+
+        if (found !== rrg_hoveredSector) {
+          rrg_hoveredSector = found;
+          drawRRGChartOnly();
+
+          if (found) {
+            const p = positions.find(pos => pos.sym === found);
+            rrgCanvas.title = `${p.sym} - ${p.title}\nRS-Ratio: ${p.last.x.toFixed(2)}\nRS-Momentum: ${p.last.y.toFixed(2)}`;
+          } else {
+            rrgCanvas.title = '';
+          }
+        }
+      });
+
+      rrgCanvas.addEventListener('mouseleave', () => {
+        if (rrg_hoveredSector) {
+          rrg_hoveredSector = null;
+          drawRRGChartOnly();
+        }
+      });
+    }
+
+    // Redraw RRG on resize
+    window.addEventListener('resize', () => {
+      if (currentView === 'rrg') drawRRG();
+    });
+
+    // ── AI Analysis ──
+    const GROK_API_URL = 'https://api.x.ai/v1/chat/completions';
+    const GROK_API_KEY = localStorage.getItem('grok_api_key') || '';
+    const GROK_MODEL = 'grok-4-fast-reasoning';
+
+    function gatherAnalysisData() {
+      const view = currentView;
+      let context = `Current view: ${view}\nDate: ${new Date().toISOString().split('T')[0]}\n\n`;
+
+      if (view === 'rrg') {
+        const sectors = computeRRGData();
+        const period = document.getElementById('rrg-period').value;
+        const benchmark = document.getElementById('rrg-benchmark').value;
+        const etfType = document.getElementById('rrg-etf-type').value;
+        context += `RRG View — ${period === 'daily' ? 'Daily' : 'Weekly'}, ${etfType === 'equal' ? 'Equal-Weight' : 'Cap-Weight'} ETFs, Benchmark: ${benchmark}\n\n`;
+        context += 'Sector ETF positions (RS-Ratio, RS-Momentum, Quadrant):\n';
+        sectors.forEach(s => {
+          const last = s.trail[s.trail.length - 1];
+          let q;
+          if (last.x >= 100 && last.y >= 100) q = 'Leading';
+          else if (last.x < 100 && last.y >= 100) q = 'Improving';
+          else if (last.x < 100 && last.y < 100) q = 'Lagging';
+          else q = 'Weakening';
+          const name = SECTOR_SHORT_NAMES[s.sym] || '';
+          // Determine direction from trail
+          let direction = 'stable';
+          if (s.trail.length >= 2) {
+            const prev = s.trail[s.trail.length - 2];
+            const dx = last.x - prev.x, dy = last.y - prev.y;
+            if (dx > 0.05 && dy > 0.05) direction = 'improving (moving to Leading)';
+            else if (dx > 0.05 && dy < -0.05) direction = 'weakening momentum';
+            else if (dx < -0.05 && dy > 0.05) direction = 'gaining momentum';
+            else if (dx < -0.05 && dy < -0.05) direction = 'deteriorating (moving to Lagging)';
+          }
+          context += `  ${s.sym} (${name}): RS-Ratio=${last.x.toFixed(2)}, RS-Mom=${last.y.toFixed(2)}, Quadrant=${q}, Direction=${direction}\n`;
+        });
+      } else if (view === 'stockrrg') {
+        const { stocks, sectorSym, benchLabel } = computeStockRRGData();
+        const period = document.getElementById('srrg-period').value;
+        const shortName = SECTOR_SHORT_NAMES[sectorSym] || sectorSym;
+        context += `Stock RRG — ${shortName} (${sectorSym}) stocks, ${period === 'daily' ? 'Daily' : 'Weekly'}, Benchmark: ${benchLabel}\n\n`;
+        // Top 10 leading, top 10 lagging
+        const sorted = [...stocks].sort((a, b) => {
+          const aL = a.trail[a.trail.length - 1], bL = b.trail[b.trail.length - 1];
+          return bL.x - aL.x;
+        });
+        context += 'Top Leading stocks:\n';
+        sorted.slice(0, 15).forEach(s => {
+          const last = s.trail[s.trail.length - 1];
+          let q;
+          if (last.x >= 100 && last.y >= 100) q = 'Leading';
+          else if (last.x < 100 && last.y >= 100) q = 'Improving';
+          else if (last.x < 100 && last.y < 100) q = 'Lagging';
+          else q = 'Weakening';
+          context += `  ${s.sym}: RS-Ratio=${last.x.toFixed(2)}, RS-Mom=${last.y.toFixed(2)}, ${q}\n`;
+        });
+        context += '\nTop Lagging stocks:\n';
+        sorted.slice(-10).reverse().forEach(s => {
+          const last = s.trail[s.trail.length - 1];
+          let q;
+          if (last.x >= 100 && last.y >= 100) q = 'Leading';
+          else if (last.x < 100 && last.y >= 100) q = 'Improving';
+          else if (last.x < 100 && last.y < 100) q = 'Lagging';
+          else q = 'Weakening';
+          context += `  ${s.sym}: RS-Ratio=${last.x.toFixed(2)}, RS-Mom=${last.y.toFixed(2)}, ${q}\n`;
+        });
+      } else {
+        // Spaghetti / Sectors / Stocks view — gather sector performance
+        context += 'Sector performance summary:\n';
+        for (let pi = 1; pi < PANEL_COUNT; pi++) {
+          const data = panelDataCache[pi];
+          if (!data) continue;
+          const sym = data.baseSymbol;
+          const prices = data.prices[sym];
+          if (!prices) continue;
+          const dates = data.dates;
+          const pct1M = computePctChange(prices, dates, '1M');
+          const pct3M = computePctChange(prices, dates, '3M');
+          const pctYTD = computePctChange(prices, dates, 'YTD');
+          const name = SECTOR_SHORT_NAMES[sym] || data.title.replace(/^\d+\.\s*/, '');
+          context += `  ${sym} (${name}): 1M=${pct1M != null ? pct1M.toFixed(1) + '%' : 'N/A'}, 3M=${pct3M != null ? pct3M.toFixed(1) + '%' : 'N/A'}, YTD=${pctYTD != null ? pctYTD.toFixed(1) + '%' : 'N/A'}\n`;
+        }
+      }
+
+      return context;
+    }
+
+    async function runAIAnalysis() {
+      const btn = document.querySelector('.ai-analyze-btn');
+      const panel = document.getElementById('ai-panel');
+      const body = document.getElementById('ai-panel-body');
+      const apiKey = localStorage.getItem('grok_api_key') || '';
+
+      if (!apiKey) {
+        panel.classList.add('visible');
+        body.innerHTML = '<div class="ai-error">No API key set. Click the &#9881; gear icon above to enter your xAI API key.</div>';
+        toggleAISettings();
+        return;
+      }
+
+      btn.classList.add('loading');
+      btn.textContent = 'Analyzing...';
+      panel.classList.add('visible');
+      body.innerHTML = '<div class="ai-loading">Analyzing market data...</div>';
+
+      const data = gatherAnalysisData();
+
+      const systemPrompt = `You are an expert market analyst and swing trader. You analyze sector rotation and relative strength data to identify trading opportunities. Be concise, actionable, and specific. Use the RRG quadrant framework:
+- Leading (top-right): Strong and getting stronger — hold/add
+- Weakening (bottom-right): Strong but losing momentum — take profits / tighten stops
+- Lagging (bottom-left): Weak and getting weaker — avoid/short
+- Improving (top-left): Weak but gaining momentum — early entry opportunities
+
+Focus on:
+1. Key rotations happening now
+2. Sectors/stocks moving into Leading or Improving (opportunities)
+3. Sectors/stocks moving into Lagging or Weakening (risks)
+4. Specific actionable trade ideas with direction
+5. Overall market regime assessment`;
+
+      const userPrompt = `Analyze this sector relative strength data and provide actionable trading insights:\n\n${data}`;
+
+      try {
+        const response = await fetch(GROK_API_URL, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${apiKey}`,
+          },
+          body: JSON.stringify({
+            model: GROK_MODEL,
+            messages: [
+              { role: 'system', content: systemPrompt },
+              { role: 'user', content: userPrompt },
+            ],
+            temperature: 0.7,
+            max_tokens: 2000,
+          }),
+        });
+
+        if (!response.ok) {
+          const err = await response.text();
+          throw new Error(`API error ${response.status}: ${err}`);
+        }
+
+        const result = await response.json();
+        const content = result.choices?.[0]?.message?.content || 'No response received.';
+
+        // Simple markdown to HTML
+        body.innerHTML = markdownToHtml(content);
+      } catch (err) {
+        body.innerHTML = `<div class="ai-error">Error: ${err.message}</div>`;
+      }
+
+      btn.classList.remove('loading');
+      btn.textContent = 'Analyze';
+    }
+
+    function markdownToHtml(md) {
+      const lines = md.split('\n');
+      let html = '';
+      let inList = false;
+      let inBlockquote = false;
+
+      lines.forEach(line => {
+        let trimmed = line.trim();
+        if (!trimmed) {
+          if (inList) { html += '</ul>'; inList = false; }
+          if (inBlockquote) { html += '</blockquote>'; inBlockquote = false; }
+          html += '<br>';
+          return;
+        }
+
+        // Escape HTML
+        trimmed = trimmed.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
+        // Headings
+        if (trimmed.startsWith('### ')) { if (inList) { html += '</ul>'; inList = false; } html += `<h3>${trimmed.slice(4)}</h3>`; return; }
+        if (trimmed.startsWith('## '))  { if (inList) { html += '</ul>'; inList = false; } html += `<h2>${trimmed.slice(3)}</h2>`; return; }
+        if (trimmed.startsWith('# '))   { if (inList) { html += '</ul>'; inList = false; } html += `<h1>${trimmed.slice(2)}</h1>`; return; }
+
+        // Horizontal rule
+        if (/^---+$/.test(trimmed)) { if (inList) { html += '</ul>'; inList = false; } html += '<hr>'; return; }
+
+        // Blockquote
+        if (trimmed.startsWith('&gt; ')) {
+          if (!inBlockquote) { html += '<blockquote>'; inBlockquote = true; }
+          html += formatInline(trimmed.slice(5)) + '<br>';
+          return;
+        } else if (inBlockquote) { html += '</blockquote>'; inBlockquote = false; }
+
+        // List items (- or numbered)
+        const bulletMatch = trimmed.match(/^[-*]\s+(.+)/);
+        const numMatch = trimmed.match(/^\d+\.\s+(.+)/);
+        if (bulletMatch || numMatch) {
+          if (!inList) { html += '<ul>'; inList = true; }
+          const content = bulletMatch ? bulletMatch[1] : numMatch[1];
+          const cls = classifyLine(content);
+          html += `<li class="${cls}">${formatInline(content)}</li>`;
+          return;
+        }
+
+        if (inList) { html += '</ul>'; inList = false; }
+
+        // Regular paragraph
+        html += `<p>${formatInline(trimmed)}</p>`;
+      });
+
+      if (inList) html += '</ul>';
+      if (inBlockquote) html += '</blockquote>';
+      return html;
+    }
+
+    function formatInline(text) {
+      return text
+        .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+        .replace(/\*(.+?)\*/g, '<em>$1</em>')
+        .replace(/`(.+?)`/g, '<code>$1</code>')
+        // Highlight stock/ETF tickers (2-5 uppercase letters, standalone)
+        .replace(/\b([A-Z]{2,5})\b/g, (match) => {
+          // Skip common English words
+          const skip = new Set(['THE','AND','FOR','BUT','NOT','YOU','ALL','CAN','HER','WAS','ONE','OUR','OUT','ARE','HAS','TOP','NEW','NOW','OLD','SEE','WAY','MAY','WHO','DID','GET','HIS','HOW','ITS','LET','SAY','SHE','TOO','USE','BUY','SELL','HOLD','LONG','SHORT','WITH','FROM','THAT','THIS','WILL','BEEN','HAVE','INTO','OVER','SUCH','TAKE','THAN','THEM','VERY','WHEN','COME','EACH','MAKE','LIKE','BACK','ONLY','ALSO','MOST','SOME','KEEP','LOOK','MOVE','RATE','HIGH','LOW','RISK','NEAR','AWAY','BOTH','LOSS','GAIN','WEAK','DOWN','LAST','NEXT','JUST','MUCH','HERE','WHAT','WELL','MADE','GOOD','BEST','MORE','LESS','TERM','PAST','NEED','NOTE','WIDE','SIGN','SHOW','TEND','PAST','SAME']);
+          if (skip.has(match)) return match;
+          return `<span class="ticker">${match}</span>`;
+        });
+    }
+
+    function classifyLine(text) {
+      const lower = text.toLowerCase();
+      const bullish = /\b(bullish|leading|improv|uptrend|outperform|strong|buy|long|opportunity|gaining|accelerat|breakout|upside)\b/;
+      const bearish = /\b(bearish|lagging|weaken|downtrend|underperform|sell|short|avoid|risk|deteriorat|breakdown|downside|losing)\b/;
+      if (bullish.test(lower)) return 'bullish';
+      if (bearish.test(lower)) return 'bearish';
+      return 'neutral';
+    }
+
+    function toggleAISettings() {
+      const form = document.getElementById('ai-key-form');
+      const input = document.getElementById('ai-key-input');
+      form.classList.toggle('visible');
+      if (form.classList.contains('visible')) {
+        const saved = localStorage.getItem('grok_api_key') || '';
+        input.value = saved;
+        input.focus();
+      }
+    }
+
+    function saveAIKey() {
+      const key = document.getElementById('ai-key-input').value.trim();
+      if (key) {
+        localStorage.setItem('grok_api_key', key);
+        document.getElementById('ai-key-form').classList.remove('visible');
+      } else {
+        localStorage.removeItem('grok_api_key');
+      }
+    }
+
+    function closeAIPanel() {
+      document.getElementById('ai-panel').classList.remove('visible');
+      document.getElementById('ai-key-form').classList.remove('visible');
+    }
+
+    // Initial build
+    buildWidgets();
+  </script>
+</body>
+</html>

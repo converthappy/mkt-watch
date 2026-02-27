@@ -1,0 +1,29 @@
+###Broad Market
+SPY
+RSP
+QQQ
+DIA
+IWM
+###Sector ETFs (Cap-Weight / Equal-Weight)
+XLK
+RYT
+XLV
+RYH
+XLF
+RYF
+XLY
+RCD
+XLP
+RHS
+XLE
+RYE
+XLI
+RGI
+XLB
+RTM
+XLC
+RSPC
+XLU
+RYU
+XLRE
+EWRE

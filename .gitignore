@@ -1,0 +1,7 @@
+__pycache__/
+*.py[cod]
+logs/
+data/.last_full_refresh
+.DS_Store
+.vscode/
+.idea/

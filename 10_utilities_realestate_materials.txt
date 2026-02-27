@@ -1,0 +1,24 @@
+###Utilities
+XLU
+RYU
+NEE
+DUK
+SO
+D
+AEP
+###Real Estate
+XLRE
+EWRE
+AMT
+PLD
+SPG
+CCI
+EQIX
+###Materials
+XLB
+RTM
+LIN
+FCX
+NEM
+SHW
+APD
