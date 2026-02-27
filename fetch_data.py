@@ -168,12 +168,25 @@ def fetch_all_data(tickers, period=None, start=None, end=None):
                 # Remove any duplicate columns
                 all_data = all_data[[c for c in all_data.columns if not c.endswith("_dup")]]
 
-    # Deduplicate date index (outer join across batches can create dupes)
-    if all_data is not None and all_data.index.duplicated().any():
-        all_data = all_data[~all_data.index.duplicated(keep="last")]
-
         except Exception as e:
             print(f"  Error in batch {i // batch_size + 1}: {e}")
+
+    if all_data is not None:
+        # Deduplicate date index (outer join across batches can create dupes)
+        if all_data.index.duplicated().any():
+            all_data = all_data[~all_data.index.duplicated(keep="last")]
+
+        # Drop trailing dates where <50% of tickers have data
+        # (yfinance often returns partial data for the most recent day)
+        while len(all_data) > 0:
+            last_row = all_data.iloc[-1]
+            valid_pct = last_row.notna().sum() / len(last_row)
+            if valid_pct < 0.5:
+                dropped = all_data.index[-1].strftime("%Y-%m-%d")
+                all_data = all_data.iloc[:-1]
+                print(f"  Dropped sparse trailing date {dropped} ({valid_pct:.0%} coverage)")
+            else:
+                break
 
     return all_data
 
