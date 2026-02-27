@@ -195,9 +195,17 @@
     .btn.active { background: var(--interactive-bg-active); border-color: var(--interactive-bg-active); color: #fff; }
     .separator { width: 1px; background: var(--interactive-border); margin: 2px 4px; }
     .topbar-label { font-size: var(--fs-sm); color: var(--text-quaternary); text-transform: uppercase; letter-spacing: 0.5px; }
+    #spaghetti-wrap { display: flex; flex-direction: column; height: calc(100vh - 32px); }
+    .view-title {
+      display: none; padding: 6px 12px; background: var(--bg-secondary);
+      border-bottom: 1px solid var(--border-medium);
+      font-size: 13px; color: var(--text-secondary); font-weight: 600;
+      letter-spacing: 0.3px; flex-shrink: 0;
+    }
+    .view-title.visible { display: block; }
     .grid {
       display: grid; gap: 1px; padding: 1px;
-      height: calc(100vh - 32px); overflow: auto;
+      flex: 1; overflow: auto;
     }
     .grid.g4x4 { grid-template-columns: repeat(4, 1fr); grid-template-rows: repeat(4, 1fr); }
     .grid.g4x2 { grid-template-columns: repeat(4, 1fr); grid-template-rows: repeat(4, calc((100vh - 36px) / 2)); }
@@ -989,7 +997,10 @@
     </div>
     <div class="ai-panel-body" id="ai-panel-body"></div>
   </div>
-  <div class="grid g4x4" id="grid"></div>
+  <div id="spaghetti-wrap">
+    <div class="view-title" id="view-title"></div>
+    <div class="grid g4x4" id="grid"></div>
+  </div>
   <div class="table-container" id="sectors-view"></div>
   <div class="table-container" id="stocks-view"></div>
 
@@ -1755,6 +1766,37 @@
     }
 
     // ── Build all panels ──
+    function updateViewTitle() {
+      const el = document.getElementById('view-title');
+      const modeLabels = { absolute: '% Change', sector: 'vs Sector ETF', equalweight: 'Equal Weight', vsSpy: 'vs SPY', vsRsp: 'vs RSP', rsRating: 'RS Rating' };
+      const viewLabels = { spaghetti: 'Spaghetti', sectors: 'Sectors Heatmap', stocks: 'Stocks Heatmap', rrg: 'Sector RRG', stockrrg: 'Stock RRG' };
+
+      let title = viewLabels[currentView] || currentView;
+
+      if (currentView === 'spaghetti') {
+        title += '  |  ' + (modeLabels[spaghettiMode] || spaghettiMode) + '  |  ' + currentRange;
+        // Add date range
+        const p0 = panelDataCache[0];
+        if (p0 && p0.dates && p0.dates.length > 0) {
+          const startDate = getRangeStartDate(currentRange, p0.dates);
+          const startIdx = findStartIndex(p0.dates, startDate);
+          title += '  [' + p0.dates[startIdx] + ' to ' + p0.dates[p0.dates.length - 1] + ']';
+        }
+      } else if (currentView === 'rrg') {
+        const period = document.getElementById('rrg-period').value;
+        const bench = document.getElementById('rrg-benchmark').value;
+        const etfType = document.getElementById('rrg-etf-type').value;
+        title += '  |  ' + (period === 'daily' ? 'Daily' : 'Weekly') + '  |  ' + (etfType === 'equal' ? 'Equal-Weight' : 'Cap-Weight') + '  |  Benchmark: ' + bench;
+      } else if (currentView === 'stockrrg') {
+        const period = document.getElementById('srrg-period').value;
+        const bench = document.getElementById('srrg-benchmark');
+        title += '  |  ' + (period === 'daily' ? 'Daily' : 'Weekly') + (bench ? '  |  Benchmark: ' + bench.value : '');
+      }
+
+      el.textContent = title;
+      el.classList.add('visible');
+    }
+
     function buildWidgets() {
       staggerTimers.forEach(t => clearTimeout(t));
       staggerTimers = [];
@@ -1799,6 +1841,7 @@
           loadPanel(i);
         }
       }
+      updateViewTitle();
     }
 
     // ── Spaghetti mode selection ──
@@ -1827,6 +1870,7 @@
       if (document.getElementById('modal').classList.contains('visible')) {
         buildModalChart();
       }
+      updateViewTitle();
     }
 
     // ── Layout selection ──
@@ -1960,7 +2004,7 @@
       document.querySelectorAll('.topbar-controls .btn[data-view]').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
 
-      document.getElementById('grid').classList.toggle('hidden', view !== 'spaghetti');
+      document.getElementById('spaghetti-wrap').classList.toggle('hidden', view !== 'spaghetti');
       document.getElementById('sectors-view').classList.toggle('active', view === 'sectors');
       document.getElementById('stocks-view').classList.toggle('active', view === 'stocks');
       document.getElementById('rrg-view').classList.toggle('active', view === 'rrg');
@@ -1970,6 +2014,7 @@
       if (view === 'stocks') loadAllPanelsThen(buildStocksView);
       if (view === 'rrg') loadAllPanelsThen(drawRRG);
       if (view === 'stockrrg') loadAllPanelsThen(() => { populateSectorDropdown(); drawStockRRG(); });
+      updateViewTitle();
     }
 
     // ── Shared table utilities ──
@@ -4076,12 +4121,12 @@ Focus on:
       try {
         // Determine what to capture based on current view
         let target;
-        if (currentView === 'spaghetti') target = document.getElementById('grid');
+        if (currentView === 'spaghetti') target = document.getElementById('spaghetti-wrap');
         else if (currentView === 'rrg') target = document.getElementById('rrg-view');
         else if (currentView === 'stockrrg') target = document.getElementById('stock-rrg-view');
         else if (currentView === 'sectors') target = document.getElementById('sectors-view');
         else if (currentView === 'stocks') target = document.getElementById('stocks-view');
-        else target = document.getElementById('grid');
+        else target = document.getElementById('spaghetti-wrap');
 
         const canvas = await html2canvas(target, {
           backgroundColor: getComputedStyle(document.documentElement).getPropertyValue('--bg-primary').trim(),
@@ -4142,6 +4187,7 @@ Focus on:
 
     // Initial build
     buildWidgets();
+    updateViewTitle();
   </script>
 </body>
 </html>
