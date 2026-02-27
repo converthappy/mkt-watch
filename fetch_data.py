@@ -168,6 +168,10 @@ def fetch_all_data(tickers, period=None, start=None, end=None):
                 # Remove any duplicate columns
                 all_data = all_data[[c for c in all_data.columns if not c.endswith("_dup")]]
 
+    # Deduplicate date index (outer join across batches can create dupes)
+    if all_data is not None and all_data.index.duplicated().any():
+        all_data = all_data[~all_data.index.duplicated(keep="last")]
+
         except Exception as e:
             print(f"  Error in batch {i // batch_size + 1}: {e}")
 
@@ -310,8 +314,16 @@ def incremental_update():
             print(f"  WARNING: {filename} missing or corrupt, skipping. Run --mode full to fix.")
             continue
 
+        # Filter out any dates already in the existing data (prevent dupes)
+        existing_date_set = set(existing["dates"])
+        dates_to_add = [d for d in new_dates if d not in existing_date_set]
+        if not dates_to_add:
+            print(f"  {filename}: all dates already present, skipping")
+            continue
+        date_mask = [d in set(dates_to_add) for d in new_dates]
+
         # Append new dates
-        existing["dates"].extend(new_dates)
+        existing["dates"].extend(dates_to_add)
 
         # Append new prices for each symbol already in the panel
         symbols_in_new_data = set()
@@ -326,14 +338,16 @@ def incremental_update():
             if col is not None:
                 symbols_in_new_data.add(sym)
                 series = close_data[col]
-                for val in series:
+                for j, val in enumerate(series):
+                    if not date_mask[j]:
+                        continue
                     if val is not None and not (isinstance(val, float) and val != val):
                         existing["prices"][sym].append(round(float(val), 4))
                     else:
                         existing["prices"][sym].append(None)
             else:
                 # Symbol not in new download — fill with nulls
-                for _ in new_dates:
+                for _ in dates_to_add:
                     existing["prices"][sym].append(None)
 
         # Check for symbols in panel definition but not in existing data
