@@ -3857,35 +3857,43 @@
           context += `  ${sym} (${name}): 1M=${pct1M != null ? pct1M.toFixed(1) + '%' : 'N/A'}, 3M=${pct3M != null ? pct3M.toFixed(1) + '%' : 'N/A'}, YTD=${pctYTD != null ? pctYTD.toFixed(1) + '%' : 'N/A'}\n`;
         }
 
-        // Per-panel stock details: top and bottom performers in the current range
-        context += '\nPer-Panel Detail (current range: ' + currentRange + '):\n';
+        // Per-panel stock details: top and bottom performers across multiple ranges
+        const aiRanges = ['5D', '1M', '3M', 'YTD'];
+        context += '\nPer-Panel Detail:\n';
         for (let pi = 0; pi < PANEL_COUNT; pi++) {
           const data = panelDataCache[pi];
           if (!data) continue;
           const title = data.title.replace(/^\d+\.\s*/, '');
 
-          // Compute % change for each symbol in this panel for the selected range
-          const ranked = [];
+          // Compute % change for each symbol across all ranges
+          const entries = [];
           for (const sym of data.symbols) {
             const prices = data.prices[sym];
             if (!prices) continue;
-            const pct = computePctChange(prices, data.dates, currentRange);
-            if (pct != null) {
+            const pcts = {};
+            let hasAny = false;
+            for (const rk of aiRanges) {
+              pcts[rk] = computePctChange(prices, data.dates, rk);
+              if (pcts[rk] != null) hasAny = true;
+            }
+            if (hasAny) {
               const name = stockNamesMap[sym] || SECTOR_SHORT_NAMES[sym] || '';
-              ranked.push({ sym, name, pct });
+              entries.push({ sym, name, pcts });
             }
           }
-          ranked.sort((a, b) => b.pct - a.pct);
+          // Sort by 3M performance (fallback to 1M)
+          entries.sort((a, b) => (b.pcts['3M'] || b.pcts['1M'] || 0) - (a.pcts['3M'] || a.pcts['1M'] || 0));
 
-          if (ranked.length === 0) continue;
-          context += `\n  ${title} (${ranked.length} symbols):\n`;
-          // Top 5
-          const top = ranked.slice(0, 5);
-          context += '    Top: ' + top.map(r => `${r.sym}${r.name ? ' (' + r.name + ')' : ''} ${r.pct >= 0 ? '+' : ''}${r.pct.toFixed(1)}%`).join(', ') + '\n';
-          // Bottom 5
-          if (ranked.length > 5) {
-            const bot = ranked.slice(-5).reverse();
-            context += '    Bottom: ' + bot.map(r => `${r.sym}${r.name ? ' (' + r.name + ')' : ''} ${r.pct >= 0 ? '+' : ''}${r.pct.toFixed(1)}%`).join(', ') + '\n';
+          if (entries.length === 0) continue;
+          const fmtPct = (v) => v != null ? (v >= 0 ? '+' : '') + v.toFixed(1) + '%' : 'N/A';
+          const fmtEntry = (r) => `${r.sym}${r.name ? ' (' + r.name + ')' : ''}: 5D=${fmtPct(r.pcts['5D'])}, 1M=${fmtPct(r.pcts['1M'])}, 3M=${fmtPct(r.pcts['3M'])}, YTD=${fmtPct(r.pcts['YTD'])}`;
+
+          context += `\n  ${title} (${entries.length} symbols):\n`;
+          context += '    Top 10:\n';
+          entries.slice(0, 10).forEach(r => { context += '      ' + fmtEntry(r) + '\n'; });
+          if (entries.length > 10) {
+            context += '    Bottom 10:\n';
+            entries.slice(-10).reverse().forEach(r => { context += '      ' + fmtEntry(r) + '\n'; });
           }
         }
       }
