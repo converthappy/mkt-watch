@@ -788,6 +788,20 @@
     .rs-bar-fill {
       width: 4px; min-height: 1px; border-radius: 1px 1px 0 0;
     }
+    /* Screenshot */
+    .screenshot-btn {
+      background: var(--bg-tertiary) !important; color: var(--text-secondary) !important;
+      border: 1px solid var(--border-medium) !important;
+    }
+    .screenshot-btn:hover { background: var(--bg-secondary) !important; color: var(--text-primary) !important; }
+    .screenshot-toast {
+      position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
+      background: var(--accent-primary); color: #fff; padding: 10px 20px;
+      border-radius: 8px; font-size: 13px; z-index: 200; opacity: 0;
+      transition: opacity 0.3s; pointer-events: none;
+    }
+    .screenshot-toast.visible { opacity: 1; }
+
     /* AI Analysis */
     .ai-analyze-btn {
       background: var(--accent-bg) !important; color: var(--accent-primary-light) !important;
@@ -954,10 +968,12 @@
       </div>
       <div class="separator"></div>
       <button class="btn ai-analyze-btn" onclick="runAIAnalysis()">Analyze</button>
+      <button class="btn screenshot-btn" onclick="captureScreenshot()" title="Copy screenshot to clipboard">Screenshot</button>
       <div class="separator"></div>
       <button class="btn theme-toggle-btn" onclick="toggleTheme()" title="Toggle light/dark theme" id="theme-toggle">&#9790;</button>
     </div>
   </div>
+  <div class="screenshot-toast" id="screenshot-toast"></div>
   <!-- AI Analysis Panel -->
   <div class="ai-panel" id="ai-panel">
     <div class="ai-panel-header">
@@ -1077,6 +1093,7 @@
   </div>
 
   <script src="https://unpkg.com/lightweight-charts@4.2.0/dist/lightweight-charts.standalone.production.js"></script>
+  <script src="https://unpkg.com/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
   <script>
     // ── Theme Management ──
     let currentThemeColors = {};
@@ -4048,6 +4065,53 @@ Focus on:
       if (bullish.test(lower)) return 'bullish';
       if (bearish.test(lower)) return 'bearish';
       return 'neutral';
+    }
+
+    async function captureScreenshot() {
+      const btn = document.querySelector('.screenshot-btn');
+      const toast = document.getElementById('screenshot-toast');
+      btn.textContent = 'Capturing...';
+      btn.style.pointerEvents = 'none';
+
+      try {
+        // Determine what to capture based on current view
+        let target;
+        if (currentView === 'spaghetti') target = document.getElementById('grid');
+        else if (currentView === 'rrg') target = document.getElementById('rrg-view');
+        else if (currentView === 'stockrrg') target = document.getElementById('stock-rrg-view');
+        else if (currentView === 'sectors') target = document.getElementById('sectors-view');
+        else if (currentView === 'stocks') target = document.getElementById('stocks-view');
+        else target = document.getElementById('grid');
+
+        const canvas = await html2canvas(target, {
+          backgroundColor: getComputedStyle(document.documentElement).getPropertyValue('--bg-primary').trim(),
+          scale: 2,
+          useCORS: true,
+        });
+
+        canvas.toBlob(async (blob) => {
+          try {
+            await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
+            toast.textContent = 'Screenshot copied to clipboard — paste into ChatGPT';
+            toast.classList.add('visible');
+            setTimeout(() => toast.classList.remove('visible'), 3000);
+          } catch (e) {
+            // Fallback: open in new tab
+            const url = URL.createObjectURL(blob);
+            window.open(url, '_blank');
+            toast.textContent = 'Opened in new tab (clipboard unavailable)';
+            toast.classList.add('visible');
+            setTimeout(() => toast.classList.remove('visible'), 3000);
+          }
+        }, 'image/png');
+      } catch (e) {
+        toast.textContent = 'Screenshot failed: ' + e.message;
+        toast.classList.add('visible');
+        setTimeout(() => toast.classList.remove('visible'), 3000);
+      }
+
+      btn.textContent = 'Screenshot';
+      btn.style.pointerEvents = '';
     }
 
     function toggleAISettings() {
