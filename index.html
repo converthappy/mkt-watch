@@ -200,7 +200,7 @@
       display: none; padding: 6px 12px; background: var(--bg-secondary);
       border-bottom: 1px solid var(--border-medium);
       font-size: 13px; color: var(--text-secondary); font-weight: 600;
-      letter-spacing: 0.3px; flex-shrink: 0;
+      letter-spacing: 0.3px; flex-shrink: 0; text-align: center;
     }
     .view-title.visible { display: block; }
     .grid {
@@ -1439,6 +1439,7 @@
         timeScale: {
           borderColor: tc.chartAxisBorder,
           timeVisible: false,
+          rightOffset: 5,
         },
         handleScale: { axisPressedMouseMove: true },
         handleScroll: { vertTouchDrag: false },
@@ -1763,6 +1764,9 @@
       }
 
       panelCharts[panelIndex] = buildPanelChart(panelIndex, chartContainer, legendEl, data, currentRange, false);
+
+      // After panel 0 loads, refresh title to show date range
+      if (panelIndex === 0) updateViewTitle();
     }
 
     // ── Build all panels ──
