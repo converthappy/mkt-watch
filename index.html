@@ -204,7 +204,7 @@
     }
     .view-title.visible { display: block; }
     .grid {
-      display: grid; gap: 1px; padding: 1px;
+      display: grid; gap: 2px; padding: 1px;
       flex: 1; overflow: auto;
     }
     .grid.g4x4 { grid-template-columns: repeat(4, 1fr); grid-template-rows: repeat(4, 1fr); }
@@ -248,11 +248,21 @@
     .modal-chart .endpoint-labels { right: 6px; }
     .modal-chart .endpoint-label { font-size: 10px; padding: 1px 3px; }
 
+    /* Hide Lightweight Charts branding */
+    .tv-lightweight-charts > table tr:last-child > td > div > a,
+    .tv-lightweight-charts > table tr:last-child > td > div[style*="bottom"] { display: none !important; }
+
     /* Sector label watermark on chart */
     .chart-sector-label {
       position: absolute; top: 6px; right: 60px; z-index: 10;
       font-size: 12px; font-weight: 700; color: var(--text-quaternary); opacity: 0.4;
       text-transform: uppercase; letter-spacing: 0.5px; pointer-events: none;
+      white-space: nowrap;
+    }
+    .chart-mode-label {
+      position: absolute; top: 20px; right: 60px; z-index: 10;
+      font-size: 10px; font-weight: 500; color: var(--text-quaternary); opacity: 0.35;
+      text-transform: uppercase; letter-spacing: 0.3px; pointer-events: none;
       white-space: nowrap;
     }
 
@@ -270,6 +280,13 @@
     }
     .chart-legend-sym { color: var(--text-white); }
     .chart-legend-val { font-weight: 600; }
+    .chart-legend.clickable { pointer-events: auto; }
+    .chart-legend-item.clickable { cursor: pointer; padding: 1px 3px; border-radius: 2px; }
+    .chart-legend-item.clickable:hover { background: var(--surface-hover); }
+    .chart-legend-item.highlighted { background: var(--surface-hover-strong); outline: 1px solid var(--accent-primary); }
+    .div-badge { display: inline-block; font-size: 7px; vertical-align: middle; margin-left: 2px; font-weight: 700; }
+    .div-badge.div-bullish { color: var(--semantic-bullish); }
+    .div-badge.div-bearish { color: var(--semantic-bearish); }
 
     /* Modal overlay */
     .modal-overlay {
@@ -308,10 +325,12 @@
 
     /* Modal legend */
     .modal-legend {
-      position: absolute; top: 8px; left: 12px; z-index: 10;
+      position: absolute; top: 0; left: 0; z-index: 10;
       font-size: var(--fs-base); line-height: 1.4; pointer-events: none;
-      max-height: calc(100% - 16px); overflow: hidden;
+      max-height: calc(100% - 32px); overflow-y: auto; overflow-x: hidden;
       display: flex; flex-direction: column; gap: 1px;
+      padding: 8px 12px;
+      scrollbar-width: thin; scrollbar-color: var(--border-medium) transparent;
     }
     .modal-legend .chart-legend-item { gap: 4px; }
     .modal-legend .chart-legend-dot { width: 8px; height: 8px; }
@@ -932,6 +951,54 @@
       padding: 2px 8px !important;
       line-height: 1;
     }
+
+    /* Modal legend visibility toggle */
+    .modal-legend.clickable { pointer-events: auto; }
+    .chart-legend-item.legend-hidden { opacity: 0.35; text-decoration: line-through; text-decoration-color: var(--text-quaternary); }
+    .chart-legend-item.legend-hidden .chart-legend-dot { opacity: 0.3; }
+    /* Modal stats cards — grid container */
+    .modal-stats-cards {
+      position: absolute; top: 8px; left: 160px; z-index: 15;
+      display: none; gap: 6px;
+      grid-template-columns: repeat(3, 185px);
+      grid-template-rows: auto auto;
+      pointer-events: none;
+    }
+    .modal-stats-cards.visible { display: grid; }
+    .modal-stats-cards .modal-stats-card {
+      width: 185px; background: var(--legend-bg);
+      border: 1px solid var(--border-medium); border-radius: 6px;
+      padding: 10px 12px; font-size: var(--fs-base);
+      backdrop-filter: blur(8px); pointer-events: auto;
+    }
+    .modal-stats-clear {
+      grid-column: 1 / -1;
+      font-size: var(--fs-sm); color: var(--accent-primary-light);
+      cursor: pointer; padding: 0 2px 2px; pointer-events: auto;
+    }
+    .modal-stats-clear:hover { text-decoration: underline; }
+    .modal-header select {
+      background: var(--interactive-bg); color: var(--text-secondary);
+      border: 1px solid var(--interactive-border);
+      padding: 2px 8px; border-radius: 4px; font-size: var(--fs-base); cursor: pointer;
+    }
+    .modal-stats-header { display: flex; align-items: center; justify-content: space-between; gap: 6px; margin-bottom: 6px; padding-bottom: 5px; border-bottom: 1px solid var(--border-subtle); }
+    .modal-stats-header-left { display: flex; align-items: center; gap: 6px; }
+    .modal-stats-sym { font-weight: 700; font-size: var(--fs-md); color: var(--text-primary); }
+    .modal-stats-close { color: var(--text-quaternary); cursor: pointer; font-size: var(--fs-md); line-height: 1; padding: 0 2px; pointer-events: auto; }
+    .modal-stats-close:hover { color: var(--text-secondary); }
+    .modal-stats-row { display: flex; justify-content: space-between; padding: 2px 0; }
+    .modal-stats-label { color: var(--text-tertiary); font-size: var(--fs-sm); }
+    .modal-stats-value { color: var(--text-primary); font-weight: 600; font-family: var(--font-mono); font-size: var(--fs-base); }
+    .modal-stats-value.positive { color: var(--semantic-bullish); }
+    .modal-stats-value.negative { color: var(--semantic-bearish); }
+    .modal-stats-divider { height: 1px; background: var(--border-subtle); margin: 4px 0; }
+
+    /* Modal RS Line toggle button */
+    .modal-rs-toggle { background: var(--interactive-bg); border: 1px solid var(--interactive-border); color: var(--text-secondary); padding: 2px 8px; border-radius: 4px; cursor: pointer; font-size: var(--fs-base); }
+    .modal-rs-toggle:hover { background: var(--interactive-bg-hover); }
+    .modal-rs-toggle.active { background: var(--interactive-bg-active); border-color: var(--interactive-bg-active); color: #fff; }
+    .modal-rs-toggle.disabled { opacity: 0.4; pointer-events: none; }
   </style>
 </head>
 <body>
@@ -955,7 +1022,9 @@
         <span class="topbar-label">Range</span>
         <button class="btn" data-range="1D" onclick="setRange('1D', this)">1D</button>
         <button class="btn" data-range="5D" onclick="setRange('5D', this)">5D</button>
+        <button class="btn" data-range="10D" onclick="setRange('10D', this)">2W</button>
         <button class="btn" data-range="1M" onclick="setRange('1M', this)">1M</button>
+        <button class="btn" data-range="2M" onclick="setRange('2M', this)">2M</button>
         <button class="btn active" data-range="3M" onclick="setRange('3M', this)">3M</button>
         <button class="btn" data-range="6M" onclick="setRange('6M', this)">6M</button>
         <button class="btn" data-range="YTD" onclick="setRange('YTD', this)">YTD</button>
@@ -974,6 +1043,8 @@
           <option value="rsRating">RS Rating</option>
         </select>
       </div>
+      <div class="separator"></div>
+      <button class="btn" id="rs-line-toggle" onclick="toggleRSLine(this)" title="RS Line overlay (price/benchmark ratio)">RS Line</button>
       <div class="separator"></div>
       <button class="btn ai-analyze-btn" onclick="runAIAnalysis()">Analyze</button>
       <button class="btn screenshot-btn" onclick="captureScreenshot()" title="Copy screenshot to clipboard">Screenshot</button>
@@ -1097,6 +1168,18 @@
           <span class="topbar-label">Range</span>
           <div class="modal-ranges" id="modal-ranges"></div>
         </div>
+        <div class="btn-group">
+          <span class="topbar-label">View</span>
+          <select id="modal-spaghetti-mode" onchange="setModalSpaghettiMode(this.value)">
+            <option value="absolute">% Change</option>
+            <option value="sector">vs Sector ETF</option>
+            <option value="equalweight">Equal Weight</option>
+            <option value="vsSpy">vs SPY</option>
+            <option value="vsRsp">vs RSP</option>
+            <option value="rsRating">RS Rating</option>
+          </select>
+        </div>
+        <button class="modal-rs-toggle" id="modal-rs-toggle" onclick="toggleModalRSLine(this)">RS Line</button>
         <button class="modal-close" onclick="closeModal()">Close (Esc)</button>
       </div>
       <div class="modal-chart" id="modal-chart"></div>
@@ -1215,8 +1298,23 @@
     let spaghettiMode = 'absolute';
     let rsRatingCache = null;
     let staggerTimers = [];
+    let highlightedSymbol = null;
+    const panelSeriesMap = {};
+    let divergenceCache = {};
+    let rsLineEnabled = false;
 
     // One muted color per sector panel
+    const ISOLATED_PALETTE = [
+      '#6ba3d6', // steel blue
+      '#e07c5a', // salmon
+      '#7bc87f', // sage green
+      '#c4a24d', // gold
+      '#a87cc4', // lavender
+      '#5bc4c4', // teal
+      '#d67ba0', // rose
+      '#8aa864', // olive
+    ];
+
     const SECTOR_COLORS = [
       '#5b86b8', // 1. Market ETFs
       '#8b6cb8', // 2. Tech Software
@@ -1251,7 +1349,9 @@
       switch (range) {
         case '1D':  start = new Date(last); start.setDate(start.getDate() - 1); break;
         case '5D':  start = new Date(last); start.setDate(start.getDate() - 5); break;
+        case '10D': start = new Date(last); start.setDate(start.getDate() - 14); break;
         case '1M':  start = new Date(last); start.setMonth(start.getMonth() - 1); break;
+        case '2M':  start = new Date(last); start.setMonth(start.getMonth() - 2); break;
         case '3M':  start = new Date(last); start.setMonth(start.getMonth() - 3); break;
         case '6M':  start = new Date(last); start.setMonth(start.getMonth() - 6); break;
         case 'YTD': start = new Date(last.getFullYear(), 0, 1); break;
@@ -1549,6 +1649,43 @@
         // Already drawn in the loop above with isBase: true — no action needed
       }
 
+      // ── RS Line overlay (price/benchmark ratio as % change) ──
+      if (rsLineEnabled && !isRsRating && spaghettiMode !== 'absolute') {
+        const p0 = panelDataCache[0];
+        const spyPrices = p0 ? p0.prices['SPY'] : null;
+        if (spyPrices) {
+          // In panel view: RS Line for base symbol only; in modal: all symbols
+          const rsSymbols = isModal ? data.symbols : [data.baseSymbol];
+          rsSymbols.forEach(sym => {
+            const rawPrices = data.prices[sym];
+            if (!rawPrices) return;
+            const rsLineData = [];
+            const baseRatio = (rawPrices[startIdx] && spyPrices[startIdx]) ? rawPrices[startIdx] / spyPrices[startIdx] : null;
+            if (!baseRatio) return;
+            for (let i = startIdx; i < data.dates.length; i++) {
+              if (rawPrices[i] != null && spyPrices[i] != null && spyPrices[i] !== 0) {
+                const ratio = rawPrices[i] / spyPrices[i];
+                rsLineData.push({ time: data.dates[i], value: ((ratio - baseRatio) / baseRatio) * 100 });
+              }
+            }
+            if (rsLineData.length === 0) return;
+            const sectorColor = SECTOR_COLORS[panelIndex % SECTOR_COLORS.length];
+            const existingEntry = seriesList.find(e => e.sym === sym && !e.isRsLine);
+            const rsColor = existingEntry ? hexToRgba(sectorColor, 0.55) : hexToRgba(sectorColor, 0.4);
+            const rsSeries = chart.addLineSeries({
+              color: rsColor,
+              lineWidth: 1,
+              lineStyle: 1, // dashed
+              priceLineVisible: false,
+              lastValueVisible: false,
+              crosshairMarkerVisible: false,
+            });
+            rsSeries.setData(rsLineData);
+            seriesList.push({ sym: sym + ' (RS)', series: rsSeries, color: rsColor, isBase: false, isRsLine: true });
+          });
+        }
+      }
+
       chart.timeScale().fitContent();
 
       // Reference lines
@@ -1616,14 +1753,25 @@
         }
       });
 
-      // Crosshair legend
+      // Crosshair legend + dynamic stats
       chart.subscribeCrosshairMove(param => {
         if (!param.time || !legendEl) {
           // Show default legend (latest values)
           updateLegend(legendEl, seriesList, null, data, startIdx, isModal);
+          if (isModal) { modalCrosshairDateIdx = null; updateModalStatsForCrosshair(); }
           return;
         }
         updateLegend(legendEl, seriesList, param, data, startIdx, isModal);
+        if (isModal && modalHiddenSymbols.size > 0) {
+          // Find the date index for the hovered time
+          const timeStr = typeof param.time === 'string' ? param.time
+            : `${param.time.year}-${String(param.time.month).padStart(2,'0')}-${String(param.time.day).padStart(2,'0')}`;
+          const idx = data.dates.indexOf(timeStr);
+          if (idx !== modalCrosshairDateIdx) {
+            modalCrosshairDateIdx = idx >= 0 ? idx : null;
+            updateModalStatsForCrosshair();
+          }
+        }
       });
 
       // Show default legend
@@ -1636,21 +1784,36 @@
 
       function updateEndpoints() {
         labelsEl.innerHTML = '';
-        seriesList.forEach(({ sym, series, color, isBase, lastValue }) => {
+        const hasIsolation = isModal && modalHiddenSymbols.size > 0;
+        seriesList.forEach(({ sym, series, color, isBase, lastValue, isRsLine }) => {
+          if (isRsLine) return; // skip RS Line overlay in endpoints
           if (lastValue == null) return;
+          // Hide endpoint labels for hidden symbols in modal
+          if (isModal && modalHiddenSymbols.has(sym)) return;
           const y = series.priceToCoordinate(lastValue);
           if (y == null || y < 0) return;
           const label = document.createElement('div');
           label.className = 'endpoint-label';
           label.style.top = y + 'px';
-          label.style.color = currentThemeColors.textPrimary;
+          // Use palette color when isolation active
+          if (hasIsolation && modalSymbolColorMap[sym]) {
+            label.style.color = modalSymbolColorMap[sym];
+          } else {
+            label.style.color = currentThemeColors.textPrimary;
+          }
           if (isBase) label.style.fontWeight = '500';
+          let text = '';
           if (isRsRating) {
-            label.textContent = `${sym} ${lastValue.toFixed(0)}`;
+            text = `${sym} ${lastValue.toFixed(0)}`;
           } else {
             const sign = lastValue >= 0 ? '+' : '';
-            label.textContent = `${sym} ${sign}${lastValue.toFixed(1)}%`;
+            text = `${sym} ${sign}${lastValue.toFixed(1)}%`;
           }
+          const div = divergenceCache[sym];
+          if (div === 'bullish') text += ' \u25B2';
+          else if (div === 'bearish') text += ' \u25BC';
+          label.textContent = text;
+          if (div) label.title = div === 'bullish' ? 'Bullish divergence: price making new lows but RS improving' : 'Bearish divergence: price making new highs but RS weakening';
           labelsEl.appendChild(label);
         });
       }
@@ -1660,7 +1823,7 @@
         requestAnimationFrame(updateEndpoints);
       });
 
-      return chart;
+      return { chart, seriesList };
     }
 
     function updateLegend(legendEl, seriesList, param, data, startIdx, isModal) {
@@ -1668,14 +1831,14 @@
       const isRsMode = spaghettiMode === 'rsRating';
 
       const items = [];
-      seriesList.forEach(({ sym, series, color, isBase }) => {
+      seriesList.forEach(({ sym, series, color, isBase, isRsLine }) => {
+        if (isRsLine) return; // skip RS Line overlay in legend
         let val = null;
         if (param && param.seriesData) {
           const d = param.seriesData.get(series);
           if (d && d.value !== undefined) val = d.value;
         } else {
-          // Use the stored lastValue from series entry (already mode-aware)
-          const entry = seriesList.find(e => e.sym === sym);
+          const entry = seriesList.find(e => e.sym === sym && !e.isRsLine);
           if (entry && entry.lastValue != null) val = entry.lastValue;
         }
         if (val != null) {
@@ -1686,10 +1849,9 @@
       // Sort by value descending
       items.sort((a, b) => b.val - a.val);
 
-      // Top 10 + always include the sector ETF
-      const maxItems = isModal ? 30 : 10;
+      // Modal: show all; panels: top 10
+      const maxItems = isModal ? items.length : 10;
       let shown = items.slice(0, maxItems);
-      // Ensure base symbol (sector ETF) is always in the legend
       const baseItem = items.find(i => i.isBase);
       if (baseItem && !shown.includes(baseItem)) {
         shown.push(baseItem);
@@ -1697,22 +1859,197 @@
 
       legendEl.innerHTML = shown.map(item => {
         const weight = item.isBase ? 'font-weight:700;' : '';
+        const hlClass = highlightedSymbol === item.sym ? ' highlighted' : '';
+        const divBadge = divergenceCache[item.sym] === 'bullish'
+          ? '<span class="div-badge div-bullish" title="Bullish divergence: price new lows but RS improving">&#9650;</span>'
+          : divergenceCache[item.sym] === 'bearish'
+          ? '<span class="div-badge div-bearish" title="Bearish divergence: price new highs but RS weakening">&#9660;</span>'
+          : '';
         if (isRsMode) {
           const valColor = item.val >= 50 ? currentThemeColors.semanticBullish : currentThemeColors.semanticBearish;
-          return `<div class="chart-legend-item" style="${weight}">
+          return `<div class="chart-legend-item clickable${hlClass}" data-sym="${item.sym}" style="${weight}">
             <span class="chart-legend-dot" style="background:${item.color}"></span>
             <span class="chart-legend-sym">${item.sym}</span>
-            <span class="chart-legend-val" style="color:${valColor}">${item.val.toFixed(0)}</span>
+            <span class="chart-legend-val" style="color:${valColor}">${item.val.toFixed(0)}</span>${divBadge}
           </div>`;
         }
         const sign = item.val >= 0 ? '+' : '';
         const valColor = item.val >= 0 ? currentThemeColors.semanticBullish : currentThemeColors.semanticBearish;
-        return `<div class="chart-legend-item" style="${weight}">
+        return `<div class="chart-legend-item clickable${hlClass}" data-sym="${item.sym}" style="${weight}">
           <span class="chart-legend-dot" style="background:${item.color}"></span>
-          <span class="chart-legend-sym">${item.sym}</span>
-          <span class="chart-legend-val" style="color:${valColor}">${sign}${item.val.toFixed(1)}%</span>
+          <span class="chart-legend-sym">${item.sym}${item.isBase && spaghettiMode !== 'absolute' ? ' (Baseline)' : ''}</span>
+          <span class="chart-legend-val" style="color:${valColor}">${sign}${item.val.toFixed(1)}%</span>${divBadge}
         </div>`;
       }).join('');
+
+      // For modal: reapply legend-hidden class and palette dot colors
+      if (isModal && modalHiddenSymbols.size > 0) {
+        legendEl.querySelectorAll('.chart-legend-item[data-sym]').forEach(el => {
+          el.classList.toggle('legend-hidden', modalHiddenSymbols.has(el.dataset.sym));
+          if (modalSymbolColorMap[el.dataset.sym]) {
+            const dot = el.querySelector('.chart-legend-dot');
+            if (dot) dot.style.background = modalSymbolColorMap[el.dataset.sym];
+          }
+        });
+      }
+    }
+
+    // ── Cross-panel symbol highlighting ──
+    function applyHighlight(symbol) {
+      highlightedSymbol = symbol;
+      Object.keys(panelSeriesMap).forEach(key => {
+        const seriesList = panelSeriesMap[key];
+        if (!seriesList) return;
+        seriesList.forEach(entry => {
+          // For RS Line entries, match against the base symbol
+          const baseSym = entry.isRsLine ? entry.sym.replace(' (RS)', '') : entry.sym;
+          // Skip modal series that are hidden (visibility takes precedence)
+          if (key === 'modal' && modalHiddenSymbols.has(baseSym)) return;
+          if (symbol === null) {
+            // Restore original colors
+            const panelIdx = key === 'modal' ? modalPanelIndex : parseInt(key);
+            const sectorColor = SECTOR_COLORS[panelIdx % SECTOR_COLORS.length];
+            const restoreColor = entry.isBase ? sectorColor : (entry.isRsLine ? hexToRgba(sectorColor, 0.55) : hexToRgba(sectorColor, 0.35));
+            entry.series.applyOptions({ color: restoreColor, lineWidth: entry.isBase ? 2 : 1 });
+          } else if (baseSym === symbol) {
+            const panelIdx = key === 'modal' ? modalPanelIndex : parseInt(key);
+            const sectorColor = SECTOR_COLORS[panelIdx % SECTOR_COLORS.length];
+            entry.series.applyOptions({ color: sectorColor, lineWidth: 3 });
+          } else {
+            const panelIdx = key === 'modal' ? modalPanelIndex : parseInt(key);
+            const sectorColor = SECTOR_COLORS[panelIdx % SECTOR_COLORS.length];
+            entry.series.applyOptions({ color: hexToRgba(sectorColor, 0.08), lineWidth: 1 });
+          }
+        });
+      });
+      // If restoring and modal has isolation active, re-apply isolated colors
+      if (symbol === null && modalHiddenSymbols.size > 0) {
+        applyModalVisibility();
+      }
+      // Update highlighted class on legend items
+      document.querySelectorAll('.chart-legend-item[data-sym]').forEach(el => {
+        el.classList.toggle('highlighted', el.dataset.sym === symbol);
+      });
+    }
+
+    // ── Compute momentum divergences ──
+    function computeDivergences(range) {
+      divergenceCache = {};
+      // Need RS Rating cache
+      if (!rsRatingCache) {
+        // Check if we have enough panel data
+        let hasPanelData = false;
+        for (let i = 0; i < PANEL_COUNT; i++) {
+          if (panelDataCache[i]) { hasPanelData = true; break; }
+        }
+        if (!hasPanelData) return;
+        computeAllRSRatings(range);
+      }
+      if (!rsRatingCache) return;
+
+      const masterDates = panelDataCache[0] ? panelDataCache[0].dates : null;
+      if (!masterDates || masterDates.length === 0) return;
+
+      const startDate = getRangeStartDate(range, masterDates);
+      const startIdx = findStartIndex(masterDates, startDate);
+      const totalBars = masterDates.length - startIdx;
+
+      // Recent window: last 1/3 of range, clamped to [10, 63]
+      const recentLen = Math.max(10, Math.min(63, Math.floor(totalBars / 3)));
+      if (totalBars < 15) return; // too few data points
+
+      const recentStart = masterDates.length - recentLen;
+      const earlyEnd = recentStart;
+
+      // Collect all unique symbols across panels
+      const seenSyms = new Set();
+      for (let pi = 0; pi < PANEL_COUNT; pi++) {
+        const pData = panelDataCache[pi];
+        if (!pData) continue;
+        pData.symbols.forEach(sym => {
+          if (seenSyms.has(sym)) return;
+          seenSyms.add(sym);
+
+          const prices = pData.prices[sym];
+          const ratings = rsRatingCache[sym];
+          if (!prices || !ratings) return;
+
+          // Need at least 5 data points in recent window
+          let recentCount = 0;
+          for (let i = recentStart; i < masterDates.length; i++) {
+            if (prices[i] != null && ratings[i] != null) recentCount++;
+          }
+          if (recentCount < 5) return;
+
+          // Price: early high/low and recent high/low
+          let earlyHigh = -Infinity, earlyLow = Infinity;
+          for (let i = startIdx; i < earlyEnd; i++) {
+            if (prices[i] != null) {
+              if (prices[i] > earlyHigh) earlyHigh = prices[i];
+              if (prices[i] < earlyLow) earlyLow = prices[i];
+            }
+          }
+          let recentHigh = -Infinity, recentLow = Infinity;
+          for (let i = recentStart; i < masterDates.length; i++) {
+            if (prices[i] != null) {
+              if (prices[i] > recentHigh) recentHigh = prices[i];
+              if (prices[i] < recentLow) recentLow = prices[i];
+            }
+          }
+
+          if (earlyHigh === -Infinity || recentHigh === -Infinity) return;
+
+          const priceNewHigh = recentHigh >= earlyHigh;
+          const priceNewLow = recentLow <= earlyLow;
+
+          // RS Rating slope via linear regression over recent window
+          let sumX = 0, sumY = 0, sumXY = 0, sumX2 = 0, n = 0;
+          for (let i = recentStart; i < masterDates.length; i++) {
+            if (ratings[i] != null) {
+              const x = i - recentStart;
+              sumX += x; sumY += ratings[i]; sumXY += x * ratings[i]; sumX2 += x * x;
+              n++;
+            }
+          }
+          if (n < 3) return;
+          const slope = (n * sumXY - sumX * sumY) / (n * sumX2 - sumX * sumX);
+
+          // Bearish: price new high + RS slope falling
+          if (priceNewHigh && slope < -0.1) {
+            divergenceCache[sym] = 'bearish';
+          }
+          // Bullish: price new low + RS slope rising
+          else if (priceNewLow && slope > 0.1) {
+            divergenceCache[sym] = 'bullish';
+          }
+        });
+      }
+
+      // Refresh legends to show badges
+      Object.keys(panelSeriesMap).forEach(key => {
+        const pi = key === 'modal' ? modalPanelIndex : parseInt(key);
+        const pData = panelDataCache[pi];
+        if (!pData) return;
+        const panelDiv = key === 'modal' ? document.getElementById('modal-chart') : document.getElementById('panel-' + pi);
+        if (!panelDiv) return;
+        const legendEl = panelDiv.querySelector('.chart-legend, .modal-legend');
+        if (!legendEl || !panelSeriesMap[key]) return;
+        const startDate = getRangeStartDate(key === 'modal' ? modalRange : currentRange, pData.dates);
+        const sIdx = findStartIndex(pData.dates, startDate);
+        updateLegend(legendEl, panelSeriesMap[key], null, pData, sIdx, key === 'modal');
+      });
+    }
+
+    // ── RS Line toggle ──
+    function toggleRSLine(btn) {
+      rsLineEnabled = !rsLineEnabled;
+      btn.classList.toggle('active', rsLineEnabled);
+      for (let i = 0; i < PANEL_COUNT; i++) {
+        if (panelDataCache[i]) loadPanel(i);
+      }
+      if (document.getElementById('modal').classList.contains('visible')) {
+        buildModalChart();
+      }
     }
 
     // ── Load panel data and build chart ──
@@ -1754,6 +2091,15 @@
       sectorLabel.textContent = data.title;
       chartWrap.appendChild(sectorLabel);
 
+      // Mode subtitle watermark
+      if (spaghettiMode !== 'absolute') {
+        const modeNames = { sector: 'vs Sector ETF', equalweight: 'Equal Weight', vsSpy: 'vs SPY', vsRsp: 'vs RSP', rsRating: 'RS Rating' };
+        const modeLabel = document.createElement('div');
+        modeLabel.className = 'chart-mode-label';
+        modeLabel.textContent = modeNames[spaghettiMode] || '';
+        chartWrap.appendChild(modeLabel);
+      }
+
       const legendEl = document.createElement('div');
       legendEl.className = 'chart-legend';
       chartWrap.appendChild(legendEl);
@@ -1763,7 +2109,25 @@
         try { panelCharts[panelIndex].remove(); } catch (e) {}
       }
 
-      panelCharts[panelIndex] = buildPanelChart(panelIndex, chartContainer, legendEl, data, currentRange, false);
+      const result = buildPanelChart(panelIndex, chartContainer, legendEl, data, currentRange, false);
+      panelCharts[panelIndex] = result.chart;
+      panelSeriesMap[panelIndex] = result.seriesList;
+
+      // Legend click handler for cross-panel highlighting
+      legendEl.classList.add('clickable');
+      legendEl.addEventListener('click', (e) => {
+        const item = e.target.closest('.chart-legend-item[data-sym]');
+        if (!item) return;
+        const sym = item.dataset.sym;
+        if (highlightedSymbol === sym) {
+          applyHighlight(null);
+        } else {
+          applyHighlight(sym);
+        }
+      });
+
+      // Reapply highlight if one is active
+      if (highlightedSymbol) applyHighlight(highlightedSymbol);
 
       // After panel 0 loads, refresh title to show date range
       if (panelIndex === 0) updateViewTitle();
@@ -1831,12 +2195,15 @@
         const timer = setTimeout(() => loadPanel(i), i * STAGGER_DELAY);
         staggerTimers.push(timer);
       }
+      // Schedule divergence computation after all panels load
+      setTimeout(() => computeDivergences(currentRange), PANEL_COUNT * STAGGER_DELAY + 500);
     }
 
     // ── Range selection ──
     function setRange(range, btn) {
       currentRange = range;
       rsRatingCache = null; // invalidate RS cache on range change
+      divergenceCache = {};
       document.querySelectorAll('.topbar-controls .btn[data-range]').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
       // Re-render all panels with new range (no refetch)
@@ -1846,12 +2213,28 @@
         }
       }
       updateViewTitle();
+      setTimeout(() => computeDivergences(range), PANEL_COUNT * STAGGER_DELAY + 200);
     }
 
     // ── Spaghetti mode selection ──
     async function setSpaghettiMode(mode) {
       spaghettiMode = mode;
       rsRatingCache = null; // invalidate RS cache on mode change
+      divergenceCache = {};
+
+      // RS Line toggle: disable for absolute and rsRating modes
+      const rsBtn = document.getElementById('rs-line-toggle');
+      if (mode === 'absolute' || mode === 'rsRating') {
+        rsLineEnabled = false;
+        if (rsBtn) { rsBtn.classList.remove('active'); rsBtn.style.opacity = '0.4'; rsBtn.style.pointerEvents = 'none'; }
+      } else {
+        if (rsBtn) { rsBtn.style.opacity = ''; rsBtn.style.pointerEvents = ''; }
+      }
+
+      // Sync modal dropdown
+      const modalSelect = document.getElementById('modal-spaghetti-mode');
+      if (modalSelect) modalSelect.value = mode;
+
       // For RS Rating, ensure all panels are loaded first
       if (mode === 'rsRating') {
         const loadPromises = [];
@@ -1874,7 +2257,53 @@
       if (document.getElementById('modal').classList.contains('visible')) {
         buildModalChart();
       }
+      updateModalRSToggleState();
       updateViewTitle();
+      setTimeout(() => computeDivergences(currentRange), PANEL_COUNT * STAGGER_DELAY + 200);
+    }
+
+    async function setModalSpaghettiMode(mode) {
+      spaghettiMode = mode;
+      rsRatingCache = null;
+      divergenceCache = {};
+
+      // Sync topbar dropdown
+      const topbarSelect = document.getElementById('spaghetti-mode');
+      if (topbarSelect) topbarSelect.value = mode;
+
+      // RS Line toggle state
+      const rsBtn = document.getElementById('rs-line-toggle');
+      if (mode === 'absolute' || mode === 'rsRating') {
+        rsLineEnabled = false;
+        if (rsBtn) { rsBtn.classList.remove('active'); rsBtn.style.opacity = '0.4'; rsBtn.style.pointerEvents = 'none'; }
+      } else {
+        if (rsBtn) { rsBtn.style.opacity = ''; rsBtn.style.pointerEvents = ''; }
+      }
+
+      // For RS Rating, ensure all panels are loaded first
+      if (mode === 'rsRating') {
+        const loadPromises = [];
+        for (let i = 0; i < PANEL_COUNT; i++) {
+          if (!panelDataCache[i]) {
+            const filename = `data/panel_${String(i + 1).padStart(2, '0')}.json`;
+            loadPromises.push(
+              fetch(filename).then(r => r.json()).then(d => { panelDataCache[i] = d; }).catch(() => {})
+            );
+          }
+        }
+        if (loadPromises.length > 0) await Promise.all(loadPromises);
+      }
+
+      // Rebuild all panels
+      for (let i = 0; i < PANEL_COUNT; i++) {
+        if (panelDataCache[i]) loadPanel(i);
+      }
+
+      // Rebuild modal chart (selection preserved)
+      buildModalChart();
+      updateModalRSToggleState();
+      updateViewTitle();
+      setTimeout(() => computeDivergences(currentRange), PANEL_COUNT * STAGGER_DELAY + 200);
     }
 
     // ── Layout selection ──
@@ -1904,18 +2333,27 @@
     let modalPanelIndex = null;
     let modalRange = null;
     let modalChart = null;
+    let modalHiddenSymbols = new Set();
+    let modalSelectedSymbols = [];
+    let modalSymbolColorMap = {};
+    let modalCrosshairDateIdx = null;  // date index for dynamic stats on hover
 
     function openModal(panelIndex) {
       modalPanelIndex = panelIndex;
       modalRange = currentRange;
+      modalHiddenSymbols.clear();
+      modalSelectedSymbols = [];
+      modalSymbolColorMap = {};
+      modalCrosshairDateIdx = null;
       const modal = document.getElementById('modal');
       const data = panelDataCache[panelIndex];
       const title = data ? data.title : `Panel ${panelIndex + 1}`;
       document.getElementById('modal-title').textContent = title;
+      document.getElementById('modal-spaghetti-mode').value = spaghettiMode;
 
       // Build range buttons
       const ranges = [
-        ['1D', '1D'], ['5D', '5D'], ['1M', '1M'], ['3M', '3M'],
+        ['1D', '1D'], ['5D', '5D'], ['10D', '2W'], ['1M', '1M'], ['2M', '2M'], ['3M', '3M'],
         ['6M', '6M'], ['YTD', 'YTD'], ['12M', '1Y'], ['60M', '5Y']
       ];
       const rangesContainer = document.getElementById('modal-ranges');
@@ -1947,6 +2385,17 @@
       sectorLabel.textContent = data.title;
       chartContainer.appendChild(sectorLabel);
 
+      // Mode subtitle watermark in modal
+      if (spaghettiMode !== 'absolute') {
+        const modeNames = { sector: 'vs Sector ETF', equalweight: 'Equal Weight', vsSpy: 'vs SPY', vsRsp: 'vs RSP', rsRating: 'RS Rating' };
+        const modeLabel = document.createElement('div');
+        modeLabel.className = 'chart-mode-label';
+        modeLabel.style.fontSize = '14px';
+        modeLabel.style.top = '34px';
+        modeLabel.textContent = modeNames[spaghettiMode] || '';
+        chartContainer.appendChild(modeLabel);
+      }
+
       const legendEl = document.createElement('div');
       legendEl.className = 'modal-legend';
       chartContainer.appendChild(legendEl);
@@ -1955,7 +2404,26 @@
         try { modalChart.remove(); } catch (e) {}
       }
 
-      modalChart = buildPanelChart(modalPanelIndex, chartDiv, legendEl, data, modalRange, true);
+      const result = buildPanelChart(modalPanelIndex, chartDiv, legendEl, data, modalRange, true);
+      modalChart = result.chart;
+      panelSeriesMap['modal'] = result.seriesList;
+
+      // Legend click handler for modal visibility toggle
+      legendEl.classList.add('clickable');
+      legendEl.addEventListener('click', (e) => {
+        const item = e.target.closest('.chart-legend-item[data-sym]');
+        if (!item) return;
+        handleModalLegendClick(item.dataset.sym);
+      });
+
+      // Reapply isolation state (selection survives range/mode changes)
+      assignIsolatedColors();
+      applyModalVisibility();
+      if (modalHiddenSymbols.size > 0) showMultiStatsCards(); else hideMultiStatsCards();
+      updateModalRSToggleState();
+
+      // Reapply highlight if one is active
+      if (highlightedSymbol) applyHighlight(highlightedSymbol);
     }
 
     function setModalRange(range, btn) {
@@ -1967,6 +2435,10 @@
 
     function closeModal(event) {
       if (event && event.target !== document.getElementById('modal')) return;
+      modalHiddenSymbols.clear();
+      modalSelectedSymbols = [];
+      modalSymbolColorMap = {};
+      modalCrosshairDateIdx = null;
       const modal = document.getElementById('modal');
       modal.classList.remove('visible');
       if (modalChart) {
@@ -1976,8 +2448,446 @@
       document.getElementById('modal-chart').innerHTML = '';
     }
 
+    // ── Modal visibility toggle ──
+    function applyModalVisibility() {
+      const seriesList = panelSeriesMap['modal'];
+      if (!seriesList) return;
+      const panelIdx = modalPanelIndex;
+      const sectorColor = SECTOR_COLORS[panelIdx % SECTOR_COLORS.length];
+
+      const hasIsolation = modalHiddenSymbols.size > 0;
+
+      // Update modalSelectedSymbols from current series
+      modalSelectedSymbols = seriesList
+        .filter(e => !e.isBase && !e.isRsLine && !modalHiddenSymbols.has(e.sym))
+        .map(e => e.sym);
+
+      seriesList.forEach(entry => {
+        const baseSym = entry.isRsLine ? entry.sym.replace(' (RS)', '') : entry.sym;
+        const isHidden = modalHiddenSymbols.has(baseSym);
+        if (isHidden) {
+          entry.series.applyOptions({ color: 'rgba(0,0,0,0)', lineWidth: 0, crosshairMarkerVisible: false });
+        } else if (hasIsolation && !entry.isBase && !entry.isRsLine) {
+          // Isolated stock: use palette color, thick line
+          const isolatedColor = modalSymbolColorMap[baseSym] || sectorColor;
+          entry.series.applyOptions({ color: isolatedColor, lineWidth: 3, crosshairMarkerVisible: true });
+        } else if (hasIsolation && !entry.isBase && entry.isRsLine) {
+          // RS line for visible stock: dimmed palette color
+          const isolatedColor = modalSymbolColorMap[baseSym] || sectorColor;
+          entry.series.applyOptions({ color: hexToRgba(isolatedColor, 0.55), lineWidth: 1, crosshairMarkerVisible: false });
+        } else if (hasIsolation && entry.isBase && !entry.isRsLine) {
+          // Base ETF during isolation: thin line, dimmed
+          entry.series.applyOptions({ color: hexToRgba(sectorColor, 0.45), lineWidth: 1, crosshairMarkerVisible: true });
+        } else {
+          const restoreColor = entry.isBase ? sectorColor : (entry.isRsLine ? hexToRgba(sectorColor, 0.55) : hexToRgba(sectorColor, 0.35));
+          entry.series.applyOptions({ color: restoreColor, lineWidth: entry.isBase ? 2 : 1, crosshairMarkerVisible: !entry.isRsLine });
+        }
+      });
+
+      // Update legend-hidden class and dot colors
+      const modalLegend = document.querySelector('.modal-legend');
+      if (modalLegend) {
+        modalLegend.querySelectorAll('.chart-legend-item[data-sym]').forEach(el => {
+          el.classList.toggle('legend-hidden', modalHiddenSymbols.has(el.dataset.sym));
+          const dot = el.querySelector('.chart-legend-dot');
+          if (dot) {
+            if (hasIsolation && modalSymbolColorMap[el.dataset.sym]) {
+              dot.style.background = modalSymbolColorMap[el.dataset.sym];
+            } else {
+              dot.style.background = '';  // reset to original
+            }
+          }
+        });
+      }
+
+      // Hide/color endpoint labels for hidden/visible symbols
+      const chartContainer = document.getElementById('modal-chart');
+      if (chartContainer) {
+        chartContainer.querySelectorAll('.endpoint-label').forEach(label => {
+          const text = label.textContent;
+          const sym = text.split(' ')[0];
+          if (sym && modalHiddenSymbols.has(sym)) {
+            label.style.display = 'none';
+          } else {
+            label.style.display = '';
+            if (hasIsolation && modalSymbolColorMap[sym]) {
+              label.style.color = modalSymbolColorMap[sym];
+            } else {
+              label.style.color = '';  // reset to default
+            }
+          }
+        });
+      }
+    }
+
+    function resetModalVisibility() {
+      modalHiddenSymbols.clear();
+      modalSelectedSymbols = [];
+      modalSymbolColorMap = {};
+      applyModalVisibility();
+      hideMultiStatsCards();
+    }
+
+    function handleModalLegendClick(sym) {
+      const seriesList = panelSeriesMap['modal'];
+      if (!seriesList) return;
+
+      // Find base symbol — ignore clicks on it
+      const baseEntry = seriesList.find(e => e.isBase && !e.isRsLine);
+      if (baseEntry && baseEntry.sym === sym) return;
+
+      const nonBaseSyms = seriesList.filter(e => !e.isBase && !e.isRsLine).map(e => e.sym);
+
+      if (modalHiddenSymbols.size === 0) {
+        // All visible → solo clicked symbol
+        nonBaseSyms.forEach(s => { if (s !== sym) modalHiddenSymbols.add(s); });
+      } else if (modalHiddenSymbols.has(sym)) {
+        // Click on hidden item → show it
+        modalHiddenSymbols.delete(sym);
+      } else {
+        // Click on visible non-base → hide it
+        modalHiddenSymbols.add(sym);
+      }
+
+      // If all non-base now hidden → reset
+      const allHidden = nonBaseSyms.every(s => modalHiddenSymbols.has(s));
+      if (allHidden) {
+        modalHiddenSymbols.clear();
+        modalSelectedSymbols = [];
+        modalSymbolColorMap = {};
+      }
+
+      assignIsolatedColors();
+      applyModalVisibility();
+
+      if (modalHiddenSymbols.size > 0) {
+        showMultiStatsCards();
+      } else {
+        hideMultiStatsCards();
+      }
+    }
+
+    // ── Stats card ──
+    // endIdx: optional index into data.dates to compute stats up to (for crosshair hover)
+    function computeSymbolStats(sym, endIdx) {
+      const data = panelDataCache[modalPanelIndex];
+      if (!data || !data.prices[sym]) return null;
+
+      const startDate = getRangeStartDate(modalRange, data.dates);
+      const startIdx = findStartIndex(data.dates, startDate);
+      const prices = data.prices[sym];
+      const rangeEnd = endIdx != null ? Math.min(endIdx, prices.length - 1) : prices.length - 1;
+
+      // Find first and last valid prices in range
+      let first = null, last = null, firstIdx = startIdx, lastIdx = startIdx;
+      for (let i = startIdx; i <= rangeEnd; i++) {
+        if (prices[i] != null) { first = prices[i]; firstIdx = i; break; }
+      }
+      for (let i = rangeEnd; i >= startIdx; i--) {
+        if (prices[i] != null) { last = prices[i]; lastIdx = i; break; }
+      }
+      if (first == null || last == null || first === 0) return null;
+
+      // Period Return
+      const periodReturn = ((last - first) / first) * 100;
+
+      // Max Drawdown
+      let peak = first, maxDrawdown = 0;
+      for (let i = firstIdx; i <= lastIdx; i++) {
+        if (prices[i] == null) continue;
+        if (prices[i] > peak) peak = prices[i];
+        const dd = ((prices[i] - peak) / peak) * 100;
+        if (dd < maxDrawdown) maxDrawdown = dd;
+      }
+
+      // Daily returns for volatility
+      const dailyReturns = [];
+      for (let i = firstIdx + 1; i <= lastIdx; i++) {
+        if (prices[i] != null && prices[i - 1] != null && prices[i - 1] !== 0) {
+          dailyReturns.push((prices[i] - prices[i - 1]) / prices[i - 1]);
+        }
+      }
+
+      let annVol = null;
+      if (dailyReturns.length > 1) {
+        const mean = dailyReturns.reduce((a, b) => a + b, 0) / dailyReturns.length;
+        const variance = dailyReturns.reduce((sum, r) => sum + (r - mean) ** 2, 0) / (dailyReturns.length - 1);
+        annVol = Math.sqrt(variance) * Math.sqrt(252) * 100;
+      }
+
+      // 50-day SMA (computed up to rangeEnd)
+      let sma50 = null;
+      const validPrices50 = [];
+      for (let i = rangeEnd; i >= 0 && validPrices50.length < 50; i--) {
+        if (prices[i] != null) validPrices50.push(prices[i]);
+      }
+      if (validPrices50.length === 50) {
+        sma50 = validPrices50.reduce((a, b) => a + b, 0) / 50;
+      }
+      const pctFrom50MA = sma50 && last ? ((last - sma50) / sma50) * 100 : null;
+
+      // EMA helper (computed up to rangeEnd)
+      function computeEMA(period) {
+        const validPrices = [];
+        for (let i = 0; i <= rangeEnd; i++) {
+          if (prices[i] != null) validPrices.push(prices[i]);
+        }
+        if (validPrices.length < period) return null;
+        const k = 2 / (period + 1);
+        let ema = validPrices.slice(0, period).reduce((a, b) => a + b, 0) / period;
+        for (let i = period; i < validPrices.length; i++) {
+          ema = validPrices[i] * k + ema * (1 - k);
+        }
+        return ema;
+      }
+
+      const ema8 = computeEMA(8);
+      const ema21 = computeEMA(21);
+      const pctFromEma8 = ema8 && last ? ((last - ema8) / ema8) * 100 : null;
+      const pctFromEma21 = ema21 && last ? ((last - ema21) / ema21) * 100 : null;
+
+      // RS Rating (up to rangeEnd)
+      const rsRating = rsRatingCache && rsRatingCache[sym] ? (() => {
+        for (let i = rangeEnd; i >= startIdx; i--) {
+          if (rsRatingCache[sym][i] != null) return rsRatingCache[sym][i];
+        }
+        return null;
+      })() : null;
+
+      // Divergence
+      const divergence = divergenceCache[sym] || null;
+
+      // Helper to compute period return for another symbol's prices
+      function getReturn(priceArr) {
+        if (!priceArr) return null;
+        let f = null, l = null;
+        const end = endIdx != null ? Math.min(endIdx, priceArr.length - 1) : priceArr.length - 1;
+        for (let i = startIdx; i <= end; i++) { if (priceArr[i] != null) { f = priceArr[i]; break; } }
+        for (let i = end; i >= startIdx; i--) { if (priceArr[i] != null) { l = priceArr[i]; break; } }
+        return (f && l && f !== 0) ? ((l - f) / f) * 100 : null;
+      }
+
+      // vs Sector ETF (always use the panel's original base symbol, not the mode-dependent one)
+      let vsSector = null;
+      if (data.baseSymbol && data.prices[data.baseSymbol]) {
+        const sectorReturn = getReturn(data.prices[data.baseSymbol]);
+        if (sectorReturn != null) vsSector = periodReturn - sectorReturn;
+      }
+
+      // vs EW Sector ETF
+      let vsEWSector = null;
+      const ewSym = CAP_TO_EQUAL[data.baseSymbol];
+      if (ewSym && ewSym !== data.baseSymbol && data.prices[ewSym]) {
+        const ewReturn = getReturn(data.prices[ewSym]);
+        if (ewReturn != null) vsEWSector = periodReturn - ewReturn;
+      }
+
+      // vs SPY
+      let vsSPY = null;
+      const spyData = panelDataCache[0];
+      if (spyData && spyData.prices && spyData.prices['SPY']) {
+        const spyReturn = getReturn(spyData.prices['SPY']);
+        if (spyReturn != null) vsSPY = periodReturn - spyReturn;
+      }
+
+      return { periodReturn, maxDrawdown, annVol, pctFrom50MA, pctFromEma8, pctFromEma21, rsRating, divergence, vsSector, vsEWSector, vsSPY };
+    }
+
+    function assignIsolatedColors() {
+      modalSymbolColorMap = {};
+      if (modalHiddenSymbols.size === 0) return;
+      const seriesList = panelSeriesMap['modal'];
+      if (!seriesList) return;
+      const visibleNonBase = seriesList
+        .filter(e => !e.isBase && !e.isRsLine && !modalHiddenSymbols.has(e.sym))
+        .map(e => e.sym);
+      visibleNonBase.forEach((sym, i) => {
+        modalSymbolColorMap[sym] = ISOLATED_PALETTE[i % ISOLATED_PALETTE.length];
+      });
+      modalSelectedSymbols = visibleNonBase;
+    }
+
+    function showMultiStatsCards() {
+      hideMultiStatsCards();
+      const chartContainer = document.getElementById('modal-chart');
+      if (!chartContainer || modalSelectedSymbols.length === 0) return;
+
+      const container = document.createElement('div');
+      container.className = 'modal-stats-cards visible';
+
+      // Clear link
+      const clearLink = document.createElement('div');
+      clearLink.className = 'modal-stats-clear';
+      clearLink.textContent = 'Clear';
+      clearLink.addEventListener('click', () => resetModalVisibility());
+      container.appendChild(clearLink);
+
+      const fmt = (v, decimals = 1) => {
+        if (v == null) return '\u2014';
+        const sign = v >= 0 ? '+' : '';
+        return sign + v.toFixed(decimals) + '%';
+      };
+      const cls = (v) => v == null ? '' : (v >= 0 ? ' positive' : ' negative');
+
+      // Sort by period return descending (strongest first)
+      const symsWithReturns = modalSelectedSymbols.slice(0, 6).map(sym => {
+        const stats = computeSymbolStats(sym);
+        return { sym, stats, ret: stats ? stats.periodReturn : -Infinity };
+      }).sort((a, b) => b.ret - a.ret);
+
+      symsWithReturns.forEach(({ sym, stats }) => {
+        if (!stats) return;
+        const dotColor = modalSymbolColorMap[sym] || '#888';
+
+        let rows = '';
+        // Group 1 — Performance
+        rows += `<div class="modal-stats-row"><span class="modal-stats-label">Return</span><span class="modal-stats-value${cls(stats.periodReturn)}">${fmt(stats.periodReturn)}</span></div>`;
+        rows += `<div class="modal-stats-row"><span class="modal-stats-label">Max DD</span><span class="modal-stats-value${cls(stats.maxDrawdown)}">${fmt(stats.maxDrawdown)}</span></div>`;
+        rows += `<div class="modal-stats-row"><span class="modal-stats-label">Volatility</span><span class="modal-stats-value">${stats.annVol != null ? stats.annVol.toFixed(1) + '%' : '\u2014'}</span></div>`;
+
+        // Group 2 — Relative
+        rows += `<div class="modal-stats-divider"></div>`;
+        rows += `<div class="modal-stats-row"><span class="modal-stats-label">vs Sector</span><span class="modal-stats-value${cls(stats.vsSector)}">${fmt(stats.vsSector)}</span></div>`;
+        rows += `<div class="modal-stats-row"><span class="modal-stats-label">vs EW Sect</span><span class="modal-stats-value${cls(stats.vsEWSector)}">${fmt(stats.vsEWSector)}</span></div>`;
+        rows += `<div class="modal-stats-row"><span class="modal-stats-label">vs SPY</span><span class="modal-stats-value${cls(stats.vsSPY)}">${fmt(stats.vsSPY)}</span></div>`;
+
+        // Group 3 — Moving Averages
+        rows += `<div class="modal-stats-divider"></div>`;
+        rows += `<div class="modal-stats-row"><span class="modal-stats-label">% from 50MA</span><span class="modal-stats-value${cls(stats.pctFrom50MA)}">${fmt(stats.pctFrom50MA)}</span></div>`;
+        rows += `<div class="modal-stats-row"><span class="modal-stats-label">% from EMA8</span><span class="modal-stats-value${cls(stats.pctFromEma8)}">${fmt(stats.pctFromEma8)}</span></div>`;
+        rows += `<div class="modal-stats-row"><span class="modal-stats-label">% from EMA21</span><span class="modal-stats-value${cls(stats.pctFromEma21)}">${fmt(stats.pctFromEma21)}</span></div>`;
+
+        // Group 4 — Momentum
+        if (stats.rsRating != null || stats.divergence) {
+          rows += `<div class="modal-stats-divider"></div>`;
+          if (stats.rsRating != null) {
+            const rsCls = stats.rsRating >= 50 ? ' positive' : ' negative';
+            rows += `<div class="modal-stats-row"><span class="modal-stats-label">RS Rating</span><span class="modal-stats-value${rsCls}">${stats.rsRating.toFixed(0)}</span></div>`;
+          }
+          if (stats.divergence) {
+            const divText = stats.divergence === 'bullish' ? '\u25B2 Bullish' : '\u25BC Bearish';
+            const divCls = stats.divergence === 'bullish' ? ' positive' : ' negative';
+            rows += `<div class="modal-stats-row"><span class="modal-stats-label">Divergence</span><span class="modal-stats-value${divCls}">${divText}</span></div>`;
+          }
+        }
+
+        const card = document.createElement('div');
+        card.className = 'modal-stats-card';
+        card.innerHTML = `<div class="modal-stats-header"><div class="modal-stats-header-left"><span class="chart-legend-dot" style="background:${dotColor};width:8px;height:8px;border-radius:50%;flex-shrink:0;"></span><span class="modal-stats-sym">${sym}</span></div><span class="modal-stats-close" data-close-sym="${sym}">&times;</span></div>${rows}`;
+        container.appendChild(card);
+      });
+
+      chartContainer.appendChild(container);
+
+      // Close button handlers
+      container.querySelectorAll('.modal-stats-close[data-close-sym]').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const closeSym = btn.dataset.closeSym;
+          modalHiddenSymbols.add(closeSym);
+          // If all non-base now hidden, reset
+          const seriesList = panelSeriesMap['modal'];
+          if (seriesList) {
+            const nonBaseSyms = seriesList.filter(e => !e.isBase && !e.isRsLine).map(e => e.sym);
+            if (nonBaseSyms.every(s => modalHiddenSymbols.has(s))) {
+              resetModalVisibility();
+              return;
+            }
+          }
+          assignIsolatedColors();
+          applyModalVisibility();
+          if (modalHiddenSymbols.size > 0) showMultiStatsCards(); else hideMultiStatsCards();
+        });
+      });
+    }
+
+    function hideMultiStatsCards() {
+      const container = document.querySelector('.modal-stats-cards');
+      if (container) container.remove();
+    }
+
+    function updateModalStatsForCrosshair() {
+      const container = document.querySelector('.modal-stats-cards');
+      if (!container || modalSelectedSymbols.length === 0) return;
+
+      const fmt = (v, decimals = 1) => {
+        if (v == null) return '\u2014';
+        const sign = v >= 0 ? '+' : '';
+        return sign + v.toFixed(decimals) + '%';
+      };
+      const cls = (v) => v == null ? '' : (v >= 0 ? ' positive' : ' negative');
+
+      const cards = container.querySelectorAll('.modal-stats-card');
+      cards.forEach(card => {
+        const symEl = card.querySelector('.modal-stats-sym');
+        if (!symEl) return;
+        const sym = symEl.textContent;
+        const stats = computeSymbolStats(sym, modalCrosshairDateIdx);
+        if (!stats) return;
+
+        const rows = card.querySelectorAll('.modal-stats-row');
+        const vals = [
+          // Group 1 — Performance
+          fmt(stats.periodReturn), fmt(stats.maxDrawdown),
+          stats.annVol != null ? stats.annVol.toFixed(1) + '%' : '\u2014',
+          // Group 2 — Relative
+          fmt(stats.vsSector), fmt(stats.vsEWSector), fmt(stats.vsSPY),
+          // Group 3 — Moving Averages
+          fmt(stats.pctFrom50MA), fmt(stats.pctFromEma8), fmt(stats.pctFromEma21),
+        ];
+        const classes = [
+          cls(stats.periodReturn), cls(stats.maxDrawdown), '',
+          cls(stats.vsSector), cls(stats.vsEWSector), cls(stats.vsSPY),
+          cls(stats.pctFrom50MA), cls(stats.pctFromEma8), cls(stats.pctFromEma21),
+        ];
+        // Update first 9 value rows
+        for (let i = 0; i < Math.min(rows.length, 9); i++) {
+          const valEl = rows[i].querySelector('.modal-stats-value');
+          if (valEl) {
+            valEl.textContent = vals[i];
+            valEl.className = 'modal-stats-value' + classes[i];
+          }
+        }
+        // Group 4 — Momentum (rows after index 8)
+        if (rows.length > 9) {
+          const rsEl = rows[9].querySelector('.modal-stats-value');
+          if (rsEl && stats.rsRating != null) {
+            rsEl.textContent = stats.rsRating.toFixed(0);
+            rsEl.className = 'modal-stats-value' + (stats.rsRating >= 50 ? ' positive' : ' negative');
+          }
+        }
+      });
+    }
+
+    // ── Modal RS Line toggle ──
+    function toggleModalRSLine(btn) {
+      rsLineEnabled = !rsLineEnabled;
+      // Sync topbar button state
+      const topbarBtn = document.getElementById('rs-line-toggle');
+      if (topbarBtn) topbarBtn.classList.toggle('active', rsLineEnabled);
+      btn.classList.toggle('active', rsLineEnabled);
+      // Rebuild all panels + modal
+      for (let i = 0; i < PANEL_COUNT; i++) {
+        if (panelDataCache[i]) loadPanel(i);
+      }
+      buildModalChart();
+    }
+
+    function updateModalRSToggleState() {
+      const btn = document.getElementById('modal-rs-toggle');
+      if (!btn) return;
+      const disabled = spaghettiMode === 'absolute' || spaghettiMode === 'rsRating';
+      btn.classList.toggle('disabled', disabled);
+      btn.classList.toggle('active', rsLineEnabled && !disabled);
+    }
+
     document.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape') closeModal();
+      if (e.key === 'Escape') {
+        const modalVisible = document.getElementById('modal').classList.contains('visible');
+        if (modalVisible && modalHiddenSymbols.size > 0) { resetModalVisibility(); return; }
+        if (highlightedSymbol) { applyHighlight(null); return; }
+        if (modalVisible) closeModal();
+      }
     });
 
     // Handle window resize
@@ -4192,6 +5102,9 @@ Focus on:
     // Initial build
     buildWidgets();
     updateViewTitle();
+    // RS Line button starts disabled in absolute mode
+    const rsBtn = document.getElementById('rs-line-toggle');
+    if (rsBtn && spaghettiMode === 'absolute') { rsBtn.style.opacity = '0.4'; rsBtn.style.pointerEvents = 'none'; }
   </script>
 </body>
 </html>
