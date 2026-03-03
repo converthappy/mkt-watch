@@ -179,7 +179,7 @@
       flex-shrink: 0;
     }
     .topbar h1 { font-size: var(--fs-md); font-weight: 600; color: var(--text-primary); }
-    .topbar-controls { display: flex; gap: 6px; align-items: center; }
+    .topbar-controls { display: flex; gap: 6px; align-items: center; margin-right: auto; }
     .btn-group { display: flex; align-items: center; gap: 4px; }
     .btn-group .topbar-label { margin-right: 2px; }
     .topbar-controls select {
@@ -196,6 +196,7 @@
     .separator { width: 1px; background: var(--interactive-border); margin: 2px 4px; }
     .topbar-label { font-size: var(--fs-sm); color: var(--text-quaternary); text-transform: uppercase; letter-spacing: 0.5px; }
     #spaghetti-wrap { display: flex; flex-direction: column; height: calc(100vh - 32px); }
+    #spaghetti-wrap.hidden { display: none; }
     .view-title {
       display: none; padding: 6px 12px; background: var(--bg-secondary);
       border-bottom: 1px solid var(--border-medium);
@@ -999,6 +1000,75 @@
     .modal-rs-toggle:hover { background: var(--interactive-bg-hover); }
     .modal-rs-toggle.active { background: var(--interactive-bg-active); border-color: var(--interactive-bg-active); color: #fff; }
     .modal-rs-toggle.disabled { opacity: 0.4; pointer-events: none; }
+
+    /* Swing score badge */
+    .swing-score {
+      display: inline-flex; align-items: center; justify-content: center;
+      min-width: 28px; height: 22px; border-radius: 4px;
+      font-weight: 700; font-size: var(--fs-sm); font-family: var(--font-mono);
+    }
+    .swing-score.high { background: rgba(77,216,180,0.2); color: #4dd8b4; }
+    .swing-score.mid  { background: rgba(200,180,60,0.2); color: #c4a24d; }
+    .swing-score.low  { background: rgba(240,97,109,0.2); color: #f0616d; }
+
+    /* Signal badges */
+    .swing-signal {
+      display: inline-block; padding: 2px 8px; border-radius: 3px;
+      font-size: var(--fs-sm); font-weight: 700; text-transform: uppercase;
+      letter-spacing: 0.3px;
+    }
+    .swing-signal.bullish { background: rgba(77,216,180,0.15); color: #4dd8b4; }
+    .swing-signal.bearish { background: rgba(240,97,109,0.15); color: #f0616d; }
+    .swing-signal.watch   { background: rgba(196,162,77,0.15); color: #c4a24d; }
+
+    /* Rotation stage pill */
+    .swing-rotation {
+      display: inline-block; padding: 2px 8px; border-radius: 10px;
+      font-size: var(--fs-sm); font-weight: 600;
+    }
+
+    /* Sub-score bar */
+    .swing-subscore-bar {
+      display: inline-flex; gap: 2px; align-items: center;
+    }
+    .swing-subscore-bar .pip {
+      width: 6px; height: 12px; border-radius: 2px; background: var(--border-medium);
+    }
+    .swing-subscore-bar .pip.filled { background: var(--accent-primary); }
+
+    /* Swing toolbar */
+    .swing-toolbar {
+      display: flex; align-items: center; gap: 12px; padding: 10px 16px;
+      border-bottom: 1px solid var(--border-medium); flex-wrap: wrap;
+    }
+    .swing-toolbar select {
+      background: var(--interactive-bg); color: var(--text-secondary);
+      border: 1px solid var(--interactive-border);
+      padding: 4px 8px; border-radius: 4px; font-size: var(--fs-base); cursor: pointer;
+    }
+
+    /* Summary row at top */
+    .swing-summary {
+      display: flex; gap: 16px; padding: 10px 16px; flex-wrap: wrap;
+      border-bottom: 1px solid var(--border-medium);
+    }
+    .swing-summary-stat {
+      display: flex; flex-direction: column; align-items: center; gap: 2px;
+    }
+    .swing-summary-stat .label { font-size: var(--fs-sm); color: var(--text-quaternary); }
+    .swing-summary-stat .value { font-size: 16px; font-weight: 700; font-family: var(--font-mono); }
+
+    /* Swing column tooltips */
+    .swing-th { position: relative; }
+    .swing-th .swing-tip {
+      display: none; position: absolute; top: 100%; left: 50%; transform: translateX(-50%);
+      background: var(--bg-tertiary); color: var(--text-secondary); border: 1px solid var(--border-medium);
+      padding: 6px 10px; border-radius: 4px; font-size: 11px; font-weight: 400;
+      text-transform: none; letter-spacing: 0; white-space: normal; width: 220px;
+      z-index: 100; pointer-events: none; line-height: 1.4; text-align: left;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    }
+    .swing-th:hover .swing-tip { display: block; }
   </style>
 </head>
 <body>
@@ -1012,39 +1082,45 @@
         <button class="btn" data-view onclick="setView('stocks', this)">Stocks</button>
         <button class="btn" data-view onclick="setView('rrg', this)">RRG</button>
         <button class="btn" data-view onclick="setView('stockrrg', this)">Stock RRG</button>
+        <button class="btn" data-view onclick="setView('swing', this)">Swing</button>
       </div>
-      <div class="separator"></div>
-      <button class="btn active" data-layout onclick="setLayout('g4x4', this)">4 x 4</button>
-      <button class="btn" data-layout onclick="setLayout('g4x2', this)">4 x 2</button>
-      <button class="btn" data-layout onclick="setLayout('g2x1', this)">2 x 1</button>
-      <div class="separator"></div>
-      <div class="btn-group">
-        <span class="topbar-label">Range</span>
-        <button class="btn" data-range="1D" onclick="setRange('1D', this)">1D</button>
-        <button class="btn" data-range="5D" onclick="setRange('5D', this)">5D</button>
-        <button class="btn" data-range="10D" onclick="setRange('10D', this)">2W</button>
-        <button class="btn" data-range="1M" onclick="setRange('1M', this)">1M</button>
-        <button class="btn" data-range="2M" onclick="setRange('2M', this)">2M</button>
-        <button class="btn active" data-range="3M" onclick="setRange('3M', this)">3M</button>
-        <button class="btn" data-range="6M" onclick="setRange('6M', this)">6M</button>
-        <button class="btn" data-range="YTD" onclick="setRange('YTD', this)">YTD</button>
-        <button class="btn" data-range="12M" onclick="setRange('12M', this)">1Y</button>
-        <button class="btn" data-range="60M" onclick="setRange('60M', this)">5Y</button>
+      <div id="spaghetti-controls" style="display:contents">
+        <div class="separator"></div>
+        <div class="btn-group">
+          <span class="topbar-label">Range</span>
+          <button class="btn" data-range="1D" onclick="setRange('1D', this)">1D</button>
+          <button class="btn" data-range="5D" onclick="setRange('5D', this)">5D</button>
+          <button class="btn" data-range="10D" onclick="setRange('10D', this)">2W</button>
+          <button class="btn" data-range="1M" onclick="setRange('1M', this)">1M</button>
+          <button class="btn" data-range="2M" onclick="setRange('2M', this)">2M</button>
+          <button class="btn active" data-range="3M" onclick="setRange('3M', this)">3M</button>
+          <button class="btn" data-range="6M" onclick="setRange('6M', this)">6M</button>
+          <button class="btn" data-range="YTD" onclick="setRange('YTD', this)">YTD</button>
+          <button class="btn" data-range="12M" onclick="setRange('12M', this)">1Y</button>
+          <button class="btn" data-range="60M" onclick="setRange('60M', this)">5Y</button>
+        </div>
+        <div class="separator"></div>
+        <div class="btn-group">
+          <span class="topbar-label">Vs</span>
+          <select id="spaghetti-mode" onchange="setSpaghettiMode(this.value)">
+            <option value="absolute">% Change</option>
+            <option value="sector">vs Sector ETF</option>
+            <option value="equalweight">Equal Weight</option>
+            <option value="vsSpy">vs SPY</option>
+            <option value="vsRsp">vs RSP</option>
+            <option value="rsRating">RS Rating</option>
+          </select>
+        </div>
+        <div class="separator"></div>
+        <button class="btn" id="rs-line-toggle" onclick="toggleRSLine(this)" title="RS Line overlay (price/benchmark ratio)">RS Line</button>
+        <div class="separator"></div>
+        <div class="btn-group">
+          <span class="topbar-label">Line</span>
+          <button class="btn active" id="line-raw-btn" onclick="setLineMode('raw')">Raw</button>
+          <button class="btn" id="line-smooth-btn" onclick="setLineMode('smooth')">Smooth</button>
+          <button class="btn" id="line-rebased-btn" onclick="setLineMode('rebased')">Rebased</button>
+        </div>
       </div>
-      <div class="separator"></div>
-      <div class="btn-group">
-        <span class="topbar-label">Vs</span>
-        <select id="spaghetti-mode" onchange="setSpaghettiMode(this.value)">
-          <option value="absolute">% Change</option>
-          <option value="sector">vs Sector ETF</option>
-          <option value="equalweight">Equal Weight</option>
-          <option value="vsSpy">vs SPY</option>
-          <option value="vsRsp">vs RSP</option>
-          <option value="rsRating">RS Rating</option>
-        </select>
-      </div>
-      <div class="separator"></div>
-      <button class="btn" id="rs-line-toggle" onclick="toggleRSLine(this)" title="RS Line overlay (price/benchmark ratio)">RS Line</button>
       <div class="separator"></div>
       <button class="btn ai-analyze-btn" onclick="runAIAnalysis()">Analyze</button>
       <button class="btn screenshot-btn" onclick="captureScreenshot()" title="Copy screenshot to clipboard">Screenshot</button>
@@ -1160,6 +1236,8 @@
     <div class="rrg-legend" id="stock-rrg-legend"></div>
   </div>
 
+  <div class="table-container" id="swing-view"></div>
+
   <div class="modal-overlay" id="modal" onclick="closeModal(event)">
     <div class="modal-box" onclick="event.stopPropagation()">
       <div class="modal-header">
@@ -1180,6 +1258,12 @@
           </select>
         </div>
         <button class="modal-rs-toggle" id="modal-rs-toggle" onclick="toggleModalRSLine(this)">RS Line</button>
+        <div class="btn-group">
+          <span class="topbar-label">Line</span>
+          <button class="btn" id="modal-line-raw" onclick="setLineMode('raw')">Raw</button>
+          <button class="btn" id="modal-line-smooth" onclick="setLineMode('smooth')">Smooth</button>
+          <button class="btn" id="modal-line-rebased" onclick="setLineMode('rebased')">Rebased</button>
+        </div>
         <button class="modal-close" onclick="closeModal()">Close (Esc)</button>
       </div>
       <div class="modal-chart" id="modal-chart"></div>
@@ -1276,6 +1360,7 @@
       // Rebuild table views
       if (currentView === 'sectors') buildSectorsView();
       if (currentView === 'stocks') buildStocksView();
+      if (currentView === 'swing') buildSwingView();
       // Rebuild modal if open
       if (document.getElementById('modal').classList.contains('visible')) {
         buildModalChart();
@@ -1302,6 +1387,25 @@
     const panelSeriesMap = {};
     let divergenceCache = {};
     let rsLineEnabled = false;
+    let spaghettiLineMode = 'raw'; // 'raw' | 'smooth' | 'rebased'
+
+    // Swing scoring time windows (trading days)
+    const SWING_WINDOWS = { short: 10, mid: 20, long: 40 };
+
+    // Rotation stage definitions
+    const ROTATION_STAGES = {
+      1: { label: 'Accumulation', color: '#4dd8b4' },
+      2: { label: 'Markup',       color: '#6ba3d6' },
+      3: { label: 'Distribution', color: '#e07c5a' },
+      4: { label: 'Decline',      color: '#f0616d' },
+    };
+
+    let swingScoreCache = {};
+    let swingPanelVisible = false;
+    let swingSortCol = 'total';
+    let swingSortAsc = false;
+    let swingFilterSector = -1;
+    let swingFilterSignal = 'all';
 
     // One muted color per sector panel
     const ISOLATED_PALETTE = [
@@ -1591,26 +1695,44 @@
         } else {
           const rawPrices = data.prices[sym];
           if (!rawPrices) return;
-          const normalized = normalizeToPercent(rawPrices, startIdx);
 
-          if (benchNorm) {
-            // Subtraction mode: symbol% - benchmark%
+          if (spaghettiLineMode === 'rebased' && benchmarkPrices) {
+            // Rebased ratio: (stock/bench) / (stock[start]/bench[start]) - 1
+            const startRatio = rawPrices[startIdx] / benchmarkPrices[startIdx];
+            if (!startRatio || !isFinite(startRatio)) return;
             for (let i = startIdx; i < data.dates.length; i++) {
-              if (normalized[i] != null && benchNorm[i] != null) {
-                lineData.push({ time: data.dates[i], value: normalized[i] - benchNorm[i] });
+              if (rawPrices[i] != null && benchmarkPrices[i] != null && benchmarkPrices[i] !== 0) {
+                const ratio = rawPrices[i] / benchmarkPrices[i];
+                lineData.push({ time: data.dates[i], value: (ratio / startRatio - 1) * 100 });
               }
             }
           } else {
-            // Absolute mode
-            for (let i = startIdx; i < data.dates.length; i++) {
-              if (normalized[i] != null) {
-                lineData.push({ time: data.dates[i], value: normalized[i] });
+            const normalized = normalizeToPercent(rawPrices, startIdx);
+
+            if (benchNorm) {
+              // Subtraction mode: symbol% - benchmark%
+              for (let i = startIdx; i < data.dates.length; i++) {
+                if (normalized[i] != null && benchNorm[i] != null) {
+                  lineData.push({ time: data.dates[i], value: normalized[i] - benchNorm[i] });
+                }
+              }
+            } else {
+              // Absolute mode
+              for (let i = startIdx; i < data.dates.length; i++) {
+                if (normalized[i] != null) {
+                  lineData.push({ time: data.dates[i], value: normalized[i] });
+                }
               }
             }
           }
         }
 
         if (lineData.length === 0) return;
+
+        // Apply 3-day EMA smoothing if enabled (display only)
+        if (spaghettiLineMode === 'smooth' && lineData.length >= 2) {
+          lineData = ema3(lineData);
+        }
 
         const series = chart.addLineSeries({
           color: color,
@@ -2052,6 +2174,32 @@
       }
     }
 
+    function setLineMode(mode) {
+      spaghettiLineMode = mode;
+      // Sync both topbar and modal buttons
+      ['raw', 'smooth', 'rebased'].forEach(m => {
+        document.getElementById('line-' + m + '-btn').classList.toggle('active', m === mode);
+        document.getElementById('modal-line-' + m).classList.toggle('active', m === mode);
+      });
+      for (let i = 0; i < PANEL_COUNT; i++) {
+        if (panelDataCache[i]) loadPanel(i);
+      }
+      if (document.getElementById('modal').classList.contains('visible')) {
+        buildModalChart();
+      }
+    }
+
+    // 3-day EMA for display smoothing
+    function ema3(lineData) {
+      if (lineData.length < 2) return lineData;
+      const k = 2 / (3 + 1); // alpha for 3-period EMA
+      const out = [lineData[0]];
+      for (let i = 1; i < lineData.length; i++) {
+        out.push({ time: lineData[i].time, value: lineData[i].value * k + out[i - 1].value * (1 - k) });
+      }
+      return out;
+    }
+
     // ── Load panel data and build chart ──
     async function loadPanel(panelIndex) {
       const panelDiv = document.getElementById('panel-' + panelIndex);
@@ -2137,7 +2285,7 @@
     function updateViewTitle() {
       const el = document.getElementById('view-title');
       const modeLabels = { absolute: '% Change', sector: 'vs Sector ETF', equalweight: 'Equal Weight', vsSpy: 'vs SPY', vsRsp: 'vs RSP', rsRating: 'RS Rating' };
-      const viewLabels = { spaghetti: 'Spaghetti', sectors: 'Sectors Heatmap', stocks: 'Stocks Heatmap', rrg: 'Sector RRG', stockrrg: 'Stock RRG' };
+      const viewLabels = { spaghetti: 'Spaghetti', sectors: 'Sectors Heatmap', stocks: 'Stocks Heatmap', rrg: 'Sector RRG', stockrrg: 'Stock RRG', swing: 'Swing Scores' };
 
       let title = viewLabels[currentView] || currentView;
 
@@ -2350,6 +2498,9 @@
       const title = data ? data.title : `Panel ${panelIndex + 1}`;
       document.getElementById('modal-title').textContent = title;
       document.getElementById('modal-spaghetti-mode').value = spaghettiMode;
+      ['raw', 'smooth', 'rebased'].forEach(m => {
+        document.getElementById('modal-line-' + m).classList.toggle('active', m === spaghettiLineMode);
+      });
 
       // Build range buttons
       const ranges = [
@@ -2466,7 +2617,7 @@
         const baseSym = entry.isRsLine ? entry.sym.replace(' (RS)', '') : entry.sym;
         const isHidden = modalHiddenSymbols.has(baseSym);
         if (isHidden) {
-          entry.series.applyOptions({ color: 'rgba(0,0,0,0)', lineWidth: 0, crosshairMarkerVisible: false });
+          entry.series.applyOptions({ color: hexToRgba(sectorColor, 0.08), lineWidth: 1, crosshairMarkerVisible: false });
         } else if (hasIsolation && !entry.isBase && !entry.isRsLine) {
           // Isolated stock: use palette color, thick line
           const isolatedColor = modalSymbolColorMap[baseSym] || sectorColor;
@@ -2919,15 +3070,29 @@
       btn.classList.add('active');
 
       document.getElementById('spaghetti-wrap').classList.toggle('hidden', view !== 'spaghetti');
+      document.getElementById('spaghetti-controls').style.display = view === 'spaghetti' ? 'contents' : 'none';
       document.getElementById('sectors-view').classList.toggle('active', view === 'sectors');
       document.getElementById('stocks-view').classList.toggle('active', view === 'stocks');
       document.getElementById('rrg-view').classList.toggle('active', view === 'rrg');
       document.getElementById('stock-rrg-view').classList.toggle('active', view === 'stockrrg');
+      document.getElementById('swing-view').classList.toggle('active', view === 'swing');
 
+      if (view === 'spaghetti') {
+        // Re-render charts after container becomes visible again
+        setTimeout(() => {
+          for (let i = 0; i < PANEL_COUNT; i++) {
+            if (panelCharts[i]) {
+              try { panelCharts[i].resize(0, 0); } catch(e) {}
+            }
+            if (panelDataCache[i]) loadPanel(i);
+          }
+        }, 50);
+      }
       if (view === 'sectors') loadAllPanelsThen(buildSectorsView);
       if (view === 'stocks') loadAllPanelsThen(buildStocksView);
       if (view === 'rrg') loadAllPanelsThen(drawRRG);
       if (view === 'stockrrg') loadAllPanelsThen(() => { populateSectorDropdown(); drawStockRRG(); });
+      if (view === 'swing') loadAllPanelsThen(buildSwingView);
       updateViewTitle();
     }
 
@@ -3415,6 +3580,350 @@
       const isCollapsed = headerRow.classList.toggle('collapsed');
       const selector = `.stock-row[data-sector="${sectorId}"][data-view="${viewType}"]`;
       document.querySelectorAll(selector).forEach(r => r.classList.toggle('hidden-row', isCollapsed));
+    }
+
+    // ── Swing Scoring Engine ──
+
+    function getWindowReturn(prices, endIdx, windowLen) {
+      const startIdx = endIdx - windowLen;
+      if (startIdx < 0) return null;
+      const startP = prices[startIdx];
+      const endP = prices[endIdx];
+      if (startP == null || endP == null || startP === 0) return null;
+      return (endP / startP - 1) * 100;
+    }
+
+    function computeAllSwingScores() {
+      swingScoreCache = {};
+      const spyData = panelDataCache[0];
+      if (!spyData || !spyData.prices['SPY']) return;
+      const spyPrices = spyData.prices['SPY'];
+      const endIdx = spyData.dates.length - 1;
+      if (endIdx < SWING_WINDOWS.long) return;
+
+      // Ensure RS ratings are computed
+      if (!rsRatingCache) computeAllRSRatings('12M');
+
+      for (let pi = 0; pi < PANEL_COUNT; pi++) {
+        const data = panelDataCache[pi];
+        if (!data) continue;
+        const basePrices = data.prices[data.baseSymbol];
+        if (!basePrices) continue;
+        const ewSym = CAP_TO_EQUAL[data.baseSymbol];
+        let ewPrices = ewSym ? data.prices[ewSym] : null;
+        if (!ewPrices && ewSym && panelDataCache[0]) ewPrices = panelDataCache[0].prices[ewSym];
+
+        // Sector ETF returns vs SPY for sector context sub-score
+        const sectorVsSpy10 = (getWindowReturn(basePrices, endIdx, SWING_WINDOWS.short) ?? 0) - (getWindowReturn(spyPrices, endIdx, SWING_WINDOWS.short) ?? 0);
+        const sectorVsSpy20 = (getWindowReturn(basePrices, endIdx, SWING_WINDOWS.mid) ?? 0) - (getWindowReturn(spyPrices, endIdx, SWING_WINDOWS.mid) ?? 0);
+        const sectorVsSpy40 = (getWindowReturn(basePrices, endIdx, SWING_WINDOWS.long) ?? 0) - (getWindowReturn(spyPrices, endIdx, SWING_WINDOWS.long) ?? 0);
+
+        data.symbols.forEach(sym => {
+          if (ETF_TICKERS.has(sym)) return;
+          const prices = data.prices[sym];
+          if (!prices) return;
+
+          // Relative return series
+          const stockRet10 = getWindowReturn(prices, endIdx, SWING_WINDOWS.short);
+          const stockRet20 = getWindowReturn(prices, endIdx, SWING_WINDOWS.mid);
+          const stockRet40 = getWindowReturn(prices, endIdx, SWING_WINDOWS.long);
+          const baseRet10 = getWindowReturn(basePrices, endIdx, SWING_WINDOWS.short);
+          const baseRet20 = getWindowReturn(basePrices, endIdx, SWING_WINDOWS.mid);
+          const baseRet40 = getWindowReturn(basePrices, endIdx, SWING_WINDOWS.long);
+          const spyRet10 = getWindowReturn(spyPrices, endIdx, SWING_WINDOWS.short);
+          const spyRet20 = getWindowReturn(spyPrices, endIdx, SWING_WINDOWS.mid);
+
+          if (stockRet10 == null || stockRet20 == null) return;
+
+          const vsSectorCap10d = (stockRet10 ?? 0) - (baseRet10 ?? 0);
+          const vsSectorCap20d = (stockRet20 ?? 0) - (baseRet20 ?? 0);
+          const vsSectorCap40d = (stockRet40 ?? 0) - (baseRet40 ?? 0);
+
+          const ewRet10 = ewPrices ? getWindowReturn(ewPrices, endIdx, SWING_WINDOWS.short) : baseRet10;
+          const ewRet20 = ewPrices ? getWindowReturn(ewPrices, endIdx, SWING_WINDOWS.mid) : baseRet20;
+          const vsSectorEW10d = (stockRet10 ?? 0) - (ewRet10 ?? 0);
+          const vsSectorEW20d = (stockRet20 ?? 0) - (ewRet20 ?? 0);
+
+          const vsSPY10d = (stockRet10 ?? 0) - (spyRet10 ?? 0);
+          const vsSPY20d = (stockRet20 ?? 0) - (spyRet20 ?? 0);
+
+          // Structure sub-score (0–6)
+          let structure = 0;
+          if (vsSectorCap10d > 0) structure++;
+          if (vsSectorCap20d > 0) structure++;
+          if (vsSectorEW10d > 0) structure++;
+          if (vsSectorEW20d > 0) structure++;
+          if (vsSPY10d > 0) structure++;
+          if (vsSPY20d > 0) structure++;
+
+          // Acceleration sub-score (0–5)
+          let acceleration = 0;
+          if (vsSectorCap10d > vsSectorCap20d) acceleration++;
+          if (vsSectorEW10d > vsSectorEW20d) acceleration++;
+          if (vsSPY10d > vsSPY20d) acceleration++;
+
+          // RS Rating momentum
+          const rsArr = rsRatingCache ? rsRatingCache[sym] : null;
+          let rsRating = null;
+          let rsRating10ago = null;
+          let rsRating20ago = null;
+          if (rsArr) {
+            rsRating = rsArr[endIdx];
+            rsRating10ago = endIdx >= 10 ? rsArr[endIdx - 10] : null;
+            rsRating20ago = endIdx >= 20 ? rsArr[endIdx - 20] : null;
+          }
+          if (rsRating != null && rsRating10ago != null && rsRating > rsRating10ago) acceleration++;
+          if (rsRating != null && rsRating20ago != null && rsRating > rsRating20ago) acceleration++;
+
+          // Sector context sub-score (0–3)
+          let sector = 0;
+          if (sectorVsSpy10 > 0) sector++;
+          if (sectorVsSpy20 > 0) sector++;
+          if (sectorVsSpy40 > 0) sector++;
+
+          const total = structure + acceleration + sector;
+
+          // Rotation stage (1–4)
+          let rotation;
+          if (vsSectorCap10d < 0 && vsSectorCap20d < 0 && vsSectorCap40d < 0) {
+            rotation = 4; // Decline
+          } else if (vsSectorCap40d < 0 && vsSectorCap10d > 0) {
+            rotation = 1; // Accumulation
+          } else if (vsSectorCap10d > 0 && vsSectorCap20d > 0 && vsSectorCap40d > 0) {
+            rotation = 2; // Markup
+          } else if (vsSectorCap40d > 0 && vsSectorCap10d < 0) {
+            rotation = 3; // Distribution
+          } else {
+            // Fallback: classify by dominant direction
+            const positiveCount = (vsSectorCap10d > 0 ? 1 : 0) + (vsSectorCap20d > 0 ? 1 : 0) + (vsSectorCap40d > 0 ? 1 : 0);
+            if (positiveCount >= 2) rotation = 2;
+            else rotation = 4;
+          }
+
+          // Signal derivation
+          let signal = null;
+          if (total >= 12 && (rotation === 1 || rotation === 2) && rsRating != null && rsRating > 75) {
+            signal = 'BULLISH';
+          } else if (total <= 2 && (rotation === 3 || rotation === 4) && rsRating != null && rsRating < 25) {
+            signal = 'BEARISH';
+          } else if (total >= 9 && rotation === 1 && acceleration >= 4) {
+            signal = 'WATCH';
+          }
+
+          swingScoreCache[sym] = {
+            total, structure, acceleration, sector, rotation,
+            rotationLabel: ROTATION_STAGES[rotation].label,
+            signal,
+            rsRating: rsRating != null ? Math.round(rsRating) : null,
+            vsSectorCap10d, vsSectorCap20d, vsSectorCap40d,
+            vsSPY10d, vsSPY20d,
+            panelIndex: pi,
+            sectorTitle: data.title,
+            baseSymbol: data.baseSymbol,
+          };
+        });
+      }
+    }
+
+    // ── Swing View ──
+
+    function sortSwing(colKey) {
+      if (swingSortCol === colKey) swingSortAsc = !swingSortAsc;
+      else { swingSortCol = colKey; swingSortAsc = false; }
+      buildSwingView();
+    }
+
+    function filterSwingBySector(val) {
+      swingFilterSector = parseInt(val);
+      buildSwingView();
+    }
+
+    function filterSwingBySignal(val) {
+      swingFilterSignal = val;
+      buildSwingView();
+    }
+
+    function swingPipBar(score, maxPips) {
+      let html = '<span class="swing-subscore-bar">';
+      for (let i = 0; i < maxPips; i++) {
+        html += `<span class="pip${i < score ? ' filled' : ''}"></span>`;
+      }
+      html += '</span>';
+      return html;
+    }
+
+    function swingNavigate(sym, panelIndex) {
+      openModal(panelIndex);
+      // After modal renders, isolate the clicked stock and show its info card
+      setTimeout(() => {
+        const seriesList = panelSeriesMap['modal'];
+        if (!seriesList) return;
+        modalHiddenSymbols.clear();
+        seriesList.forEach(entry => {
+          if (entry.isBase || entry.isRsLine) return;
+          if (entry.sym !== sym) modalHiddenSymbols.add(entry.sym);
+        });
+        applyModalVisibility();
+        showMultiStatsCards();
+      }, 300);
+    }
+
+    function swingScoreBadge(score) {
+      const cls = score >= 10 ? 'high' : score >= 5 ? 'mid' : 'low';
+      return `<span class="swing-score ${cls}">${score}</span>`;
+    }
+
+    function swingSignalBadge(signal) {
+      if (!signal) return '<span style="color:var(--text-quaternary)">--</span>';
+      const cls = signal.toLowerCase();
+      return `<span class="swing-signal ${cls}">${signal}</span>`;
+    }
+
+    function swingRotationPill(rotation) {
+      const stage = ROTATION_STAGES[rotation];
+      return `<span class="swing-rotation" style="background:${stage.color}22;color:${stage.color}">${stage.label}</span>`;
+    }
+
+    const SWING_TOOLTIPS = {
+      sym: 'Stock ticker symbol',
+      sectorTitle: 'Sector classification panel',
+      total: 'Composite score (0-14): Structure + Acceleration + Sector Context',
+      structure: 'Structure (0-6): +1 for each positive relative return vs sector cap-weight ETF, equal-weight ETF, and SPY over 10d and 20d windows',
+      acceleration: 'Acceleration (0-5): +1 when short-term outperformance exceeds medium-term for each benchmark, +1 for RS Rating improving over 10d and 20d',
+      sector: 'Sector Context (0-3): +1 for each window (10d, 20d, 40d) where the sector ETF outperforms SPY',
+      rotation: 'Rotation stage based on relative performance trend: Accumulation (turning up), Markup (all positive), Distribution (turning down), Decline (all negative)',
+      signal: 'Bullish: Score 12+, RS Rating 75+, Accumulation/Markup. Bearish: Score 2 or less, RS Rating under 25, Distribution/Decline. Watch: Score 9+, Accumulation, strong acceleration',
+      rsRating: 'Relative Strength Rating: percentile rank (0-100) based on weighted multi-period performance vs all stocks',
+      vsSectorCap10d: '10-day stock return minus sector cap-weight ETF return',
+      vsSPY10d: '10-day stock return minus SPY return',
+    };
+
+    function swingSortHeader(label, colKey) {
+      const sorted = colKey === swingSortCol;
+      const arrow = sorted ? (swingSortAsc ? '&#9650;' : '&#9660;') : '&#9660;';
+      const tip = SWING_TOOLTIPS[colKey] || '';
+      return `<th class="swing-th ${sorted ? 'sorted' : ''}" onclick="sortSwing('${colKey}')">
+        ${label} <span class="sort-arrow">${arrow}</span>${tip ? `<span class="swing-tip">${tip}</span>` : ''}</th>`;
+    }
+
+    function buildSwingView() {
+      const container = document.getElementById('swing-view');
+      if (!rsRatingCache) computeAllRSRatings('12M');
+      computeAllSwingScores();
+
+      // Collect all scored stocks
+      const allStocks = [];
+      Object.keys(swingScoreCache).forEach(sym => {
+        allStocks.push({ sym, ...swingScoreCache[sym] });
+      });
+
+      // Apply filters
+      let filtered = allStocks;
+      if (swingFilterSector !== -1) {
+        filtered = filtered.filter(s => s.panelIndex === swingFilterSector);
+      }
+      if (swingFilterSignal !== 'all') {
+        if (swingFilterSignal === 'neutral') {
+          filtered = filtered.filter(s => s.signal == null);
+        } else {
+          filtered = filtered.filter(s => s.signal && s.signal.toLowerCase() === swingFilterSignal);
+        }
+      }
+
+      // Sort
+      filtered.sort((a, b) => {
+        let aVal, bVal;
+        if (swingSortCol === 'sym') {
+          return swingSortAsc ? a.sym.localeCompare(b.sym) : b.sym.localeCompare(a.sym);
+        } else if (swingSortCol === 'sectorTitle') {
+          return swingSortAsc ? a.sectorTitle.localeCompare(b.sectorTitle) : b.sectorTitle.localeCompare(a.sectorTitle);
+        } else if (swingSortCol === 'signal') {
+          const signalOrder = { 'BULLISH': 3, 'WATCH': 2, 'BEARISH': 1 };
+          aVal = signalOrder[a.signal] || 0;
+          bVal = signalOrder[b.signal] || 0;
+        } else {
+          aVal = a[swingSortCol] ?? -Infinity;
+          bVal = b[swingSortCol] ?? -Infinity;
+        }
+        return swingSortAsc ? aVal - bVal : bVal - aVal;
+      });
+
+      // Compute summary stats
+      const buyCount = allStocks.filter(s => s.signal === 'BULLISH').length;
+      const sellCount = allStocks.filter(s => s.signal === 'BEARISH').length;
+      const watchCount = allStocks.filter(s => s.signal === 'WATCH').length;
+      const avgScore = allStocks.length > 0 ? (allStocks.reduce((sum, s) => sum + s.total, 0) / allStocks.length).toFixed(1) : '0.0';
+      const stageCounts = [0, 0, 0, 0, 0]; // index 1–4
+      allStocks.forEach(s => { stageCounts[s.rotation]++; });
+
+      // Build summary bar
+      let html = '<div class="swing-summary">';
+      html += `<div class="swing-summary-stat"><span class="label">Total</span><span class="value">${allStocks.length}</span></div>`;
+      html += `<div class="swing-summary-stat"><span class="label">Avg Score</span><span class="value">${avgScore}</span></div>`;
+      html += `<div class="swing-summary-stat"><span class="label">Bullish</span><span class="value" style="color:#4dd8b4">${buyCount}</span></div>`;
+      html += `<div class="swing-summary-stat"><span class="label">Watch</span><span class="value" style="color:#c4a24d">${watchCount}</span></div>`;
+      html += `<div class="swing-summary-stat"><span class="label">Bearish</span><span class="value" style="color:#f0616d">${sellCount}</span></div>`;
+      for (let st = 1; st <= 4; st++) {
+        html += `<div class="swing-summary-stat"><span class="label">${ROTATION_STAGES[st].label}</span><span class="value" style="color:${ROTATION_STAGES[st].color}">${stageCounts[st]}</span></div>`;
+      }
+      html += '</div>';
+
+      // Toolbar
+      html += '<div class="swing-toolbar">';
+      html += '<span class="topbar-label">Sector</span>';
+      html += '<select onchange="filterSwingBySector(this.value)">';
+      html += `<option value="-1" ${swingFilterSector === -1 ? 'selected' : ''}>All Sectors</option>`;
+      for (let pi = 0; pi < PANEL_COUNT; pi++) {
+        const data = panelDataCache[pi];
+        if (!data) continue;
+        const count = allStocks.filter(s => s.panelIndex === pi).length;
+        html += `<option value="${pi}" ${swingFilterSector === pi ? 'selected' : ''}>${data.title} (${count})</option>`;
+      }
+      html += '</select>';
+      html += '<span class="topbar-label" style="margin-left:8px">Signal</span>';
+      html += '<select onchange="filterSwingBySignal(this.value)">';
+      html += `<option value="all" ${swingFilterSignal === 'all' ? 'selected' : ''}>All</option>`;
+      html += `<option value="bullish" ${swingFilterSignal === 'bullish' ? 'selected' : ''}>Bullish</option>`;
+      html += `<option value="watch" ${swingFilterSignal === 'watch' ? 'selected' : ''}>Watch</option>`;
+      html += `<option value="bearish" ${swingFilterSignal === 'bearish' ? 'selected' : ''}>Bearish</option>`;
+      html += `<option value="neutral" ${swingFilterSignal === 'neutral' ? 'selected' : ''}>Neutral</option>`;
+      html += '</select>';
+      html += `<span class="topbar-label" style="margin-left:12px">Showing ${filtered.length} stocks</span>`;
+      html += '</div>';
+
+      // Table
+      html += '<div class="stocks-table-wrap"><table class="stocks-table"><thead><tr>';
+      html += swingSortHeader('Symbol', 'sym');
+      html += swingSortHeader('Sector', 'sectorTitle');
+      html += swingSortHeader('Score', 'total');
+      html += swingSortHeader('Structure', 'structure');
+      html += swingSortHeader('Accel', 'acceleration');
+      html += swingSortHeader('Sect Ctx', 'sector');
+      html += swingSortHeader('Rotation', 'rotation');
+      html += swingSortHeader('Signal', 'signal');
+      html += swingSortHeader('RS Rating', 'rsRating');
+      html += swingSortHeader('vs Sect 10d', 'vsSectorCap10d');
+      html += swingSortHeader('vs SPY 10d', 'vsSPY10d');
+      html += '</tr></thead><tbody>';
+
+      filtered.forEach(stock => {
+        html += `<tr style="cursor:pointer" onclick="swingNavigate('${stock.sym}', ${stock.panelIndex})">`;
+        html += `<td><span class="stock-badge">${stock.sym}</span></td>`;
+        html += `<td style="color:var(--text-tertiary);font-size:var(--fs-sm)">${stock.sectorTitle}</td>`;
+        html += `<td>${swingScoreBadge(stock.total)}</td>`;
+        html += `<td>${swingPipBar(stock.structure, 6)}</td>`;
+        html += `<td>${swingPipBar(stock.acceleration, 5)}</td>`;
+        html += `<td>${swingPipBar(stock.sector, 3)}</td>`;
+        html += `<td>${swingRotationPill(stock.rotation)}</td>`;
+        html += `<td>${swingSignalBadge(stock.signal)}</td>`;
+        html += `<td style="color:${pctTextColorBright(stock.rsRating != null ? stock.rsRating - 50 : null)};font-family:var(--font-mono)">${stock.rsRating != null ? stock.rsRating : '--'}</td>`;
+        html += `<td style="color:${pctTextColorBright(stock.vsSectorCap10d)}">${formatPct(stock.vsSectorCap10d)}</td>`;
+        html += `<td style="color:${pctTextColorBright(stock.vsSPY10d)}">${formatPct(stock.vsSPY10d)}</td>`;
+        html += '</tr>';
+      });
+
+      html += '</tbody></table></div>';
+      container.innerHTML = html;
     }
 
     // ── Relative Rotation Graph (RRG) ──
