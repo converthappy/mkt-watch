@@ -789,7 +789,6 @@
     .srrg-quad-btn:hover { background: var(--interactive-bg-hover); }
     .srrg-quad-btn .count { font-weight: 400; opacity: 0.6; }
     .srrg-toggle-sec { background: none; border: 1px solid var(--border-medium); border-radius: 3px; color: var(--text-tertiary); padding: 2px 6px; cursor: pointer; font-size: var(--fs-sm); font-family: inherit; }
-    .srrg-toggle-sec.active { color: var(--text-primary); border-color: var(--text-secondary); background: var(--surface-hover-strong); }
     .rrg-legend-sector { color: var(--text-quaternary); font-size: var(--fs-sm); white-space: nowrap; flex-shrink: 0; display: none; text-align: right; }
     .show-sectors .rrg-legend-sector { display: inline; }
     .show-sectors .rrg-distance-bar { flex: 0 0 40px; max-width: 40px; min-width: 40px; margin: 0 32px; }
@@ -5734,7 +5733,7 @@
       if (!isAllSectors) sidebar.classList.remove('show-sectors');
       let html = rrgTipsHTML(tc);
       if (isAllSectors) {
-        html += `<div style="display:flex;justify-content:flex-end;padding:4px 8px 0"><button class="srrg-toggle-sec${secActive ? ' active' : ''}" id="srrg-toggle-sec" title="Show sectors">Show Sectors</button></div>`;
+        html += `<div style="display:flex;justify-content:flex-end;padding:4px 8px 0"><button class="srrg-toggle-sec" id="srrg-toggle-sec">${secActive ? 'Hide Sectors' : 'Show Sectors'}</button></div>`;
       }
       for (const q of QUADRANT_ORDER) {
         const items = groups[q];
@@ -5784,7 +5783,8 @@
         secBtn.addEventListener('click', (e) => {
           e.stopPropagation();
           sidebar.classList.toggle('show-sectors');
-          secBtn.classList.toggle('active');
+          const showing = sidebar.classList.contains('show-sectors');
+          secBtn.textContent = showing ? 'Hide Sectors' : 'Show Sectors';
           drawStockRRGChartOnly();
         });
       }
