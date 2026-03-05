@@ -712,7 +712,7 @@
       position: relative;
       background: var(--bg-primary);
     }
-    #rrg-view.active, #stock-rrg-view.active { display: block; }
+    #rrg-view.active, #stock-rrg-view.active { display: flex; }
     #rrg-canvas {
       width: 100%; height: 100%;
       cursor: crosshair;
@@ -730,16 +730,143 @@
       text-transform: uppercase; letter-spacing: 1px; pointer-events: none;
       opacity: 0.4;
     }
-    .rrg-legend {
-      position: absolute; bottom: 12px; right: 12px; z-index: 10;
-      background: var(--legend-bg);
-      border: 1px solid var(--border-medium); border-radius: 6px;
-      padding: 8px 0; min-width: 180px;
-      max-height: calc(100% - 80px); overflow-y: auto;
+    .srrg-info-panel {
+      display: none;
+      position: absolute;
+      z-index: 15;
+      cursor: grab;
     }
-    .rrg-legend-title {
-      font-size: var(--fs-xs); color: var(--text-quaternary); text-transform: uppercase; letter-spacing: 0.5px;
-      padding: 0 10px 4px; border-bottom: 1px solid var(--border-medium); margin-bottom: 2px;
+    .srrg-info-panel.dragging { cursor: grabbing; }
+    .srrg-info-panel.visible { display: block; }
+    .srrg-info-panel .modal-stats-card {
+      width: 185px;
+      background: var(--legend-bg);
+      border: 1px solid var(--border-medium);
+      border-radius: 6px;
+      padding: 10px 12px;
+      font-size: var(--fs-base);
+      backdrop-filter: blur(8px);
+    }
+    .rrg-chart-area {
+      flex: 1;
+      position: relative;
+      min-width: 0;
+    }
+    .rrg-sidebar {
+      width: 280px;
+      flex-shrink: 0;
+      border-left: 1px solid var(--border-medium);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      background: var(--bg-secondary);
+    }
+    .srrg-sidebar-list {
+      flex: 1;
+      overflow-y: auto;
+      position: relative;
+    }
+    .srrg-quad-nav {
+      display: flex;
+      gap: 4px;
+      padding: 6px 8px;
+      flex-shrink: 0;
+      background: var(--bg-secondary);
+      border-bottom: 1px solid var(--border-medium);
+    }
+    .srrg-quad-btn {
+      flex: 1;
+      background: none;
+      border: 1px solid;
+      border-radius: 4px;
+      padding: 3px 0;
+      font-size: var(--fs-sm);
+      font-weight: 600;
+      cursor: pointer;
+      font-family: inherit;
+    }
+    .srrg-quad-btn:hover { background: var(--interactive-bg-hover); }
+    .srrg-quad-btn .count { font-weight: 400; opacity: 0.6; }
+    .rrg-group-header {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 12px 4px;
+      font-size: var(--fs-sm);
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+      border-bottom: 1px solid var(--border-medium);
+      position: sticky;
+      top: 0;
+      background: var(--bg-secondary);
+      z-index: 2;
+    }
+    .rrg-group-header .count {
+      font-weight: 400;
+      color: var(--text-quaternary);
+    }
+    .rrg-tips {
+      padding: 6px 10px;
+      border-bottom: 1px solid var(--border-medium);
+      font-size: var(--fs-xs);
+      color: var(--text-quaternary);
+      line-height: 1.5;
+    }
+    .rrg-tips summary {
+      cursor: pointer;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+      color: var(--text-tertiary);
+      font-size: var(--fs-xs);
+    }
+    .rrg-tips summary::-webkit-details-marker { font-size: 8px; }
+    .rrg-tips .tip-row {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      padding: 1px 0;
+    }
+    .rrg-crossing {
+      font-size: 9px;
+      font-weight: 700;
+      margin-left: auto;
+      padding: 1px 5px;
+      border-radius: 3px;
+      text-transform: uppercase;
+    }
+    .rrg-from {
+      font-size: 8px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.2px;
+    }
+    .rrg-heading {
+      color: var(--text-tertiary);
+      font-size: var(--fs-sm);
+      flex-shrink: 0;
+    }
+    .rrg-actionable {
+      background: rgba(38, 166, 154, 0.08);
+      border-left: 2px solid var(--semantic-bullish);
+    }
+    .rrg-actionable .rrg-legend-sym {
+      color: var(--text-primary);
+    }
+    .rrg-distance-bar {
+      width: 40px;
+      height: 4px;
+      border-radius: 2px;
+      background: var(--border-medium);
+      overflow: hidden;
+      margin-left: auto;
+      flex-shrink: 0;
+    }
+    .rrg-distance-bar .fill {
+      display: block;
+      height: 100%;
+      border-radius: 2px;
     }
     .rrg-legend-item {
       display: flex; align-items: center; gap: 6px;
@@ -749,6 +876,8 @@
     .rrg-legend-item:hover { background: var(--surface-hover-strong); }
     .rrg-legend-item.dimmed { opacity: 0.25; }
     .rrg-legend-item.highlighted { background: var(--surface-hover-strong); }
+    .rrg-legend-item.rrg-active { background: rgba(255, 255, 255, 0.08); border: 1px solid rgba(255, 255, 255, 0.5); border-radius: 3px; }
+    .light .rrg-legend-item.rrg-active { background: rgba(0, 0, 0, 0.06); border-color: rgba(0, 0, 0, 0.35); }
     .rrg-legend-dot {
       width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0;
     }
@@ -1152,88 +1281,96 @@
   <div class="table-container" id="stocks-view"></div>
 
   <div id="rrg-view">
-    <canvas id="rrg-canvas"></canvas>
-    <div class="rrg-toolbar">
-      <span class="topbar-label">Period</span>
-      <select id="rrg-period" onchange="updateRRGDefaults(); drawRRG()">
-        <option value="daily">Daily (Swing)</option>
-        <option value="weekly" selected>Weekly (Position)</option>
-      </select>
-      <span class="topbar-label" style="margin-left:8px">ETFs</span>
-      <select id="rrg-etf-type" onchange="drawRRG()">
-        <option value="cap" selected>Cap-Weight (X)</option>
-        <option value="equal">Equal-Weight (R)</option>
-      </select>
-      <span class="topbar-label" style="margin-left:8px">Benchmark</span>
-      <select id="rrg-benchmark" onchange="drawRRG()">
-        <option value="SPY" selected>SPY</option>
-        <option value="RSP">RSP</option>
-      </select>
-      <span class="topbar-label" style="margin-left:8px">Tail</span>
-      <select id="rrg-tail" onchange="drawRRG()">
-        <option value="5">5</option>
-        <option value="10">10</option>
-        <option value="20" selected>20</option>
-        <option value="40">40</option>
-      </select>
-      <span class="topbar-label" style="margin-left:8px">Smooth</span>
-      <select id="rrg-window" onchange="drawRRG()">
-        <option value="1" selected>Off</option>
-        <option value="3">3</option>
-        <option value="5">5</option>
-        <option value="10">10</option>
-      </select>
-    </div>
-    <div class="rrg-quadrant-label" style="top:15%;right:15%;color:var(--semantic-bullish)">Leading</div>
-    <div class="rrg-quadrant-label" style="top:15%;left:15%;color:var(--semantic-neutral)">Improving</div>
-    <div class="rrg-quadrant-label" style="bottom:15%;left:15%;color:var(--semantic-bearish)">Lagging</div>
-    <div class="rrg-quadrant-label" style="bottom:15%;right:15%;color:var(--semantic-weakening)">Weakening</div>
-    <div class="rrg-drilldown" id="rrg-drilldown">
-      <div class="rrg-drilldown-header">
-        <span class="rrg-drilldown-title" id="rrg-drilldown-title"></span>
-        <button class="rrg-drilldown-close" onclick="closeRRGDrilldown()">&times;</button>
+    <div class="rrg-chart-area">
+      <canvas id="rrg-canvas"></canvas>
+      <div class="rrg-toolbar">
+        <span class="topbar-label">Period</span>
+        <select id="rrg-period" onchange="updateRRGDefaults(); drawRRG()">
+          <option value="daily" selected>Daily (Swing)</option>
+          <option value="weekly">Weekly (Position)</option>
+        </select>
+        <span class="topbar-label" style="margin-left:8px">ETFs</span>
+        <select id="rrg-etf-type" onchange="drawRRG()">
+          <option value="cap" selected>Cap-Weight (X)</option>
+          <option value="equal">Equal-Weight (R)</option>
+        </select>
+        <span class="topbar-label" style="margin-left:8px">Benchmark</span>
+        <select id="rrg-benchmark" onchange="drawRRG()">
+          <option value="SPY" selected>SPY</option>
+          <option value="RSP">RSP</option>
+        </select>
+        <span class="topbar-label" style="margin-left:8px">Tail</span>
+        <select id="rrg-tail" onchange="drawRRG()">
+          <option value="5">5</option>
+          <option value="10">10</option>
+          <option value="20" selected>20</option>
+          <option value="40">40</option>
+        </select>
+        <span class="topbar-label" style="margin-left:8px">Smooth</span>
+        <select id="rrg-window" onchange="drawRRG()">
+          <option value="1" selected>Off</option>
+          <option value="3">3</option>
+          <option value="5">5</option>
+          <option value="10">10</option>
+        </select>
       </div>
-      <div class="rrg-drilldown-body" id="rrg-drilldown-body"></div>
+      <div class="rrg-quadrant-label" style="top:15%;right:15%;color:var(--semantic-bullish)">Leading</div>
+      <div class="rrg-quadrant-label" style="top:15%;left:15%;color:var(--semantic-neutral)">Improving</div>
+      <div class="rrg-quadrant-label" style="bottom:15%;left:15%;color:var(--semantic-bearish)">Lagging</div>
+      <div class="rrg-quadrant-label" style="bottom:15%;right:15%;color:var(--semantic-weakening)">Weakening</div>
+      <div class="rrg-drilldown" id="rrg-drilldown">
+        <div class="rrg-drilldown-header">
+          <span class="rrg-drilldown-title" id="rrg-drilldown-title"></span>
+          <button class="rrg-drilldown-close" onclick="closeRRGDrilldown()">&times;</button>
+        </div>
+        <div class="rrg-drilldown-body" id="rrg-drilldown-body"></div>
+      </div>
     </div>
-    <div class="rrg-legend" id="rrg-legend"></div>
+    <div class="rrg-sidebar" id="rrg-sidebar"></div>
   </div>
 
   <div id="stock-rrg-view">
-    <canvas id="stock-rrg-canvas" style="width:100%;height:100%;cursor:crosshair;"></canvas>
-    <div class="rrg-toolbar" id="stock-rrg-toolbar">
-      <span class="topbar-label">Sector</span>
-      <select id="srrg-sector" onchange="drawStockRRG()"></select>
-      <span class="topbar-label" style="margin-left:8px">Period</span>
-      <select id="srrg-period" onchange="drawStockRRG()">
-        <option value="daily">Daily (Swing)</option>
-        <option value="weekly" selected>Weekly (Position)</option>
-      </select>
-      <span class="topbar-label" style="margin-left:8px">Benchmark</span>
-      <select id="srrg-benchmark" onchange="drawStockRRG()">
-        <option value="sector" selected>Sector ETF</option>
-        <option value="SPY">SPY</option>
-        <option value="RSP">RSP</option>
-      </select>
-      <span class="topbar-label" style="margin-left:8px">Tail</span>
-      <select id="srrg-tail" onchange="drawStockRRG()">
-        <option value="5">5</option>
-        <option value="10">10</option>
-        <option value="20" selected>20</option>
-        <option value="40">40</option>
-      </select>
-      <span class="topbar-label" style="margin-left:8px">Smooth</span>
-      <select id="srrg-smooth" onchange="drawStockRRG()">
-        <option value="1" selected>Off</option>
-        <option value="3">3</option>
-        <option value="5">5</option>
-        <option value="10">10</option>
-      </select>
+    <div class="rrg-chart-area">
+      <canvas id="stock-rrg-canvas" style="width:100%;height:100%;cursor:crosshair;"></canvas>
+      <div class="rrg-toolbar" id="stock-rrg-toolbar">
+        <span class="topbar-label">Sector</span>
+        <select id="srrg-sector" onchange="drawStockRRG()"></select>
+        <span class="topbar-label" style="margin-left:8px">Period</span>
+        <select id="srrg-period" onchange="drawStockRRG()">
+          <option value="daily" selected>Daily (Swing)</option>
+          <option value="weekly">Weekly (Position)</option>
+        </select>
+        <span class="topbar-label" style="margin-left:8px">Benchmark</span>
+        <select id="srrg-benchmark" onchange="drawStockRRG()">
+          <option value="sector" selected>Sector ETF</option>
+          <option value="SPY">SPY</option>
+          <option value="RSP">RSP</option>
+        </select>
+        <span class="topbar-label" style="margin-left:8px">Tail</span>
+        <select id="srrg-tail" onchange="drawStockRRG()">
+          <option value="5">5</option>
+          <option value="10">10</option>
+          <option value="20" selected>20</option>
+          <option value="40">40</option>
+        </select>
+        <span class="topbar-label" style="margin-left:8px">Smooth</span>
+        <select id="srrg-smooth" onchange="drawStockRRG()">
+          <option value="1" selected>Off</option>
+          <option value="3">3</option>
+          <option value="5">5</option>
+          <option value="10">10</option>
+        </select>
+      </div>
+      <div class="rrg-quadrant-label" style="top:15%;right:15%;color:var(--semantic-bullish)">Leading</div>
+      <div class="rrg-quadrant-label" style="top:15%;left:15%;color:var(--semantic-neutral)">Improving</div>
+      <div class="rrg-quadrant-label" style="bottom:15%;left:15%;color:var(--semantic-bearish)">Lagging</div>
+      <div class="rrg-quadrant-label" style="bottom:15%;right:15%;color:var(--semantic-weakening)">Weakening</div>
+      <div class="srrg-info-panel" id="srrg-info-panel"></div>
     </div>
-    <div class="rrg-quadrant-label" style="top:15%;right:15%;color:var(--semantic-bullish)">Leading</div>
-    <div class="rrg-quadrant-label" style="top:15%;left:15%;color:var(--semantic-neutral)">Improving</div>
-    <div class="rrg-quadrant-label" style="bottom:15%;left:15%;color:var(--semantic-bearish)">Lagging</div>
-    <div class="rrg-quadrant-label" style="bottom:15%;right:15%;color:var(--semantic-weakening)">Weakening</div>
-    <div class="rrg-legend" id="stock-rrg-legend"></div>
+    <div class="rrg-sidebar" id="stock-rrg-sidebar">
+      <div class="srrg-quad-nav" id="srrg-quad-nav"></div>
+      <div class="srrg-sidebar-list" id="srrg-sidebar-list"></div>
+    </div>
   </div>
 
   <div class="table-container" id="swing-view"></div>
@@ -3066,6 +3203,7 @@
 
     function setView(view, btn) {
       currentView = view;
+      localStorage.setItem('currentView', view);
       document.querySelectorAll('.topbar-controls .btn[data-view]').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
 
@@ -4461,7 +4599,7 @@
       // Draw trails and dots
       sectors.forEach(s => {
         const isHovered = rrg_hoveredSector === s.sym;
-        const alpha = rrg_hoveredSector && !isHovered ? 0.2 : 1;
+        const alpha = rrg_hoveredSector && !isHovered ? 0.08 : 1;
 
         // Draw trail
         if (s.trail.length > 1) {
@@ -4518,47 +4656,119 @@
       canvas._sectorPositions = sectorPositions;
 
       // Build legend (skip if just redrawing chart for hover)
-      if (!drawRRG._skipLegend) buildRRGLegend(sectors);
+      if (!drawRRG._skipLegend) buildRRGSidebar(sectors);
       drawRRG._skipLegend = false;
     }
 
-    function buildRRGLegend(sectors) {
-      const legendEl = document.getElementById('rrg-legend');
-      if (!legendEl) return;
+    function getQuadrant(x, y) {
+      if (x >= 100 && y >= 100) return 'leading';
+      if (x < 100 && y >= 100) return 'improving';
+      if (x >= 100 && y < 100) return 'weakening';
+      return 'lagging';
+    }
 
-      // Sort by RS-Ratio descending (strongest first)
-      const sorted = [...sectors].sort((a, b) => {
-        const aLast = a.trail[a.trail.length - 1];
-        const bLast = b.trail[b.trail.length - 1];
-        return bLast.x - aLast.x;
-      });
+    function rrgHeading(trail) {
+      if (trail.length < 2) return { arrow: '', signal: 'neutral' };
+      const prev = trail[trail.length - 2];
+      const curr = trail[trail.length - 1];
+      const dx = curr.x - prev.x;
+      const dy = curr.y - prev.y;
+      const angle = Math.atan2(dy, dx) * 180 / Math.PI;
+      let arrow;
+      if (angle > -22.5 && angle <= 22.5) arrow = '\u2192';
+      else if (angle > 22.5 && angle <= 67.5) arrow = '\u2197';
+      else if (angle > 67.5 && angle <= 112.5) arrow = '\u2191';
+      else if (angle > 112.5 && angle <= 157.5) arrow = '\u2196';
+      else if (angle > -67.5 && angle <= -22.5) arrow = '\u2198';
+      else if (angle > -112.5 && angle <= -67.5) arrow = '\u2193';
+      else if (angle > -157.5 && angle <= -112.5) arrow = '\u2199';
+      else arrow = '\u2190';
+      // Signal: bullish if heading toward Leading (right+up), bearish if toward Lagging (left+down)
+      const signal = (dx > 0 && dy > 0) ? 'bullish' : (dx < 0 && dy < 0) ? 'bearish' : 'neutral';
+      return { arrow, signal };
+    }
 
-      let html = '<div class="rrg-legend-title">Sector ETFs</div>';
-      sorted.forEach(s => {
-        const last = s.trail[s.trail.length - 1];
+    const QUADRANT_ORDER = ['leading', 'improving', 'weakening', 'lagging'];
+    const QUADRANT_META = {
+      leading:    { label: 'Leading',    short: 'Lead', colorVar: 'semanticBullish' },
+      improving:  { label: 'Improving',  short: 'Impr', colorVar: 'semanticNeutral' },
+      weakening:  { label: 'Weakening',  short: 'Weak', colorVar: 'semanticWeakening' },
+      lagging:    { label: 'Lagging',    short: 'Lag',  colorVar: 'semanticBearish' },
+    };
+
+    function rrgTipsHTML(tc) {
+      return `<details class="rrg-tips"><summary>How to read</summary>
+        <div class="tip-row"><span style="color:${tc.semanticBullish}">\u2197</span> Green arrow = heading toward Leading (bullish)</div>
+        <div class="tip-row"><span style="color:${tc.semanticBearish}">\u2199</span> Red arrow = heading toward Lagging (bearish)</div>
+        <div class="tip-row"><span style="color:${tc.semanticNeutral}">\u2192</span> Grey arrow = mixed / sideways</div>
+        <div class="tip-row" style="margin-top:2px"><b>Improving</b> + green arrow = early entry</div>
+        <div class="tip-row"><b>Leading</b> + green arrow = hold / add</div>
+        <div class="tip-row"><b>Weakening</b> + red arrow = exit warning</div>
+        <div class="tip-row"><b>NEW</b> = just crossed quadrants. <b>from</b> = where it came from</div>
+        <div class="tip-row">Bar = distance from center (conviction strength)</div>
+      </details>`;
+    }
+
+    function buildRRGSidebar(sectors) {
+      const sidebarEl = document.getElementById('rrg-sidebar');
+      if (!sidebarEl) return;
+
+      const tc = currentThemeColors;
+
+      // Classify each sector into quadrant groups
+      const groups = { leading: [], improving: [], weakening: [], lagging: [] };
+      let maxDist = 0;
+
+      sectors.forEach(s => {
+        const curr = s.trail[s.trail.length - 1];
+        const prev = s.trail.length >= 2 ? s.trail[s.trail.length - 2] : curr;
+        const currQ = getQuadrant(curr.x, curr.y);
+        const prevQ = getQuadrant(prev.x, prev.y);
+        const isCrossing = currQ !== prevQ;
+        const dist = Math.sqrt((curr.x - 100) ** 2 + (curr.y - 100) ** 2);
+        if (dist > maxDist) maxDist = dist;
+        const { arrow, signal } = rrgHeading(s.trail);
         const shortName = SECTOR_SHORT_NAMES[s.sym] || s.title.replace(/^\d+\.\s*/, '');
 
-        // Determine quadrant
-        const tc = currentThemeColors;
-        let quadrant, qColor;
-        if (last.x >= 100 && last.y >= 100) { quadrant = 'Lead'; qColor = tc.semanticBullish; }
-        else if (last.x < 100 && last.y >= 100) { quadrant = 'Impr'; qColor = tc.semanticNeutral; }
-        else if (last.x < 100 && last.y < 100) { quadrant = 'Lag'; qColor = tc.semanticBearish; }
-        else { quadrant = 'Weak'; qColor = tc.semanticWeakening; }
-
-        const isHighlighted = rrg_hoveredSector === s.sym;
-        const isDimmed = rrg_hoveredSector && !isHighlighted;
-        const cls = isHighlighted ? 'highlighted' : isDimmed ? 'dimmed' : '';
-
-        html += `<div class="rrg-legend-item ${cls}" data-sym="${s.sym}" data-panel="${s.panelIndex}">
-          <span class="rrg-legend-dot" style="background:${s.color}"></span>
-          <span class="rrg-legend-sym">${s.sym}</span>
-          <span class="rrg-legend-name">${shortName}</span>
-          <span class="rrg-legend-quadrant" style="color:${qColor}">${quadrant}</span>
-        </div>`;
+        groups[currQ].push({ ...s, dist, isCrossing, prevQ, arrow, signal, shortName, currQ });
       });
 
-      legendEl.innerHTML = html;
+      // Sort within each group: crossings first, then by distance desc
+      for (const q of QUADRANT_ORDER) {
+        groups[q].sort((a, b) => {
+          if (a.isCrossing !== b.isCrossing) return a.isCrossing ? -1 : 1;
+          return b.dist - a.dist;
+        });
+      }
+
+      let html = rrgTipsHTML(tc);
+      for (const q of QUADRANT_ORDER) {
+        const items = groups[q];
+        if (items.length === 0) continue;
+        const meta = QUADRANT_META[q];
+        const qColor = tc[meta.colorVar];
+
+        html += `<div class="rrg-group-header" style="color:${qColor}"><span>\u25CF ${meta.label}</span><span class="count">${items.length}</span></div>`;
+
+        items.forEach(s => {
+          const distPct = maxDist > 0 ? Math.min(100, Math.round(s.dist / maxDist * 100)) : 0;
+
+          const arrowColor = s.signal === 'bullish' ? tc.semanticBullish : s.signal === 'bearish' ? tc.semanticBearish : tc.textQuaternary;
+          const isBullishCross = s.isCrossing && (q === 'leading' || q === 'improving');
+          const itemCls = 'rrg-legend-item' + (isBullishCross ? ' rrg-actionable' : '');
+
+          html += `<div class="${itemCls}" data-sym="${s.sym}" data-panel="${s.panelIndex}">
+            <span class="rrg-legend-dot" style="background:${s.color}"></span>
+            <span class="rrg-legend-sym">${s.sym}</span>
+            <span class="rrg-legend-name">${s.shortName}</span>
+            <span class="rrg-heading" style="color:${arrowColor}">${s.arrow}</span>
+            ${s.isCrossing ? `<span class="rrg-crossing" style="color:${qColor};background:${qColor}22">NEW</span><span class="rrg-from" style="color:${tc[QUADRANT_META[s.prevQ].colorVar]}">from ${QUADRANT_META[s.prevQ].short}</span>` : ''}
+            <span class="rrg-distance-bar"><span class="fill" style="width:${distPct}%;background:${qColor}"></span></span>
+          </div>`;
+        });
+      }
+
+      sidebarEl.innerHTML = html;
     }
 
     // ── RRG Sector Drilldown ──
@@ -4740,10 +4950,398 @@
     let srrg_lockedStock = null;
     let srrg_legendOrder = []; // sorted sym list for arrow key navigation
 
+    function computeStockRRGStats(sym) {
+      const sectorVal = document.getElementById('srrg-sector').value;
+      let data;
+      if (sectorVal === 'all') {
+        // Find which panel contains this symbol
+        for (let pi = 1; pi < PANEL_COUNT; pi++) {
+          const d = panelDataCache[pi];
+          if (d && d.prices[sym]) { data = d; break; }
+        }
+      } else {
+        data = panelDataCache[parseInt(sectorVal)];
+      }
+      if (!data || !data.prices[sym]) return null;
+
+      const prices = data.prices[sym];
+      const rangeEnd = prices.length - 1;
+
+      // Last valid price
+      let last = null, lastIdx = rangeEnd;
+      for (let i = rangeEnd; i >= 0; i--) {
+        if (prices[i] != null) { last = prices[i]; lastIdx = i; break; }
+      }
+      if (last == null) return null;
+
+      // Multi-timeframe returns
+      const ranges = [
+        { label: '1D', range: '1D' },
+        { label: '5D', range: '5D' },
+        { label: '2W', range: '10D' },
+        { label: '1M', range: '1M' },
+        { label: '3M', range: '3M' },
+      ];
+      const returns = [];
+      for (const r of ranges) {
+        const startDate = getRangeStartDate(r.range, data.dates);
+        const si = findStartIndex(data.dates, startDate);
+        let startPrice = null;
+        for (let i = si; i <= lastIdx; i++) {
+          if (prices[i] != null) { startPrice = prices[i]; break; }
+        }
+        const ret = (startPrice && startPrice !== 0) ? ((last - startPrice) / startPrice) * 100 : null;
+        returns.push({ label: r.label, value: ret });
+      }
+
+      // 50-day SMA
+      let sma50 = null;
+      const validPrices50 = [];
+      for (let i = rangeEnd; i >= 0 && validPrices50.length < 50; i--) {
+        if (prices[i] != null) validPrices50.push(prices[i]);
+      }
+      if (validPrices50.length === 50) {
+        sma50 = validPrices50.reduce((a, b) => a + b, 0) / 50;
+      }
+      const pctFrom50MA = sma50 && last ? ((last - sma50) / sma50) * 100 : null;
+
+      // EMAs
+      function computeEMA(period) {
+        const vp = [];
+        for (let i = 0; i <= rangeEnd; i++) {
+          if (prices[i] != null) vp.push(prices[i]);
+        }
+        if (vp.length < period) return null;
+        const k = 2 / (period + 1);
+        let ema = vp.slice(0, period).reduce((a, b) => a + b, 0) / period;
+        for (let i = period; i < vp.length; i++) {
+          ema = vp[i] * k + ema * (1 - k);
+        }
+        return ema;
+      }
+      const ema8 = computeEMA(8);
+      const ema21 = computeEMA(21);
+      const pctFromEma8 = ema8 && last ? ((last - ema8) / ema8) * 100 : null;
+      const pctFromEma21 = ema21 && last ? ((last - ema21) / ema21) * 100 : null;
+
+      // RS Rating
+      const rsRating = rsRatingCache && rsRatingCache[sym] ? (() => {
+        for (let i = rangeEnd; i >= 0; i--) {
+          if (rsRatingCache[sym][i] != null) return rsRatingCache[sym][i];
+        }
+        return null;
+      })() : null;
+
+      const divergence = divergenceCache[sym] || null;
+
+      // 3M price series for sparkline
+      const sparkStart = getRangeStartDate('3M', data.dates);
+      const sparkIdx = findStartIndex(data.dates, sparkStart);
+      const sparkPrices = [];
+      for (let i = sparkIdx; i <= lastIdx; i++) {
+        if (prices[i] != null) sparkPrices.push(prices[i]);
+      }
+
+      // 14-day RSI — compute full series then extract 3M window
+      const rsiPeriod = 14;
+      let rsi = null;
+      const rsiSeries = [];
+      const validForRsi = [];
+      const validForRsiIdx = []; // track original indices for 3M slicing
+      for (let i = 0; i <= rangeEnd; i++) {
+        if (prices[i] != null) { validForRsi.push(prices[i]); validForRsiIdx.push(i); }
+      }
+      if (validForRsi.length > rsiPeriod) {
+        let avgGain = 0, avgLoss = 0;
+        for (let i = 1; i <= rsiPeriod; i++) {
+          const change = validForRsi[i] - validForRsi[i - 1];
+          if (change > 0) avgGain += change; else avgLoss -= change;
+        }
+        avgGain /= rsiPeriod;
+        avgLoss /= rsiPeriod;
+        // First RSI value at index rsiPeriod
+        for (let i = 0; i <= rsiPeriod; i++) rsiSeries.push(null);
+        rsiSeries[rsiPeriod] = avgLoss === 0 ? 100 : 100 - (100 / (1 + avgGain / avgLoss));
+        for (let i = rsiPeriod + 1; i < validForRsi.length; i++) {
+          const change = validForRsi[i] - validForRsi[i - 1];
+          avgGain = (avgGain * (rsiPeriod - 1) + (change > 0 ? change : 0)) / rsiPeriod;
+          avgLoss = (avgLoss * (rsiPeriod - 1) + (change < 0 ? -change : 0)) / rsiPeriod;
+          rsiSeries[i] = avgLoss === 0 ? 100 : 100 - (100 / (1 + avgGain / avgLoss));
+        }
+        rsi = rsiSeries[rsiSeries.length - 1];
+      }
+      // Extract 3M RSI series matching sparkline period
+      const sparkRsi = [];
+      for (let i = 0; i < validForRsiIdx.length; i++) {
+        if (validForRsiIdx[i] >= sparkIdx && rsiSeries[i] != null) {
+          sparkRsi.push(rsiSeries[i]);
+        }
+      }
+
+      // Awesome Oscillator: SMA(5) - SMA(34) of close prices
+      const aoSeries = [];
+      if (validForRsi.length >= 34) {
+        for (let i = 0; i < validForRsi.length; i++) {
+          if (i < 33) { aoSeries.push(null); continue; }
+          let sum5 = 0, sum34 = 0;
+          for (let j = i - 4; j <= i; j++) sum5 += validForRsi[j];
+          for (let j = i - 33; j <= i; j++) sum34 += validForRsi[j];
+          aoSeries.push(sum5 / 5 - sum34 / 34);
+        }
+      }
+      const sparkAo = [];
+      for (let i = 0; i < validForRsiIdx.length; i++) {
+        if (validForRsiIdx[i] >= sparkIdx && aoSeries[i] != null) {
+          sparkAo.push(aoSeries[i]);
+        }
+      }
+      const ao = sparkAo.length > 0 ? sparkAo[sparkAo.length - 1] : null;
+
+      return { returns, pctFrom50MA, pctFromEma8, pctFromEma21, rsRating, divergence, sparkPrices, rsi, sparkRsi, ao, sparkAo };
+    }
+
+    function showStockInfoPanel(sym) {
+      const panel = document.getElementById('srrg-info-panel');
+      const stats = computeStockRRGStats(sym);
+      if (!stats) { hideStockInfoPanel(); return; }
+
+      const fmt = (v, decimals = 1) => {
+        if (v == null) return '\u2014';
+        const sign = v >= 0 ? '+' : '';
+        return sign + v.toFixed(decimals) + '%';
+      };
+      const cls = (v) => v == null ? '' : (v >= 0 ? ' positive' : ' negative');
+
+      const sectionTitle = (t) => `<div class="modal-stats-divider"></div><div style="font-size:var(--fs-sm);color:var(--text-quaternary);text-transform:uppercase;letter-spacing:0.5px;padding:2px 0 1px">${t}</div>`;
+
+      let rows = '';
+      rows += `<div class="modal-stats-header"><span class="modal-stats-sym">${sym}</span></div>`;
+
+      // Multi-timeframe returns
+      rows += sectionTitle('Returns');
+      for (const r of stats.returns) {
+        rows += `<div class="modal-stats-row"><span class="modal-stats-label">${r.label}</span><span class="modal-stats-value${cls(r.value)}">${fmt(r.value)}</span></div>`;
+      }
+
+      // Moving averages
+      rows += sectionTitle('Moving Avgs');
+      rows += `<div class="modal-stats-row"><span class="modal-stats-label">% from EMA8</span><span class="modal-stats-value${cls(stats.pctFromEma8)}">${fmt(stats.pctFromEma8)}</span></div>`;
+      rows += `<div class="modal-stats-row"><span class="modal-stats-label">% from EMA21</span><span class="modal-stats-value${cls(stats.pctFromEma21)}">${fmt(stats.pctFromEma21)}</span></div>`;
+      rows += `<div class="modal-stats-row"><span class="modal-stats-label">% from 50MA</span><span class="modal-stats-value${cls(stats.pctFrom50MA)}">${fmt(stats.pctFrom50MA)}</span></div>`;
+
+      // Momentum
+      if (stats.rsRating != null || stats.divergence) {
+        rows += sectionTitle('Momentum');
+        if (stats.rsRating != null) {
+          const rsCls = stats.rsRating >= 50 ? ' positive' : ' negative';
+          rows += `<div class="modal-stats-row"><span class="modal-stats-label">RS Rating</span><span class="modal-stats-value${rsCls}">${stats.rsRating.toFixed(0)}</span></div>`;
+        }
+        if (stats.divergence) {
+          const divText = stats.divergence === 'bullish' ? '\u25B2 Bullish' : '\u25BC Bearish';
+          const divCls = stats.divergence === 'bullish' ? ' positive' : ' negative';
+          rows += `<div class="modal-stats-row"><span class="modal-stats-label">Divergence</span><span class="modal-stats-value${divCls}">${divText}</span></div>`;
+        }
+      }
+
+      // Sparkline canvas
+      rows += sectionTitle('Price (3 Month)');
+      rows += `<canvas id="srrg-sparkline" width="161" height="50" style="width:100%;height:50px;display:block;"></canvas>`;
+
+      // RSI chart
+      if (stats.rsi != null) {
+        const rsiCls = stats.rsi >= 50 ? ' positive' : ' negative';
+        rows += sectionTitle(`RSI (14) <span class="modal-stats-value${rsiCls}" style="float:right;font-size:var(--fs-sm)">${stats.rsi.toFixed(1)}</span>`);
+        rows += `<canvas id="srrg-rsi-chart" width="161" height="60" style="width:100%;height:60px;display:block;"></canvas>`;
+      }
+
+      // AO chart
+      if (stats.ao != null) {
+        const aoCls = stats.ao >= 0 ? ' positive' : ' negative';
+        const aoFmt = stats.ao >= 0 ? '+' + stats.ao.toFixed(2) : stats.ao.toFixed(2);
+        rows += sectionTitle(`AO <span class="modal-stats-value${aoCls}" style="float:right;font-size:var(--fs-sm)">${aoFmt}</span>`);
+        rows += `<canvas id="srrg-ao-chart" width="161" height="50" style="width:100%;height:50px;display:block;"></canvas>`;
+      }
+
+      panel.innerHTML = `<div class="modal-stats-card">${rows}</div>`;
+      panel.classList.add('visible');
+
+      // Position: right-center of parent (only if not manually dragged)
+      if (!panel.dataset.dragged) {
+        const parent = panel.parentElement;
+        const ph = parent.clientHeight;
+        const panelH = panel.offsetHeight;
+        panel.style.top = Math.max(0, (ph - panelH) / 2) + 'px';
+        panel.style.right = '8px';
+        panel.style.left = '';
+      }
+
+      // Draw sparkline
+      const canvas = document.getElementById('srrg-sparkline');
+      if (canvas && stats.sparkPrices.length > 1) {
+        const ctx = canvas.getContext('2d');
+        const dpr = window.devicePixelRatio || 1;
+        canvas.width = canvas.clientWidth * dpr;
+        canvas.height = canvas.clientHeight * dpr;
+        ctx.scale(dpr, dpr);
+        const w = canvas.clientWidth, h = canvas.clientHeight;
+        const sp = stats.sparkPrices;
+        const min = Math.min(...sp), max = Math.max(...sp);
+        const range = max - min || 1;
+        const pad = 2;
+        const isUp = sp[sp.length - 1] >= sp[0];
+        const tc = getThemeColors();
+        const color = isUp ? tc.semanticBullish : tc.semanticBearish;
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        for (let i = 0; i < sp.length; i++) {
+          const x = (i / (sp.length - 1)) * w;
+          const y = pad + ((max - sp[i]) / range) * (h - 2 * pad);
+          i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+        }
+        ctx.stroke();
+        // Fill under the line
+        ctx.lineTo(w, h);
+        ctx.lineTo(0, h);
+        ctx.closePath();
+        const hex = color.replace('#', '');
+        const r = parseInt(hex.slice(0, 2), 16), g = parseInt(hex.slice(2, 4), 16), b = parseInt(hex.slice(4, 6), 16);
+        ctx.fillStyle = `rgba(${r},${g},${b},0.15)`;
+        ctx.fill();
+      }
+
+      // Draw RSI chart
+      const rsiCanvas = document.getElementById('srrg-rsi-chart');
+      const tc2 = getThemeColors();
+      if (rsiCanvas && stats.sparkRsi.length > 1) {
+        const rCtx = rsiCanvas.getContext('2d');
+        const rDpr = window.devicePixelRatio || 1;
+        rsiCanvas.width = rsiCanvas.clientWidth * rDpr;
+        rsiCanvas.height = rsiCanvas.clientHeight * rDpr;
+        rCtx.scale(rDpr, rDpr);
+        const rW = rsiCanvas.clientWidth, rH = rsiCanvas.clientHeight;
+        const rPad = 2;
+        const rData = stats.sparkRsi;
+
+        // Y scale: 0–100 fixed for RSI
+        const toY = (v) => rPad + ((100 - v) / 100) * (rH - 2 * rPad);
+
+        // 50 level line
+        rCtx.strokeStyle = 'rgba(255,255,255,0.25)';
+        rCtx.lineWidth = 0.75;
+        rCtx.beginPath();
+        const y50 = toY(50);
+        rCtx.moveTo(0, y50);
+        rCtx.lineTo(rW, y50);
+        rCtx.stroke();
+
+        // RSI line
+        const lastRsi = rData[rData.length - 1];
+        const rsiColor = lastRsi >= 50 ? tc2.semanticBullish : tc2.semanticBearish;
+        rCtx.strokeStyle = rsiColor;
+        rCtx.lineWidth = 1.5;
+        rCtx.beginPath();
+        for (let i = 0; i < rData.length; i++) {
+          const x = (i / (rData.length - 1)) * rW;
+          const y = toY(rData[i]);
+          i === 0 ? rCtx.moveTo(x, y) : rCtx.lineTo(x, y);
+        }
+        rCtx.stroke();
+      }
+
+      // Draw AO chart — histogram bars colored green/red based on change
+      const aoCanvas = document.getElementById('srrg-ao-chart');
+      if (aoCanvas && stats.sparkAo.length > 1) {
+        const aCtx = aoCanvas.getContext('2d');
+        const aDpr = window.devicePixelRatio || 1;
+        aoCanvas.width = aoCanvas.clientWidth * aDpr;
+        aoCanvas.height = aoCanvas.clientHeight * aDpr;
+        aCtx.scale(aDpr, aDpr);
+        const aW = aoCanvas.clientWidth, aH = aoCanvas.clientHeight;
+        const aData = stats.sparkAo;
+        const aMax = Math.max(...aData.map(v => Math.abs(v))) || 1;
+        const aPad = 2;
+        const zeroY = aH / 2;
+        const barW = Math.max(1, (aW / aData.length) - 0.5);
+
+        // Zero line
+        aCtx.strokeStyle = 'rgba(255,255,255,0.25)';
+        aCtx.lineWidth = 0.75;
+        aCtx.beginPath();
+        aCtx.moveTo(0, zeroY);
+        aCtx.lineTo(aW, zeroY);
+        aCtx.stroke();
+
+        for (let i = 0; i < aData.length; i++) {
+          const x = (i / aData.length) * aW;
+          const val = aData[i];
+          const barH = (Math.abs(val) / aMax) * (aH / 2 - aPad);
+          // Color: green if rising from prev bar, red if falling
+          const rising = i === 0 ? val >= 0 : val >= aData[i - 1];
+          aCtx.fillStyle = rising ? tc2.semanticBullish : tc2.semanticBearish;
+          if (val >= 0) {
+            aCtx.fillRect(x, zeroY - barH, barW, barH);
+          } else {
+            aCtx.fillRect(x, zeroY, barW, barH);
+          }
+        }
+      }
+    }
+
+    function hideStockInfoPanel() {
+      const panel = document.getElementById('srrg-info-panel');
+      panel.classList.remove('visible');
+      panel.innerHTML = '';
+      delete panel.dataset.dragged;
+    }
+
+    // Draggable info panel
+    (function() {
+      const panel = document.getElementById('srrg-info-panel');
+      let dragging = false, startX, startY, startLeft, startTop;
+      panel.addEventListener('mousedown', (e) => {
+        if (e.target.tagName === 'SELECT' || e.target.tagName === 'INPUT') return;
+        dragging = true;
+        panel.classList.add('dragging');
+        panel.dataset.dragged = '1';
+        const rect = panel.getBoundingClientRect();
+        const parentRect = panel.parentElement.getBoundingClientRect();
+        startLeft = rect.left - parentRect.left;
+        startTop = rect.top - parentRect.top;
+        panel.style.right = '';
+        panel.style.left = startLeft + 'px';
+        panel.style.top = startTop + 'px';
+        startX = e.clientX;
+        startY = e.clientY;
+        e.preventDefault();
+      });
+      document.addEventListener('mousemove', (e) => {
+        if (!dragging) return;
+        const parentRect = panel.parentElement.getBoundingClientRect();
+        let newLeft = startLeft + (e.clientX - startX);
+        let newTop = startTop + (e.clientY - startY);
+        // Clamp within parent
+        newLeft = Math.max(0, Math.min(newLeft, parentRect.width - panel.offsetWidth));
+        newTop = Math.max(0, Math.min(newTop, parentRect.height - panel.offsetHeight));
+        panel.style.left = newLeft + 'px';
+        panel.style.top = newTop + 'px';
+      });
+      document.addEventListener('mouseup', () => {
+        if (!dragging) return;
+        dragging = false;
+        panel.classList.remove('dragging');
+      });
+    })();
+
     function populateSectorDropdown() {
       const sel = document.getElementById('srrg-sector');
       if (sel.options.length > 1) return; // already populated
       sel.innerHTML = '';
+      // "All" option
+      const allOpt = document.createElement('option');
+      allOpt.value = 'all';
+      allOpt.textContent = 'All Sectors';
+      sel.appendChild(allOpt);
       const seenSyms = new Set();
       for (let pi = 1; pi < PANEL_COUNT; pi++) {
         const data = panelDataCache[pi];
@@ -4760,21 +5358,23 @@
     }
 
     function computeStockRRGData() {
-      const panelIndex = parseInt(document.getElementById('srrg-sector').value);
-      const data = panelDataCache[panelIndex];
-      if (!data) return { stocks: [], sectorSym: '', panelIndex };
+      const sectorVal = document.getElementById('srrg-sector').value;
+      const isAll = sectorVal === 'all';
+      const panelIndex = isAll ? 1 : parseInt(sectorVal);
+      const refData = panelDataCache[panelIndex];
+      if (!refData) return { stocks: [], sectorSym: '', panelIndex };
 
       const period = document.getElementById('srrg-period').value;
       const tailLen = parseInt(document.getElementById('srrg-tail').value);
       const smoothLen = parseInt(document.getElementById('srrg-smooth').value);
       const benchChoice = document.getElementById('srrg-benchmark').value;
 
-      const sectorSym = data.baseSymbol;
+      const sectorSym = isAll ? 'SPY' : refData.baseSymbol;
 
       // Find benchmark prices
       let benchPrices;
-      if (benchChoice === 'sector') {
-        benchPrices = data.prices[sectorSym];
+      if (benchChoice === 'sector' && !isAll) {
+        benchPrices = refData.prices[sectorSym];
         if (!benchPrices) {
           for (let pi = 0; pi < PANEL_COUNT; pi++) {
             const d = panelDataCache[pi];
@@ -4782,12 +5382,14 @@
           }
         }
       } else {
+        // For "All" with sector benchmark, use SPY; otherwise use selected benchmark
+        const benchSym = (isAll && benchChoice === 'sector') ? 'SPY' : benchChoice;
         const p0 = panelDataCache[0];
-        benchPrices = p0 ? p0.prices[benchChoice] : null;
+        benchPrices = p0 ? p0.prices[benchSym] : null;
       }
       if (!benchPrices) return { stocks: [], sectorSym, panelIndex };
 
-      const dates = data.dates;
+      const dates = refData.dates;
       const step = period === 'daily' ? 1 : 5;
       const sampleIndices = [];
       for (let i = 0; i < dates.length; i += step) sampleIndices.push(i);
@@ -4803,62 +5405,82 @@
         '#ffb74d','#ba68c8','#4fc3f7','#fff176','#81c784','#e57373',
       ];
       let colorIdx = 0;
+      const seenStocks = new Set();
 
-      data.symbols.forEach(s => {
-        if (ETF_TICKERS.has(s)) return;
-        const prices = data.prices[s];
-        if (!prices) return;
-
-        const rsLine = sampleIndices.map(idx => {
-          const sp = prices[idx], bp = benchPrices[idx];
-          if (sp == null || bp == null || bp === 0) return null;
-          return sp / bp;
-        });
-
-        const rawRsRatio = [];
-        for (let i = 0; i < rsLine.length; i++) {
-          if (i < smaWindow - 1 || rsLine[i] == null) { rawRsRatio.push(null); continue; }
-          let sum = 0, count = 0;
-          for (let j = i - smaWindow + 1; j <= i; j++) {
-            if (rsLine[j] != null) { sum += rsLine[j]; count++; }
-          }
-          if (count === 0) { rawRsRatio.push(null); continue; }
-          rawRsRatio.push((rsLine[i] / (sum / count)) * 100);
+      // Collect panels to process
+      const panelsToProcess = [];
+      if (isAll) {
+        const seenBases = new Set();
+        for (let pi = 1; pi < PANEL_COUNT; pi++) {
+          const d = panelDataCache[pi];
+          if (!d) continue;
+          if (seenBases.has(d.baseSymbol)) continue;
+          seenBases.add(d.baseSymbol);
+          panelsToProcess.push(d);
         }
-        const rsRatio = emaSmooth(rawRsRatio, smoothLen);
+      } else {
+        panelsToProcess.push(refData);
+      }
 
-        const rawMomentum = [];
-        for (let i = 0; i < rsRatio.length; i++) {
-          if (i < momWindow - 1 || rsRatio[i] == null) { rawMomentum.push(null); continue; }
-          let sum = 0, count = 0;
-          for (let j = i - momWindow + 1; j <= i; j++) {
-            if (rsRatio[j] != null) { sum += rsRatio[j]; count++; }
-          }
-          if (count === 0) { rawMomentum.push(null); continue; }
-          rawMomentum.push((rsRatio[i] / (sum / count)) * 100);
-        }
-        const rsMomentum = emaSmooth(rawMomentum, smoothLen);
+      for (const data of panelsToProcess) {
+        data.symbols.forEach(s => {
+          if (ETF_TICKERS.has(s)) return;
+          if (seenStocks.has(s)) return;
+          seenStocks.add(s);
+          const prices = data.prices[s];
+          if (!prices) return;
 
-        const trail = [];
-        let added = 0;
-        for (let i = rsRatio.length - 1; i >= 0 && added < tailLen; i--) {
-          if (rsRatio[i] != null && rsMomentum[i] != null) {
-            trail.unshift({ x: rsRatio[i], y: rsMomentum[i] });
-            added++;
-          }
-        }
-
-        if (trail.length > 0) {
-          results.push({
-            sym: s,
-            color: stockColors[colorIdx % stockColors.length],
-            trail,
+          const rsLine = sampleIndices.map(idx => {
+            const sp = prices[idx], bp = benchPrices[idx];
+            if (sp == null || bp == null || bp === 0) return null;
+            return sp / bp;
           });
-          colorIdx++;
-        }
-      });
 
-      const benchLabel = benchChoice === 'sector' ? sectorSym : benchChoice;
+          const rawRsRatio = [];
+          for (let i = 0; i < rsLine.length; i++) {
+            if (i < smaWindow - 1 || rsLine[i] == null) { rawRsRatio.push(null); continue; }
+            let sum = 0, count = 0;
+            for (let j = i - smaWindow + 1; j <= i; j++) {
+              if (rsLine[j] != null) { sum += rsLine[j]; count++; }
+            }
+            if (count === 0) { rawRsRatio.push(null); continue; }
+            rawRsRatio.push((rsLine[i] / (sum / count)) * 100);
+          }
+          const rsRatio = emaSmooth(rawRsRatio, smoothLen);
+
+          const rawMomentum = [];
+          for (let i = 0; i < rsRatio.length; i++) {
+            if (i < momWindow - 1 || rsRatio[i] == null) { rawMomentum.push(null); continue; }
+            let sum = 0, count = 0;
+            for (let j = i - momWindow + 1; j <= i; j++) {
+              if (rsRatio[j] != null) { sum += rsRatio[j]; count++; }
+            }
+            if (count === 0) { rawMomentum.push(null); continue; }
+            rawMomentum.push((rsRatio[i] / (sum / count)) * 100);
+          }
+          const rsMomentum = emaSmooth(rawMomentum, smoothLen);
+
+          const trail = [];
+          let added = 0;
+          for (let i = rsRatio.length - 1; i >= 0 && added < tailLen; i--) {
+            if (rsRatio[i] != null && rsMomentum[i] != null) {
+              trail.unshift({ x: rsRatio[i], y: rsMomentum[i] });
+              added++;
+            }
+          }
+
+          if (trail.length > 0) {
+            results.push({
+              sym: s,
+              color: stockColors[colorIdx % stockColors.length],
+              trail,
+            });
+            colorIdx++;
+          }
+        });
+      }
+
+      const benchLabel = (isAll || benchChoice !== 'sector') ? (isAll && benchChoice === 'sector' ? 'SPY' : benchChoice) : sectorSym;
       return { stocks: results, sectorSym, benchLabel, panelIndex };
     }
 
@@ -5030,50 +5652,112 @@
       canvas._stockPositions = stockPositions;
 
       // Build legend
-      if (!drawStockRRG._skipLegend) buildStockRRGLegend(stocks);
+      if (!drawStockRRG._skipLegend) buildStockRRGSidebar(stocks);
       drawStockRRG._skipLegend = false;
     }
 
-    function buildStockRRGLegend(stocks) {
-      const legendEl = document.getElementById('stock-rrg-legend');
-      if (!legendEl) return;
+    function buildStockRRGSidebar(stocks) {
+      const sidebarEl = document.getElementById('stock-rrg-sidebar');
+      if (!sidebarEl) return;
 
-      const sorted = [...stocks].sort((a, b) => {
-        const aLast = a.trail[a.trail.length - 1];
-        const bLast = b.trail[b.trail.length - 1];
-        return bLast.x - aLast.x;
-      });
-
-      // Store sorted order for arrow key navigation
-      srrg_legendOrder = sorted.map(s => s.sym);
-
-      const activeSym = srrg_lockedStock || srrg_hoveredStock;
       const tc = currentThemeColors;
-      let html = '<div class="rrg-legend-title">Stocks' + (srrg_lockedStock ? ' (Esc to unlock)' : '') + '</div>';
-      sorted.forEach(s => {
-        const last = s.trail[s.trail.length - 1];
-        let quadrant, qColor;
-        if (last.x >= 100 && last.y >= 100) { quadrant = 'Lead'; qColor = tc.semanticBullish; }
-        else if (last.x < 100 && last.y >= 100) { quadrant = 'Impr'; qColor = tc.semanticNeutral; }
-        else if (last.x < 100 && last.y < 100) { quadrant = 'Lag'; qColor = tc.semanticBearish; }
-        else { quadrant = 'Weak'; qColor = tc.semanticWeakening; }
+      const activeSym = srrg_lockedStock || srrg_hoveredStock;
 
-        const isActive = activeSym === s.sym;
-        const isDimmed = activeSym && !isActive;
-        const cls = isActive ? 'highlighted' : isDimmed ? 'dimmed' : '';
+      // Classify each stock into quadrant groups
+      const groups = { leading: [], improving: [], weakening: [], lagging: [] };
+      let maxDist = 0;
 
-        html += `<div class="rrg-legend-item ${cls}" data-sym="${s.sym}">
-          <span class="rrg-legend-dot" style="background:${s.color}"></span>
-          <span class="rrg-legend-sym">${s.sym}</span>
-          <span class="rrg-legend-quadrant" style="color:${qColor}">${quadrant}</span>
-        </div>`;
+      stocks.forEach(s => {
+        const curr = s.trail[s.trail.length - 1];
+        const prev = s.trail.length >= 2 ? s.trail[s.trail.length - 2] : curr;
+        const currQ = getQuadrant(curr.x, curr.y);
+        const prevQ = getQuadrant(prev.x, prev.y);
+        const isCrossing = currQ !== prevQ;
+        const dist = Math.sqrt((curr.x - 100) ** 2 + (curr.y - 100) ** 2);
+        if (dist > maxDist) maxDist = dist;
+        const { arrow, signal } = rrgHeading(s.trail);
+
+        groups[currQ].push({ ...s, dist, isCrossing, prevQ, arrow, signal, currQ });
       });
 
-      legendEl.innerHTML = html;
+      // Sort within each group for trade-finding:
+      // Leading: momentum (y) desc — accelerating leaders first, fading ones last
+      // Improving: RS-Ratio (x) desc — closest to crossing into Leading first
+      // Weakening: momentum (y) asc — most urgent sells first
+      // Lagging: momentum (y) desc — potential bottoms/turnarounds first
+      for (const q of QUADRANT_ORDER) {
+        groups[q].sort((a, b) => {
+          const aCurr = a.trail[a.trail.length - 1];
+          const bCurr = b.trail[b.trail.length - 1];
+          if (q === 'improving') return bCurr.x - aCurr.x;
+          if (q === 'weakening') return aCurr.y - bCurr.y;
+          return bCurr.y - aCurr.y;
+        });
+      }
+
+      // Rebuild legend order for arrow key navigation
+      srrg_legendOrder = [];
+      for (const q of QUADRANT_ORDER) {
+        groups[q].forEach(s => srrg_legendOrder.push(s.sym));
+      }
+
+      // Build nav buttons
+      const navEl = document.getElementById('srrg-quad-nav');
+      let navHtml = '';
+      for (const q of QUADRANT_ORDER) {
+        const meta = QUADRANT_META[q];
+        const qColor = tc[meta.colorVar];
+        const count = groups[q].length;
+        navHtml += `<button class="srrg-quad-btn" style="color:${qColor};border-color:${qColor}40" data-quad="${q}">${meta.short} <span class="count">${count}</span></button>`;
+      }
+      navEl.innerHTML = navHtml;
+
+      // Build list content
+      const listEl = document.getElementById('srrg-sidebar-list');
+      let html = rrgTipsHTML(tc);
+      for (const q of QUADRANT_ORDER) {
+        const items = groups[q];
+        if (items.length === 0) continue;
+        const meta = QUADRANT_META[q];
+        const qColor = tc[meta.colorVar];
+
+        html += `<div id="srrg-q-${q}"></div>`;
+        html += `<div class="rrg-group-header" style="color:${qColor}"><span>\u25CF ${meta.label}</span><span class="count">${items.length}</span></div>`;
+
+        items.forEach(s => {
+          const distPct = maxDist > 0 ? Math.min(100, Math.round(s.dist / maxDist * 100)) : 0;
+
+          const arrowColor = s.signal === 'bullish' ? tc.semanticBullish : s.signal === 'bearish' ? tc.semanticBearish : tc.textQuaternary;
+          const isBullishCross = s.isCrossing && (q === 'leading' || q === 'improving');
+          const isActive = activeSym === s.sym;
+          const itemCls = 'rrg-legend-item' + (isBullishCross ? ' rrg-actionable' : '') + (isActive ? ' rrg-active' : '');
+
+          html += `<div class="${itemCls}" data-sym="${s.sym}">
+            <span class="rrg-legend-dot" style="background:${s.color}"></span>
+            <span class="rrg-legend-sym">${s.sym}</span>
+            <span class="rrg-heading" style="color:${arrowColor}">${s.arrow}</span>
+            ${s.isCrossing ? `<span class="rrg-crossing" style="color:${qColor};background:${qColor}22">NEW</span><span class="rrg-from" style="color:${tc[QUADRANT_META[s.prevQ].colorVar]}">from ${QUADRANT_META[s.prevQ].short}</span>` : ''}
+            <span class="rrg-distance-bar"><span class="fill" style="width:${distPct}%;background:${qColor}"></span></span>
+          </div>`;
+        });
+      }
+      listEl.innerHTML = html;
+
+      // Quadrant nav button clicks — scroll the list container
+      navEl.querySelectorAll('.srrg-quad-btn[data-quad]').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const q = btn.dataset.quad;
+          const anchor = document.getElementById('srrg-q-' + q);
+          if (anchor) {
+            listEl.scrollTo({ top: anchor.offsetTop, behavior: 'smooth' });
+          }
+        });
+      });
 
       // Scroll the active item into view
       if (activeSym) {
-        const activeEl = legendEl.querySelector(`.rrg-legend-item[data-sym="${activeSym}"]`);
+        const activeEl = listEl.querySelector(`.rrg-legend-item[data-sym="${activeSym}"]`);
         if (activeEl) activeEl.scrollIntoView({ block: 'nearest' });
       }
     }
@@ -5106,23 +5790,28 @@
     }
 
     // Stock RRG legend events (hover, click, keyboard)
-    const stockRRGLegendEl = document.getElementById('stock-rrg-legend');
+    const stockRRGLegendEl = document.getElementById('srrg-sidebar-list');
     if (stockRRGLegendEl) {
+      let srrgHoverTimer = null;
       stockRRGLegendEl.addEventListener('mouseenter', (e) => {
-        if (srrg_lockedStock) return; // don't hover-change when locked
+        if (srrg_lockedStock) return;
         const item = e.target.closest('.rrg-legend-item');
         if (!item) return;
         const sym = item.dataset.sym;
         if (sym && sym !== srrg_hoveredStock) {
-          srrg_hoveredStock = sym;
-          drawStockRRG();
+          clearTimeout(srrgHoverTimer);
+          srrgHoverTimer = setTimeout(() => {
+            srrg_hoveredStock = sym;
+            drawStockRRGChartOnly();
+          }, 120);
         }
       }, true);
       stockRRGLegendEl.addEventListener('mouseleave', () => {
-        if (srrg_lockedStock) return; // stay locked
+        clearTimeout(srrgHoverTimer);
+        if (srrg_lockedStock) return;
         if (srrg_hoveredStock) {
           srrg_hoveredStock = null;
-          drawStockRRG();
+          drawStockRRGChartOnly();
         }
       });
       stockRRGLegendEl.addEventListener('click', (e) => {
@@ -5133,8 +5822,10 @@
           // Toggle lock: click same to unlock, click different to switch
           if (srrg_lockedStock === sym) {
             srrg_lockedStock = null;
+            hideStockInfoPanel();
           } else {
             srrg_lockedStock = sym;
+            showStockInfoPanel(sym);
           }
           srrg_hoveredStock = null;
           drawStockRRG();
@@ -5151,6 +5842,7 @@
         if (srrg_lockedStock) {
           srrg_lockedStock = null;
           srrg_hoveredStock = null;
+          hideStockInfoPanel();
           drawStockRRG();
         }
         return;
@@ -5162,18 +5854,21 @@
         const current = srrg_lockedStock || srrg_hoveredStock;
         let idx = current ? srrg_legendOrder.indexOf(current) : -1;
         if (e.key === 'ArrowDown') {
-          idx = idx < srrg_legendOrder.length - 1 ? idx + 1 : 0;
+          if (idx >= srrg_legendOrder.length - 1) return; // don't wrap
+          idx = idx + 1;
         } else {
-          idx = idx > 0 ? idx - 1 : srrg_legendOrder.length - 1;
+          if (idx <= 0) return; // don't wrap
+          idx = idx - 1;
         }
         srrg_lockedStock = srrg_legendOrder[idx];
         srrg_hoveredStock = null;
         drawStockRRG();
+        showStockInfoPanel(srrg_lockedStock);
       }
     });
 
     // Legend event delegation (hover + click)
-    const rrgLegendEl = document.getElementById('rrg-legend');
+    const rrgLegendEl = document.getElementById('rrg-sidebar');
     if (rrgLegendEl) {
       let legendHoverTimer = null;
 
@@ -5182,14 +5877,13 @@
         if (!item) return;
         const sym = item.dataset.sym;
         if (sym && sym !== rrg_hoveredSector) {
+          clearTimeout(legendHoverTimer);
           rrg_hoveredSector = sym;
-          // Redraw chart but NOT the legend (to avoid killing hover state)
           drawRRGChartOnly();
         }
       }, true);
 
       rrgLegendEl.addEventListener('mouseleave', (e) => {
-        // Small delay so click can fire before we clear
         clearTimeout(legendHoverTimer);
         legendHoverTimer = setTimeout(() => {
           if (rrg_hoveredSector) {
@@ -5208,10 +5902,14 @@
       });
     }
 
-    // Draw only the canvas without rebuilding legend (avoids killing hover/click state)
+    // Draw only the canvas without rebuilding sidebar (avoids killing hover/click state)
     function drawRRGChartOnly() {
       drawRRG._skipLegend = true;
       drawRRG();
+    }
+    function drawStockRRGChartOnly() {
+      drawStockRRG._skipLegend = true;
+      drawStockRRG();
     }
 
     // Mouse hover for RRG canvas
@@ -5610,6 +6308,17 @@ Focus on:
 
     // Initial build
     buildWidgets();
+    // Restore saved view
+    const savedView = localStorage.getItem('currentView');
+    if (savedView && savedView !== 'spaghetti') {
+      const viewBtns = document.querySelectorAll('.topbar-controls .btn[data-view]');
+      for (const btn of viewBtns) {
+        if (btn.getAttribute('onclick').includes(`'${savedView}'`)) {
+          setView(savedView, btn);
+          break;
+        }
+      }
+    }
     updateViewTitle();
     // RS Line button starts disabled in absolute mode
     const rsBtn = document.getElementById('rs-line-toggle');
