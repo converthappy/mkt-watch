@@ -26,7 +26,7 @@ PANELS = [
     {
         "title": "1. Market ETFs Overview",
         "baseSymbol": "SPY",
-        "symbols": ["SPY","RSP","QQQ","DIA","IWM","XLK","RYT","XLV","RYH","XLF","RYF","XLY","RCD","XLP","RHS","XLE","RYE","XLI","RGI","XLB","RTM","XLC","RSPC","XLU","RYU","XLRE","EWRE"]
+        "symbols": ["SPY","RSP","QQQ","QQQE","DIA","IWM","XLK","RYT","XLV","RYH","XLF","RYF","XLY","RCD","XLP","RHS","XLE","RYE","XLI","RGI","XLB","RTM","XLC","RSPC","XLU","RYU","XLRE","EWRE"]
     },
     {
         "title": "2. Tech - Software & Services",
