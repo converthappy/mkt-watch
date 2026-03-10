@@ -352,7 +352,7 @@
     }
     .grid-toolbar {
       display: flex; align-items: center; gap: 8px;
-      flex-wrap: wrap;
+      flex-wrap: nowrap; overflow-x: auto;
       position: sticky; top: 0; z-index: 10;
       background: var(--bg-primary);
       margin: 0 -12px;
@@ -373,6 +373,20 @@
       transition: border-color 0.15s;
     }
     .grid-tile:hover { border-color: var(--text-quaternary); }
+    .grid-spark-wrap { position: relative; }
+    .grid-spark-hover {
+      position: absolute; top: 4px; right: 4px;
+      display: flex; gap: 3px;
+      opacity: 0; transition: opacity 0.15s;
+      pointer-events: none;
+    }
+    .grid-spark-hover span {
+      font-size: 9px; font-weight: 600;
+      padding: 1px 4px; border-radius: 3px;
+      background: rgba(30,30,40,0.5);
+      border: 1px solid rgba(255,255,255,0.05);
+    }
+    .grid-spark-wrap:hover .grid-spark-hover { opacity: 1; }
     .grid-tile.favorited { border-color: var(--text-positive, #4dd8b4); }
     .grid-tile.favorited:hover { border-color: #6ee8c8; }
     .grid-fav-btn {
@@ -405,7 +419,10 @@
     .grid-view-container.highlight-indicators .grid-tile:hover .grid-spark { opacity: 1; }
     .grid-tile-returns {
       display: flex; gap: 6px; align-items: center;
-      font-size: 9px; font-weight: 600; margin-bottom: 4px;
+      font-size: 9px; font-weight: 600;
+      padding: 4px 0; margin-bottom: 4px;
+      border-top: 1px solid var(--border-subtle);
+      border-bottom: 1px solid var(--border-subtle);
     }
     .grid-tile-returns span { opacity: 0.85; }
     .grid-tile-returns .ret-label { color: var(--text-quaternary); font-weight: 400; }
@@ -1698,6 +1715,8 @@
     let gridShowEma21 = false;
     let gridShowMa50 = false;
     let gridHighlightIndicators = false;
+    let rotationBenchmark = 'sector'; // 'sector' | 'spy' | 'absolute'
+    let gridSortBy = 'default'; // 'default' | 'rsRating' | 'swingScore' | 'ret1d' | 'rsiDelta' | 'ma50Dist'
     let stockNamesMap = {};
     fetch('data/stock_names.json').then(r => r.json()).then(d => { stockNamesMap = d; }).catch(() => {});
     let currentRange = '3M';
@@ -3957,6 +3976,7 @@
           const baseRet40 = getWindowReturn(basePrices, endIdx, SWING_WINDOWS.long);
           const spyRet10 = getWindowReturn(spyPrices, endIdx, SWING_WINDOWS.short);
           const spyRet20 = getWindowReturn(spyPrices, endIdx, SWING_WINDOWS.mid);
+          const spyRet40 = getWindowReturn(spyPrices, endIdx, SWING_WINDOWS.long);
 
           if (stockRet10 == null || stockRet20 == null) return;
 
@@ -4008,19 +4028,27 @@
 
           const total = structure + acceleration + sector;
 
-          // Rotation stage (1–4)
+          // Rotation stage (1–4) — benchmark-dependent
+          const vsSPY40d = (stockRet40 ?? 0) - (spyRet40 ?? 0);
+          let rot10, rot20, rot40;
+          if (rotationBenchmark === 'spy') {
+            rot10 = vsSPY10d; rot20 = vsSPY20d; rot40 = vsSPY40d;
+          } else if (rotationBenchmark === 'absolute') {
+            rot10 = stockRet10 ?? 0; rot20 = stockRet20 ?? 0; rot40 = stockRet40 ?? 0;
+          } else {
+            rot10 = vsSectorCap10d; rot20 = vsSectorCap20d; rot40 = vsSectorCap40d;
+          }
           let rotation;
-          if (vsSectorCap10d < 0 && vsSectorCap20d < 0 && vsSectorCap40d < 0) {
+          if (rot10 < 0 && rot20 < 0 && rot40 < 0) {
             rotation = 4; // Decline
-          } else if (vsSectorCap40d < 0 && vsSectorCap10d > 0) {
+          } else if (rot40 < 0 && rot10 > 0) {
             rotation = 1; // Accumulation
-          } else if (vsSectorCap10d > 0 && vsSectorCap20d > 0 && vsSectorCap40d > 0) {
+          } else if (rot10 > 0 && rot20 > 0 && rot40 > 0) {
             rotation = 2; // Markup
-          } else if (vsSectorCap40d > 0 && vsSectorCap10d < 0) {
+          } else if (rot40 > 0 && rot10 < 0) {
             rotation = 3; // Distribution
           } else {
-            // Fallback: classify by dominant direction
-            const positiveCount = (vsSectorCap10d > 0 ? 1 : 0) + (vsSectorCap20d > 0 ? 1 : 0) + (vsSectorCap40d > 0 ? 1 : 0);
+            const positiveCount = (rot10 > 0 ? 1 : 0) + (rot20 > 0 ? 1 : 0) + (rot40 > 0 ? 1 : 0);
             if (positiveCount >= 2) rotation = 2;
             else rotation = 4;
           }
@@ -4213,6 +4241,12 @@
       html += `<option value="bearish" ${swingFilterSignal === 'bearish' ? 'selected' : ''}>Bearish</option>`;
       html += `<option value="neutral" ${swingFilterSignal === 'neutral' ? 'selected' : ''}>Neutral</option>`;
       html += '</select>';
+      html += '<span class="topbar-label" style="margin-left:12px">Benchmark</span>';
+      html += `<select onchange="setRotationBenchmark(this.value)">`;
+      html += `<option value="sector"${rotationBenchmark==='sector'?' selected':''}>vs Sector</option>`;
+      html += `<option value="spy"${rotationBenchmark==='spy'?' selected':''}>vs SPY</option>`;
+      html += `<option value="absolute"${rotationBenchmark==='absolute'?' selected':''}>Absolute</option>`;
+      html += '</select>';
       html += `<span class="topbar-label" style="margin-left:12px">Showing ${filtered.length} stocks</span>`;
       html += '</div>';
 
@@ -4291,12 +4325,12 @@
           const len = prices.length;
           let last = null;
           for (let i = len - 1; i >= 0; i--) { if (prices[i] != null) { last = prices[i]; break; } }
-          let nearEma8 = false, nearEma21 = false;
+          let nearEma8 = false, nearEma21 = false, ema8Dist = null, ema21Dist = null;
           if (last != null) {
             const calcEma = (period) => { const k = 2 / (period + 1); let ema = null; for (let i = 0; i < len; i++) { if (prices[i] == null) continue; ema = ema == null ? prices[i] : prices[i] * k + ema * (1 - k); } return ema; };
             const e8 = calcEma(8), e21 = calcEma(21);
-            if (e8 != null) { const pct = ((last - e8) / e8) * 100; nearEma8 = pct >= 0 && pct <= 3; }
-            if (e21 != null) { const pct = ((last - e21) / e21) * 100; nearEma21 = pct >= 0 && pct <= 5; }
+            if (e8 != null) { ema8Dist = ((last - e8) / e8) * 100; nearEma8 = ema8Dist >= 0 && ema8Dist <= 3; }
+            if (e21 != null) { ema21Dist = ((last - e21) / e21) * 100; nearEma21 = ema21Dist >= 0 && ema21Dist <= 5; }
           }
           // Compute returns (1D, 5D, 1M, 3M)
           let ret1d = null, ret5d = null, ret1m = null, ret3m = null;
@@ -4309,7 +4343,71 @@
             if (vLen >= 22) ret1m = ((last - validPrices[vLen - 22]) / validPrices[vLen - 22]) * 100;
             if (vLen >= 65) ret3m = ((last - validPrices[vLen - 65]) / validPrices[vLen - 65]) * 100;
           }
-          stocks.push({ sym, panelIndex: pi, sectorName, data: d, rsRating: swing.rsRating != null ? swing.rsRating : null, rotation: swing.rotation || null, swingScore: swing.total != null ? swing.total : null, nearEma8, nearEma21, ret1d, ret5d, ret1m, ret3m });
+          // RSI delta (5-bar) and MA50 distance
+          let rsiDelta = null, ma50Dist = null;
+          if (last != null) {
+            // RSI series (14-period)
+            const rsiPeriod = 14;
+            let gains = 0, losses = 0, rsiArr = [];
+            for (let i = 1; i < len; i++) {
+              if (prices[i] == null || prices[i-1] == null) { rsiArr.push(null); continue; }
+              const chg = prices[i] - prices[i-1];
+              if (i <= rsiPeriod) {
+                if (chg > 0) gains += chg; else losses -= chg;
+                if (i === rsiPeriod) {
+                  gains /= rsiPeriod; losses /= rsiPeriod;
+                  rsiArr.push(losses === 0 ? 100 : 100 - 100 / (1 + gains / losses));
+                } else { rsiArr.push(null); }
+              } else {
+                gains = (gains * (rsiPeriod - 1) + (chg > 0 ? chg : 0)) / rsiPeriod;
+                losses = (losses * (rsiPeriod - 1) + (chg < 0 ? -chg : 0)) / rsiPeriod;
+                rsiArr.push(losses === 0 ? 100 : 100 - 100 / (1 + gains / losses));
+              }
+            }
+            const rsiValid = rsiArr.filter(v => v != null);
+            const rsiLen = rsiValid.length;
+            if (rsiLen >= 6) {
+              rsiDelta = rsiValid[rsiLen - 1] - rsiValid[rsiLen - 6];
+            }
+            // MA50 distance in ATR multiples
+            const ohlcSym = d.ohlc && d.ohlc[sym];
+            const validPricesAll = [];
+            for (let i = 0; i < len; i++) { if (prices[i] != null) validPricesAll.push(prices[i]); }
+            if (validPricesAll.length >= 50) {
+              let sum50 = 0;
+              for (let i = validPricesAll.length - 50; i < validPricesAll.length; i++) sum50 += validPricesAll[i];
+              const ma50 = sum50 / 50;
+              // ATR(14) using true range: max(H-L, |H-prevC|, |L-prevC|)
+              const atrPeriod = 14;
+              let atrSum = 0, atrCount = 0;
+              for (let i = len - atrPeriod; i < len; i++) {
+                if (i < 1 || prices[i] == null || prices[i-1] == null) continue;
+                const h = ohlcSym && ohlcSym.h && ohlcSym.h[i] != null ? ohlcSym.h[i] : prices[i];
+                const l = ohlcSym && ohlcSym.l && ohlcSym.l[i] != null ? ohlcSym.l[i] : prices[i];
+                const pc = prices[i-1];
+                const tr = Math.max(h - l, Math.abs(h - pc), Math.abs(l - pc));
+                atrSum += tr; atrCount++;
+              }
+              if (atrCount > 0) {
+                const atr = atrSum / atrCount;
+                ma50Dist = atr > 0 ? (last - ma50) / atr : null;
+              }
+            }
+          }
+          // ADR% = (SMA(High, 14) / SMA(Low, 14) - 1) * 100  (TradingView method)
+          let adrPct = null;
+          const ohlcSymAdr = d.ohlc && d.ohlc[sym];
+          if (last != null && ohlcSymAdr && ohlcSymAdr.h && ohlcSymAdr.l) {
+            let hSum = 0, lSum = 0, adrN = 0;
+            for (let i = len - 14; i < len; i++) {
+              if (i < 0 || ohlcSymAdr.h[i] == null || ohlcSymAdr.l[i] == null) continue;
+              hSum += ohlcSymAdr.h[i];
+              lSum += ohlcSymAdr.l[i];
+              adrN++;
+            }
+            if (adrN > 0 && lSum > 0) adrPct = ((hSum / adrN) / (lSum / adrN) - 1) * 100;
+          }
+          stocks.push({ sym, panelIndex: pi, sectorName, data: d, rsRating: swing.rsRating != null ? swing.rsRating : null, rotation: swing.rotation || null, swingScore: swing.total != null ? swing.total : null, nearEma8, nearEma21, ema8Dist, ema21Dist, ret1d, ret5d, ret1m, ret3m, rsiDelta, ma50Dist, adrPct });
         }
       }
 
@@ -4394,13 +4492,21 @@
         });
       }
 
-      // Column buttons
-      const colBtns = [2, 3, 4, 6].map(n =>
-        `<button class="btn${gridColumns === n ? ' active' : ''}" onclick="setGridColumns(${n})">${n}</button>`
+      // Sort-by dropdown
+      const sortOpts = [['default','Quadrant'],['rsRating','RS Rating'],['swingScore','Swing Score'],['ret1d','1D Return'],['rsiDelta','RSI Delta'],['ma50Dist','MA50 (ATR)']].map(([v,l]) =>
+        `<option value="${v}"${gridSortBy===v?' selected':''}>${l}</option>`
       ).join('');
 
-      // Chart mode toggle
-      const modeToggle = `<button class="btn${gridChartMode==='line'?' active':''}" onclick="setGridChartMode('line')">Line</button><button class="btn${gridChartMode==='candle'?' active':''}" onclick="setGridChartMode('candle')">Candle</button>`;
+      // Column select
+      const colOpts = [2, 3, 4, 6].map(n =>
+        `<option value="${n}"${gridColumns === n ? ' selected' : ''}>${n}</option>`
+      ).join('');
+
+      // Chart mode select
+      const modeOpts = `<option value="line"${gridChartMode==='line'?' selected':''}>Line</option><option value="candle"${gridChartMode==='candle'?' selected':''}>Candle</option>`;
+
+      // Bench select
+      const benchOpts = `<option value="sector"${rotationBenchmark==='sector'?' selected':''}>vs Sector</option><option value="spy"${rotationBenchmark==='spy'?' selected':''}>vs SPY</option><option value="absolute"${rotationBenchmark==='absolute'?' selected':''}>Absolute</option>`;
 
       // Range buttons
       const rangeBtns = ['1M','3M','6M','YTD','1Y'].map(r =>
@@ -4432,74 +4538,117 @@
           <select onchange="setGridFilter('momentum',this.value)">${momOpts}</select>
         </div>
         <div class="separator"></div>
+        <div class="btn-group"><span class="topbar-label">Sort</span>
+          <select onchange="setGridSort(this.value)">${sortOpts}</select>
+        </div>
+        <div class="separator"></div>
         <div class="btn-group"><span class="topbar-label">Range</span>${rangeBtns}</div>
         <div class="separator"></div>
-        <div class="btn-group"><span class="topbar-label">Columns</span>${colBtns}</div>
+        <div class="btn-group"><span class="topbar-label">Columns</span>
+          <select onchange="setGridColumns(+this.value)">${colOpts}</select>
+        </div>
         <div class="separator"></div>
-        <div class="btn-group"><span class="topbar-label">Chart</span>${modeToggle}</div>
+        <div class="btn-group"><span class="topbar-label">Chart</span>
+          <select onchange="setGridChartMode(this.value)">${modeOpts}</select>
+        </div>
         <div class="separator"></div>
-        <div class="btn-group">
-          <button class="btn${gridShowEma8?' active':''}" onclick="toggleGridEma(8)" style="font-size:10px">E8</button>
-          <button class="btn${gridShowEma21?' active':''}" onclick="toggleGridEma(21)" style="font-size:10px">E21</button>
-          <button class="btn${gridShowMa50?' active':''}" onclick="toggleGridEma(50)" style="font-size:10px">MA50</button>
+        <div class="btn-group"><span class="topbar-label">Overlays</span>
+          <select onchange="toggleGridEma(+this.value)">
+            <option value="0" disabled selected>${[gridShowEma8?'E8':null,gridShowEma21?'E21':null,gridShowMa50?'MA50':null].filter(Boolean).join(', ')||'None'}</option>
+            <option value="8">${gridShowEma8?'\u2713 ':''}EMA 8</option>
+            <option value="21">${gridShowEma21?'\u2713 ':''}EMA 21</option>
+            <option value="50">${gridShowMa50?'\u2713 ':''}MA 50</option>
+          </select>
         </div>
         <div class="separator"></div>
         <button class="btn${gridHighlightIndicators?' active':''}" onclick="toggleGridHighlight()">RSI/AO</button>
         <div class="separator"></div>
-        <button class="btn${gridShowFavorites?' active':''}" onclick="toggleGridFavorites()" style="${gridShowFavorites?'color:var(--text-positive,#4dd8b4)':''}">&#9733; Favorites${gridFavorites.size?' ('+gridFavorites.size+')':''}</button>
+        <div class="btn-group"><span class="topbar-label">Bench</span>
+          <select onchange="setRotationBenchmark(this.value)">${benchOpts}</select>
+        </div>
+        <div class="separator"></div>
+        <button class="btn${gridShowFavorites?' active':''}" onclick="toggleGridFavorites()" style="white-space:nowrap;${gridShowFavorites?'color:var(--text-positive,#4dd8b4)':''}">&#9733; Favorites${gridFavorites.size?' ('+gridFavorites.size+')':''}</button>
         <div class="separator"></div>
         <span style="font-size:var(--fs-sm);color:var(--text-quaternary)">${filtered.length} stocks</span>
       </div>`;
 
       const sparkH = gridChartMode === 'candle' ? 140 : 80;
-      for (const q of QUADRANT_ORDER) {
-        const items = groups[q];
-        if (items.length === 0) continue;
-        const meta = QUADRANT_META[q];
-        const qColor = tc[meta.colorVar];
 
-        html += `<div class="grid-quadrant-section" style="border-color:${qColor}66">`;
-        html += `<div class="grid-group-header" style="color:${qColor}">\u25CF ${meta.label} <span class="count">${items.length}</span></div>`;
-        html += `<div class="grid-tiles-grid" style="grid-template-columns:repeat(${gridColumns}, 1fr)">`;
+      const fmtRet = (v, label) => {
+        if (v == null) return '';
+        const c = v >= 0 ? tc.semanticBullish : tc.semanticBearish;
+        const sign = v >= 0 ? '+' : '';
+        return `<span class="ret-label">${label}</span><span style="color:${c}">${sign}${v.toFixed(1)}%</span>`;
+      };
+      const fmtVal = (v, suffix) => {
+        if (v == null) return '';
+        const c = v >= 0 ? tc.semanticBullish : tc.semanticBearish;
+        const sign = v >= 0 ? '+' : '';
+        return `<span style="font-size:9px;font-weight:600;padding:1px 4px;border-radius:3px;color:${c};background:${c}18">${sign}${v.toFixed(1)}${suffix}</span>`;
+      };
 
-        for (const s of items) {
-          const rotStage = s.rotation ? ROTATION_STAGES[s.rotation] : null;
-          const rotTag = rotStage ? `<span class="grid-tile-rotation" style="background:${rotStage.color}22;color:${rotStage.color}">${rotStage.label}</span>` : '';
-          const emaTags = (s.nearEma21 ? '<span class="rrg-ema-tag">E21</span>' : '') + (s.nearEma8 ? '<span class="rrg-ema-tag">E8</span>' : '');
-          const rsColor = s.rsRating != null ? (s.rsRating >= 50 ? 'var(--text-positive,#4dd8b4)' : 'var(--text-negative,#f0616d)') : '';
-          const rsBg = s.rsRating != null ? (s.rsRating >= 50 ? 'rgba(77,216,180,0.12)' : 'rgba(240,97,109,0.12)') : '';
-          const rsTag = s.rsRating != null ? `<span style="font-size:9px;font-weight:600;padding:1px 4px;border-radius:3px;color:${rsColor};background:${rsBg}">RS ${s.rsRating}</span>` : '';
-
-          const arrowColor = s.signal === 'bullish' ? tc.semanticBullish : s.signal === 'bearish' ? tc.semanticBearish : tc.textQuaternary;
-          const momentumTag = s.arrow ? `<span style="font-size:11px;font-weight:700;color:${arrowColor}">${s.arrow}</span>` : '';
-          const crossingTag = s.isCrossing ? `<span class="rrg-crossing" style="color:${qColor};background:${qColor}22">NEW</span>` : '';
-          const fromTag = s.isCrossing ? `<span class="rrg-from" style="color:${tc[QUADRANT_META[s.prevQ].colorVar]}">from ${QUADRANT_META[s.prevQ].short}</span>` : '';
-
-          const fmtRet = (v, label) => {
-            if (v == null) return '';
-            const c = v >= 0 ? tc.semanticBullish : tc.semanticBearish;
-            const sign = v >= 0 ? '+' : '';
-            return `<span class="ret-label">${label}</span><span style="color:${c}">${sign}${v.toFixed(1)}%</span>`;
-          };
-          const retHtml = `<div class="grid-tile-returns">${fmtRet(s.ret1d,'1D')}${fmtRet(s.ret5d,'5D')}${fmtRet(s.ret1m,'1M')}${fmtRet(s.ret3m,'3M')}</div>`;
-
-          const isFav = gridFavorites.has(s.sym);
-          html += `<div class="grid-tile${isFav ? ' favorited' : ''}" data-sym="${s.sym}" data-pi="${s.panelIndex}">
+      const renderTile = (s, qColor) => {
+        const rotStage = s.rotation ? ROTATION_STAGES[s.rotation] : null;
+        const rotTag = rotStage ? `<span class="grid-tile-rotation" style="background:${rotStage.color}22;color:${rotStage.color}">${rotStage.label}</span>` : '';
+        const emaTags = (s.nearEma21 ? '<span class="rrg-ema-tag">E21</span>' : '') + (s.nearEma8 ? '<span class="rrg-ema-tag">E8</span>' : '');
+        const rsColor = s.rsRating != null ? (s.rsRating >= 50 ? 'var(--text-positive,#4dd8b4)' : 'var(--text-negative,#f0616d)') : '';
+        const rsBg = s.rsRating != null ? (s.rsRating >= 50 ? 'rgba(77,216,180,0.12)' : 'rgba(240,97,109,0.12)') : '';
+        const rsTag = s.rsRating != null ? `<span style="font-size:9px;font-weight:600;padding:1px 4px;border-radius:3px;color:${rsColor};background:${rsBg}">RS ${s.rsRating}</span>` : '';
+        const arrowColor = s.signal === 'bullish' ? tc.semanticBullish : s.signal === 'bearish' ? tc.semanticBearish : tc.textQuaternary;
+        const momentumTag = s.arrow ? `<span style="font-size:11px;font-weight:700;color:${arrowColor}">${s.arrow}</span>` : '';
+        const crossingTag = s.isCrossing ? `<span class="rrg-crossing" style="color:${qColor};background:${qColor}22">NEW</span>` : '';
+        const fromTag = s.isCrossing ? `<span class="rrg-from" style="color:${tc[QUADRANT_META[s.prevQ].colorVar]}">from ${QUADRANT_META[s.prevQ].short}</span>` : '';
+        const adrHigh = s.adrPct != null && s.adrPct >= 4;
+        const adrTag = s.adrPct != null ? `<span style="font-size:9px;font-weight:600;padding:1px 4px;border-radius:3px;color:${adrHigh ? 'var(--text-positive,#4dd8b4)' : 'var(--text-tertiary)'};background:${adrHigh ? 'rgba(77,216,180,0.12)' : 'rgba(255,255,255,0.06)'}">ADR ${s.adrPct.toFixed(1)}%</span>` : '';
+        const retHtml = `<div class="grid-tile-returns">${fmtRet(s.ret1d,'1D')}${fmtRet(s.ret5d,'5D')}${fmtRet(s.ret1m,'1M')}${fmtRet(s.ret3m,'3M')}</div>`;
+        const isFav = gridFavorites.has(s.sym);
+        return `<div class="grid-tile${isFav ? ' favorited' : ''}" data-sym="${s.sym}" data-pi="${s.panelIndex}">
           <div class="grid-tile-header">
             <span class="grid-tile-sym">${s.sym}</span>
             <span class="grid-tile-sector">${s.sectorName}</span>
           </div>
-          <div class="grid-tile-tags">${momentumTag}${rotTag}${crossingTag}${fromTag}${emaTags}${rsTag}</div>
+          <div class="grid-tile-tags">${momentumTag}${rotTag}${crossingTag}${fromTag}${emaTags}${rsTag}${adrTag}</div>
           ${retHtml}
-          <canvas class="grid-spark" height="${sparkH}" style="height:${sparkH}px"></canvas>
+          <div class="grid-spark-wrap">
+            <canvas class="grid-spark" height="${sparkH}" style="height:${sparkH}px"></canvas>
+            <div class="grid-spark-hover">${s.ema8Dist != null ? `<span style="color:${s.ema8Dist >= 0 ? tc.semanticBullish : tc.semanticBearish}">E8 ${s.ema8Dist >= 0 ? '+' : ''}${s.ema8Dist.toFixed(1)}%</span>` : ''}${s.ema21Dist != null ? `<span style="color:${s.ema21Dist >= 0 ? tc.semanticBullish : tc.semanticBearish}">E21 ${s.ema21Dist >= 0 ? '+' : ''}${s.ema21Dist.toFixed(1)}%</span>` : ''}</div>
+          </div>
           <div class="grid-tile-label">RSI <span class="grid-rsi-val"></span></div>
           <canvas class="grid-rsi" height="60" style="height:60px"></canvas>
           <div class="grid-tile-label">AO</div>
           <canvas class="grid-ao" height="55" style="height:55px"></canvas>
           <button class="grid-fav-btn" onclick="event.stopPropagation();toggleGridFav('${s.sym}',this)">${isFav ? '\u2605' : '\u2606'}</button>
         </div>`;
+      };
+
+      if (gridSortBy !== 'default') {
+        // Flat sorted list
+        const sortKey = { rsRating: s => s.rsRating ?? -1, swingScore: s => s.swingScore ?? -1, ret1d: s => s.ret1d ?? -999, rsiDelta: s => s.rsiDelta ?? -999, ma50Dist: s => s.ma50Dist ?? -999 }[gridSortBy];
+        const allItems = [];
+        for (const q of QUADRANT_ORDER) allItems.push(...groups[q]);
+        allItems.sort((a, b) => sortKey(b) - sortKey(a));
+        const sortLabels = { rsRating: 'RS Rating', swingScore: 'Swing Score', ret1d: '1D Return', rsiDelta: 'RSI Delta (5-bar)', ma50Dist: 'MA50 Distance (ATR)' };
+        html += `<div class="grid-quadrant-section" style="border-color:var(--border-medium)">`;
+        html += `<div class="grid-group-header" style="color:var(--text-secondary)">Sorted by ${sortLabels[gridSortBy]} <span class="count">${allItems.length}</span></div>`;
+        html += `<div class="grid-tiles-grid" style="grid-template-columns:repeat(${gridColumns}, 1fr)">`;
+        for (const s of allItems) {
+          const qColor = tc[QUADRANT_META[s.quadrant].colorVar];
+          html += renderTile(s, qColor);
         }
-        html += `</div></div>`; // close grid-tiles-grid + grid-quadrant-section
+        html += `</div></div>`;
+      } else {
+        // Default: quadrant grouped
+        for (const q of QUADRANT_ORDER) {
+          const items = groups[q];
+          if (items.length === 0) continue;
+          const meta = QUADRANT_META[q];
+          const qColor = tc[meta.colorVar];
+          html += `<div class="grid-quadrant-section" style="border-color:${qColor}66">`;
+          html += `<div class="grid-group-header" style="color:${qColor}">\u25CF ${meta.label} <span class="count">${items.length}</span></div>`;
+          html += `<div class="grid-tiles-grid" style="grid-template-columns:repeat(${gridColumns}, 1fr)">`;
+          for (const s of items) html += renderTile(s, qColor);
+          html += `</div></div>`;
+        }
       }
 
       container.innerHTML = html;
@@ -4886,7 +5035,17 @@
       buildGridView();
     }
 
+    function setGridSort(val) {
+      gridSortBy = val;
+      buildGridView();
+    }
 
+    function setRotationBenchmark(val) {
+      rotationBenchmark = val;
+      swingScoreCache = {};
+      if (currentView === 'swing') buildSwingView();
+      else if (currentView === 'grid') buildGridView();
+    }
 
     // Close grid info panel on Escape or outside click
 
