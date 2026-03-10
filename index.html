@@ -323,6 +323,131 @@
     }
     .modal-close:hover { background: #ff4444; border-color: #ff4444; color: #fff; }
     .modal-chart { flex: 1; min-height: 0; position: relative; }
+    .srrg-chart-btn {
+      width: 100%; padding: 6px; border: 1px solid var(--border-medium);
+      border-radius: 4px; background: var(--surface-hover-strong);
+      color: var(--text-secondary); cursor: pointer; font-size: var(--fs-sm);
+      font-family: inherit;
+    }
+    .srrg-chart-btn:hover { background: var(--interactive-bg-hover); color: var(--text-primary); }
+    .srrg-spark-toggle {
+      padding: 2px 6px; border: 1px solid var(--border-medium); background: transparent;
+      color: var(--text-quaternary); cursor: pointer; font-size: var(--fs-xs); font-family: inherit;
+      border-radius: 3px;
+    }
+    .srrg-spark-toggle:hover { color: var(--text-secondary); }
+    .srrg-spark-toggle.active { background: var(--interactive-bg); color: var(--text-primary); border-color: var(--interactive-border); }
+
+    /* ── Grid View ── */
+    .grid-view-container {
+      display: none;
+      height: calc(100vh - 32px);
+      overflow: auto;
+      padding: 12px;
+      position: relative;
+    }
+    .grid-view-container.active {
+      display: block;
+      padding-top: 0;
+    }
+    .grid-toolbar {
+      display: flex; align-items: center; gap: 8px;
+      flex-wrap: wrap;
+      position: sticky; top: 0; z-index: 10;
+      background: var(--bg-primary);
+      margin: 0 -12px;
+      padding: 8px 12px;
+      border-bottom: 1px solid var(--border-subtle);
+    }
+    .grid-toolbar .btn-group { display: flex; align-items: center; gap: 2px; }
+    .grid-toolbar select {
+      background: var(--bg-tertiary); color: var(--text-primary);
+      border: 1px solid var(--border-medium); border-radius: 4px;
+      padding: 3px 6px; font-size: var(--fs-sm); font-family: inherit;
+    }
+    .grid-tile {
+      background: #000000;
+      border: 2px solid var(--border-emphasis);
+      border-radius: 6px;
+      padding: 10px;
+      cursor: pointer;
+      transition: border-color 0.15s;
+    }
+    .grid-tile:hover { border-color: var(--text-quaternary); }
+    .grid-tile-header {
+      display: flex; justify-content: space-between; align-items: center;
+      gap: 4px;
+    }
+    .grid-tile-sym { font-weight: 700; font-size: var(--fs-sm); color: var(--text-primary); }
+    .grid-tile-sector { font-size: var(--fs-xs); color: var(--text-quaternary); flex-shrink: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .grid-tile-tags {
+      display: flex; flex-wrap: wrap; gap: 3px; align-items: center;
+      margin-bottom: 6px; min-height: 16px;
+    }
+    .grid-tile-rotation {
+      font-size: 9px; font-weight: 600; padding: 1px 5px; border-radius: 3px;
+      white-space: nowrap; flex-shrink: 0;
+    }
+    .grid-tile canvas { width: 100%; display: block; }
+    .grid-tile-returns {
+      display: flex; gap: 6px; align-items: center;
+      font-size: 9px; font-weight: 600; margin-bottom: 4px;
+    }
+    .grid-tile-returns span { opacity: 0.85; }
+    .grid-tile-returns .ret-label { color: var(--text-quaternary); font-weight: 400; }
+    .grid-tile-label {
+      font-size: 9px; color: var(--text-quaternary); text-transform: uppercase;
+      letter-spacing: 0.5px; margin: 6px 0 2px; padding-top: 4px;
+      border-top: 1px solid var(--border-subtle);
+    }
+    .grid-quadrant-section {
+      border: 2px solid var(--border-subtle);
+      border-radius: 8px;
+      padding: 0 10px 10px;
+      margin-top: 10px;
+    }
+    .grid-quadrant-section .grid-tiles-grid {
+      display: grid;
+      gap: 8px;
+    }
+    .grid-group-header {
+      font-size: var(--fs-sm); font-weight: 600;
+      padding: 6px 10px;
+      display: flex; justify-content: space-between; align-items: center;
+      position: sticky; top: 37px; z-index: 5;
+      background: var(--bg-primary);
+      margin: -2px -12px 0;
+      border-width: 2px 2px 0 2px;
+      border-style: solid;
+      border-color: inherit;
+      border-radius: 8px 8px 0 0;
+    }
+    .grid-group-header .count {
+      font-size: var(--fs-xs); font-weight: 400; opacity: 0.6;
+    }
+    .grid-info-overlay {
+      position: fixed; right: 12px; top: 60px; z-index: 100;
+      width: 210px; max-height: calc(100vh - 80px); overflow-y: auto;
+      background: var(--bg-secondary); border: 1px solid var(--border-medium);
+      border-radius: 6px; box-shadow: 0 4px 16px rgba(0,0,0,0.3);
+      display: none;
+      scrollbar-width: thin; scrollbar-color: var(--border-medium) transparent;
+    }
+    .grid-info-overlay.visible { display: block; }
+
+    .tv-chart-panel {
+      display: none;
+      position: absolute; top: 0; left: 0; right: 210px; bottom: 0;
+      z-index: 14;
+      background: var(--bg-primary);
+      border-right: 1px solid var(--border-medium);
+      flex-direction: column;
+    }
+    .tv-chart-panel.visible { display: flex; }
+    .tv-chart-panel-header {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 6px 12px; background: var(--bg-quaternary); border-bottom: 1px solid var(--border-medium);
+    }
 
     /* Modal legend */
     .modal-legend {
@@ -753,7 +878,7 @@
       min-width: 0;
     }
     .rrg-sidebar {
-      width: 280px;
+      width: 310px;
       flex-shrink: 0;
       border-left: 1px solid var(--border-medium);
       overflow: hidden;
@@ -761,7 +886,7 @@
       flex-direction: column;
       background: var(--bg-secondary);
     }
-    .rrg-sidebar.show-sectors { width: 420px; }
+    .rrg-sidebar.show-sectors { width: 450px; }
     .srrg-sidebar-list {
       flex: 1;
       overflow-y: auto;
@@ -840,6 +965,10 @@
       border-radius: 3px;
       text-transform: uppercase;
     }
+    .rrg-ema-tag {
+      font-size: 8px; font-weight: 700; padding: 1px 4px; border-radius: 3px;
+      color: #4fc3f7; background: rgba(79,195,247,0.12);
+    }
     .rrg-from {
       font-size: 8px;
       font-weight: 600;
@@ -854,7 +983,7 @@
     }
     .rrg-legend-tags {
       display: flex; align-items: center; gap: 4px;
-      width: 90px; flex-shrink: 0;
+      min-width: 90px; flex-shrink: 0;
     }
     .rrg-actionable {
       background: rgba(38, 166, 154, 0.08);
@@ -1220,6 +1349,7 @@
         <button class="btn" data-view onclick="setView('rrg', this)">RRG</button>
         <button class="btn" data-view onclick="setView('stockrrg', this)">Stock RRG</button>
         <button class="btn" data-view onclick="setView('swing', this)">Swing</button>
+        <button class="btn" data-view onclick="setView('grid', this)">Grid</button>
       </div>
       <div id="spaghetti-controls" style="display:contents">
         <div class="separator"></div>
@@ -1377,6 +1507,13 @@
       <div class="rrg-quadrant-label" style="bottom:15%;left:15%;color:var(--semantic-bearish)">Lagging</div>
       <div class="rrg-quadrant-label" style="bottom:15%;right:15%;color:var(--semantic-weakening)">Weakening</div>
       <div class="srrg-info-panel" id="srrg-info-panel"></div>
+      <div class="tv-chart-panel" id="tv-chart-modal">
+        <div class="tv-chart-panel-header">
+          <span class="modal-title" id="tv-chart-title"></span>
+          <button class="modal-close" onclick="closeTVChartModal()">Close (Esc)</button>
+        </div>
+        <div id="tv-chart-container" style="flex:1;min-height:0;display:flex;flex-direction:column;"></div>
+      </div>
     </div>
     <div class="rrg-sidebar" id="stock-rrg-sidebar">
       <div class="srrg-quad-nav" id="srrg-quad-nav"></div>
@@ -1385,6 +1522,9 @@
   </div>
 
   <div class="table-container" id="swing-view"></div>
+
+  <div id="grid-view" class="grid-view-container"></div>
+  <div class="grid-info-overlay" id="grid-info-panel"></div>
 
   <div class="modal-overlay" id="modal" onclick="closeModal(event)">
     <div class="modal-box" onclick="event.stopPropagation()">
@@ -1509,9 +1649,23 @@
       if (currentView === 'sectors') buildSectorsView();
       if (currentView === 'stocks') buildStocksView();
       if (currentView === 'swing') buildSwingView();
+      if (currentView === 'grid') buildGridView();
       // Rebuild modal if open
       if (document.getElementById('modal').classList.contains('visible')) {
         buildModalChart();
+      }
+      // Re-render TV chart modal if open
+      if (tvChartSymbol && document.getElementById('tv-chart-modal').classList.contains('visible')) {
+        const sym = tvChartSymbol;
+        if (tvChartInstances) {
+          try { tvChartInstances.main.remove(); } catch(e) {}
+          try { tvChartInstances.rsi.remove(); } catch(e) {}
+          try { tvChartInstances.ao.remove(); } catch(e) {}
+          tvChartInstances = null;
+        }
+        document.getElementById('tv-chart-container').innerHTML = '';
+        // Re-open with updated theme colors (currentThemeColors already refreshed)
+        openTVChartModal(sym);
       }
     }
 
@@ -1525,6 +1679,15 @@
     // Store loaded panel data, chart instances, and stock names
     const panelDataCache = {};
     const panelCharts = {};
+    let tvChartInstances = null; // { main, rsi, ao } Lightweight Charts for TV modal
+    let tvChartSymbol = null;    // currently displayed symbol in TV modal
+    let infoPanelChartMode = 'line'; // 'line' | 'candle' for info panel sparkline
+    let gridColumns = 4;
+    let gridChartMode = 'candle'; // 'line' | 'candle'
+    let gridSectorFilter = 'all';
+    let gridRange = '6M'; // '1M' | '3M' | '6M'
+    let gridFilterQuadrant = 'all'; // 'all' | 'leading' | 'improving' | 'weakening' | 'lagging'
+    let gridFilterMomentum = 'all'; // 'all' | 'bullish' | 'bearish' | 'crossing' | 'nearEma8' | 'nearEma21'
     let stockNamesMap = {};
     fetch('data/stock_names.json').then(r => r.json()).then(d => { stockNamesMap = d; }).catch(() => {});
     let currentRange = '3M';
@@ -1607,6 +1770,7 @@
         case '3M':  start = new Date(last); start.setMonth(start.getMonth() - 3); break;
         case '6M':  start = new Date(last); start.setMonth(start.getMonth() - 6); break;
         case 'YTD': start = new Date(last.getFullYear(), 0, 1); break;
+        case '1Y':  start = new Date(last); start.setFullYear(start.getFullYear() - 1); break;
         case '12M': start = new Date(last); start.setFullYear(start.getFullYear() - 1); break;
         case '60M': start = new Date(last); start.setFullYear(start.getFullYear() - 5); break;
         default:    start = new Date(last); start.setMonth(start.getMonth() - 3); break;
@@ -2433,7 +2597,7 @@
     function updateViewTitle() {
       const el = document.getElementById('view-title');
       const modeLabels = { absolute: '% Change', sector: 'vs Sector ETF', equalweight: 'Equal Weight', vsSpy: 'vs SPY', vsRsp: 'vs RSP', rsRating: 'RS Rating' };
-      const viewLabels = { spaghetti: 'Spaghetti', sectors: 'Sectors Heatmap', stocks: 'Stocks Heatmap', rrg: 'Sector RRG', stockrrg: 'Stock RRG', swing: 'Swing Scores' };
+      const viewLabels = { spaghetti: 'Spaghetti', sectors: 'Sectors Heatmap', stocks: 'Stocks Heatmap', rrg: 'Sector RRG', stockrrg: 'Stock RRG', swing: 'Swing Scores', grid: 'Grid' };
 
       let title = viewLabels[currentView] || currentView;
 
@@ -3225,6 +3389,8 @@
       document.getElementById('rrg-view').classList.toggle('active', view === 'rrg');
       document.getElementById('stock-rrg-view').classList.toggle('active', view === 'stockrrg');
       document.getElementById('swing-view').classList.toggle('active', view === 'swing');
+      document.getElementById('grid-view').classList.toggle('active', view === 'grid');
+      if (view !== 'grid') hideGridInfoPanel();
 
       if (view === 'spaghetti') {
         // Re-render charts after container becomes visible again
@@ -3242,6 +3408,7 @@
       if (view === 'rrg') loadAllPanelsThen(drawRRG);
       if (view === 'stockrrg') loadAllPanelsThen(() => { populateSectorDropdown(); drawStockRRG(); });
       if (view === 'swing') loadAllPanelsThen(buildSwingView);
+      if (view === 'grid') loadAllPanelsThen(buildGridView);
       updateViewTitle();
     }
 
@@ -4075,6 +4242,724 @@
       container.innerHTML = html;
     }
 
+    // ── Grid View ──
+    function buildGridView() {
+      const container = document.getElementById('grid-view');
+      if (!container.classList.contains('active')) return;
+
+      // Collect sector options for filter
+      const sectorOpts = ['<option value="all">All Sectors</option>'];
+      const seenBase = new Set();
+      for (let pi = 1; pi < PANEL_COUNT; pi++) {
+        const d = panelDataCache[pi];
+        if (!d) continue;
+        const sym = d.baseSymbol;
+        if (seenBase.has(sym)) continue;
+        seenBase.add(sym);
+        const name = SECTOR_SHORT_NAMES[sym] || d.title.replace(/^\d+\.\s*/, '');
+        sectorOpts.push(`<option value="${pi}"${gridSectorFilter == pi ? ' selected' : ''}>${sym} — ${name}</option>`);
+      }
+
+      // Ensure swing scores are computed for rotation tags + RS rating
+      if (Object.keys(swingScoreCache).length === 0) {
+        if (!rsRatingCache) computeAllRSRatings('12M');
+        computeAllSwingScores();
+      }
+
+      // Collect stocks with metadata
+      const stocks = [];
+      for (let pi = 1; pi < PANEL_COUNT; pi++) {
+        const d = panelDataCache[pi];
+        if (!d) continue;
+        if (gridSectorFilter !== 'all' && pi !== parseInt(gridSectorFilter)) continue;
+        for (const sym of d.symbols) {
+          if (sym === d.baseSymbol) continue;
+          if (!d.prices[sym]) continue;
+          const sectorName = SECTOR_SHORT_NAMES[d.baseSymbol] || d.title.replace(/^\d+\.\s*/, '');
+          const swing = swingScoreCache[sym] || {};
+          // EMA proximity
+          const prices = d.prices[sym];
+          const len = prices.length;
+          let last = null;
+          for (let i = len - 1; i >= 0; i--) { if (prices[i] != null) { last = prices[i]; break; } }
+          let nearEma8 = false, nearEma21 = false;
+          if (last != null) {
+            const calcEma = (period) => { const k = 2 / (period + 1); let ema = null; for (let i = 0; i < len; i++) { if (prices[i] == null) continue; ema = ema == null ? prices[i] : prices[i] * k + ema * (1 - k); } return ema; };
+            const e8 = calcEma(8), e21 = calcEma(21);
+            if (e8 != null) { const pct = ((last - e8) / e8) * 100; nearEma8 = pct >= 0 && pct <= 3; }
+            if (e21 != null) { const pct = ((last - e21) / e21) * 100; nearEma21 = pct >= 0 && pct <= 5; }
+          }
+          // Compute returns (1D, 5D, 1M)
+          let ret1d = null, ret5d = null, ret1m = null;
+          if (last != null) {
+            const validPrices = [];
+            for (let i = 0; i < len; i++) { if (prices[i] != null) validPrices.push(prices[i]); }
+            const vLen = validPrices.length;
+            if (vLen >= 2) ret1d = ((last - validPrices[vLen - 2]) / validPrices[vLen - 2]) * 100;
+            if (vLen >= 6) ret5d = ((last - validPrices[vLen - 6]) / validPrices[vLen - 6]) * 100;
+            if (vLen >= 22) ret1m = ((last - validPrices[vLen - 22]) / validPrices[vLen - 22]) * 100;
+          }
+          stocks.push({ sym, panelIndex: pi, sectorName, data: d, rsRating: swing.rsRating != null ? swing.rsRating : null, rotation: swing.rotation || null, swingScore: swing.total != null ? swing.total : null, nearEma8, nearEma21, ret1d, ret5d, ret1m });
+        }
+      }
+
+      // ── Compute RRG quadrant via the same function as Stock RRG view ──
+      // Ensure srrg-sector dropdown is populated and set to 'all'
+      populateSectorDropdown();
+      const sectorSel = document.getElementById('srrg-sector');
+      const prevSectorVal = sectorSel.value;
+      sectorSel.value = 'all';
+      const rrgResult = computeStockRRGData();
+      sectorSel.value = prevSectorVal;
+
+      // Build lookup: sym → RRG data (quadrant, arrow, signal, crossing, EMA)
+      const rrgLookup = {};
+      rrgResult.stocks.forEach(rs => {
+        if (rs.trail.length === 0) return;
+        const curr = rs.trail[rs.trail.length - 1];
+        const prev = rs.trail.length >= 2 ? rs.trail[rs.trail.length - 2] : curr;
+        const currQ = getQuadrant(curr.x, curr.y);
+        const prevQ = getQuadrant(prev.x, prev.y);
+        const heading = rrgHeading(rs.trail);
+        rrgLookup[rs.sym] = {
+          quadrant: currQ,
+          arrow: heading.arrow,
+          signal: heading.signal,
+          prevQ,
+          isCrossing: currQ !== prevQ,
+          nearEma8: rs.nearEma8,
+          nearEma21: rs.nearEma21,
+          rsRatio: curr.x,
+          rsMomentum: curr.y,
+        };
+      });
+
+      // Apply RRG data to each stock (override grid-computed EMA with RRG's)
+      stocks.forEach(s => {
+        const rrg = rrgLookup[s.sym];
+        if (rrg) {
+          s.quadrant = rrg.quadrant;
+          s.arrow = rrg.arrow;
+          s.signal = rrg.signal;
+          s.prevQ = rrg.prevQ;
+          s.isCrossing = rrg.isCrossing;
+          s.nearEma8 = rrg.nearEma8;
+          s.nearEma21 = rrg.nearEma21;
+          s.rsRatio = rrg.rsRatio;
+          s.rsMomentum = rrg.rsMomentum;
+        } else {
+          s.quadrant = 'lagging'; s.arrow = ''; s.signal = 'neutral'; s.isCrossing = false;
+          s.rsRatio = 99; s.rsMomentum = 99;
+        }
+      });
+
+      // ── Apply filters ──
+      let filtered = stocks;
+      if (gridFilterQuadrant !== 'all') {
+        filtered = filtered.filter(s => s.quadrant === gridFilterQuadrant);
+      }
+      if (gridFilterMomentum !== 'all') {
+        if (gridFilterMomentum === 'bullish') filtered = filtered.filter(s => s.signal === 'bullish');
+        else if (gridFilterMomentum === 'bearish') filtered = filtered.filter(s => s.signal === 'bearish');
+        else if (gridFilterMomentum === 'crossing') filtered = filtered.filter(s => s.isCrossing);
+        else if (gridFilterMomentum === 'nearEma8') filtered = filtered.filter(s => s.nearEma8);
+        else if (gridFilterMomentum === 'nearEma21') filtered = filtered.filter(s => s.nearEma21);
+      }
+
+      // ── Group by quadrant ──
+      const groups = { leading: [], improving: [], weakening: [], lagging: [] };
+      filtered.forEach(s => {
+        groups[s.quadrant].push(s);
+      });
+
+      // Sort within each quadrant — same logic as Stock RRG sidebar
+      for (const q of QUADRANT_ORDER) {
+        groups[q].sort((a, b) => {
+          if (q === 'improving') return b.rsRatio - a.rsRatio;
+          if (q === 'weakening') return a.rsMomentum - b.rsMomentum;
+          return b.rsMomentum - a.rsMomentum; // leading & lagging
+        });
+      }
+
+      // Column buttons
+      const colBtns = [2, 3, 4, 6].map(n =>
+        `<button class="btn${gridColumns === n ? ' active' : ''}" onclick="setGridColumns(${n})">${n}</button>`
+      ).join('');
+
+      // Chart mode toggle
+      const modeToggle = `<button class="btn${gridChartMode==='line'?' active':''}" onclick="setGridChartMode('line')">Line</button><button class="btn${gridChartMode==='candle'?' active':''}" onclick="setGridChartMode('candle')">Candle</button>`;
+
+      // Range buttons
+      const rangeBtns = ['1M','3M','6M','YTD','1Y'].map(r =>
+        `<button class="btn${gridRange===r?' active':''}" onclick="setGridRange('${r}')">${r}</button>`
+      ).join('');
+
+      // Quadrant filter
+      const quadOpts = [['all','All'],['leading','Leading'],['improving','Improving'],['weakening','Weakening'],['lagging','Lagging']].map(([v,l]) =>
+        `<option value="${v}"${gridFilterQuadrant===v?' selected':''}>${l}</option>`
+      ).join('');
+
+      // Momentum filter
+      const momOpts = [['all','All'],['bullish','Bullish'],['bearish','Bearish'],['crossing','Crossing'],['nearEma8','Near EMA8'],['nearEma21','Near EMA21']].map(([v,l]) =>
+        `<option value="${v}"${gridFilterMomentum===v?' selected':''}>${l}</option>`
+      ).join('');
+
+      const tc = getThemeColors();
+
+      let html = `<div class="grid-toolbar">
+        <div class="btn-group"><span class="topbar-label">Sector</span>
+          <select onchange="setGridSector(this.value)">${sectorOpts.join('')}</select>
+        </div>
+        <div class="separator"></div>
+        <div class="btn-group"><span class="topbar-label">Quadrant</span>
+          <select onchange="setGridFilter('quadrant',this.value)">${quadOpts}</select>
+        </div>
+        <div class="separator"></div>
+        <div class="btn-group"><span class="topbar-label">Momentum</span>
+          <select onchange="setGridFilter('momentum',this.value)">${momOpts}</select>
+        </div>
+        <div class="separator"></div>
+        <div class="btn-group"><span class="topbar-label">Range</span>${rangeBtns}</div>
+        <div class="separator"></div>
+        <div class="btn-group"><span class="topbar-label">Columns</span>${colBtns}</div>
+        <div class="separator"></div>
+        <div class="btn-group"><span class="topbar-label">Chart</span>${modeToggle}</div>
+        <div class="separator"></div>
+        <span style="font-size:var(--fs-sm);color:var(--text-quaternary)">${filtered.length} stocks</span>
+      </div>`;
+
+      const sparkH = gridChartMode === 'candle' ? 140 : 80;
+      for (const q of QUADRANT_ORDER) {
+        const items = groups[q];
+        if (items.length === 0) continue;
+        const meta = QUADRANT_META[q];
+        const qColor = tc[meta.colorVar];
+
+        html += `<div class="grid-quadrant-section" style="border-color:${qColor}66">`;
+        html += `<div class="grid-group-header" style="color:${qColor}">\u25CF ${meta.label} <span class="count">${items.length}</span></div>`;
+        html += `<div class="grid-tiles-grid" style="grid-template-columns:repeat(${gridColumns}, 1fr)">`;
+
+        for (const s of items) {
+          const rotStage = s.rotation ? ROTATION_STAGES[s.rotation] : null;
+          const rotTag = rotStage ? `<span class="grid-tile-rotation" style="background:${rotStage.color}22;color:${rotStage.color}">${rotStage.label}</span>` : '';
+          const emaTags = (s.nearEma21 ? '<span class="rrg-ema-tag">E21</span>' : '') + (s.nearEma8 ? '<span class="rrg-ema-tag">E8</span>' : '');
+          const rsColor = s.rsRating != null ? (s.rsRating >= 50 ? 'var(--text-positive,#4dd8b4)' : 'var(--text-negative,#f0616d)') : '';
+          const rsBg = s.rsRating != null ? (s.rsRating >= 50 ? 'rgba(77,216,180,0.12)' : 'rgba(240,97,109,0.12)') : '';
+          const rsTag = s.rsRating != null ? `<span style="font-size:9px;font-weight:600;padding:1px 4px;border-radius:3px;color:${rsColor};background:${rsBg}">RS ${s.rsRating}</span>` : '';
+
+          const arrowColor = s.signal === 'bullish' ? tc.semanticBullish : s.signal === 'bearish' ? tc.semanticBearish : tc.textQuaternary;
+          const momentumTag = s.arrow ? `<span style="font-size:11px;font-weight:700;color:${arrowColor}">${s.arrow}</span>` : '';
+          const crossingTag = s.isCrossing ? `<span class="rrg-crossing" style="color:${qColor};background:${qColor}22">NEW</span>` : '';
+          const fromTag = s.isCrossing ? `<span class="rrg-from" style="color:${tc[QUADRANT_META[s.prevQ].colorVar]}">from ${QUADRANT_META[s.prevQ].short}</span>` : '';
+
+          const fmtRet = (v, label) => {
+            if (v == null) return '';
+            const c = v >= 0 ? tc.semanticBullish : tc.semanticBearish;
+            const sign = v >= 0 ? '+' : '';
+            return `<span class="ret-label">${label}</span><span style="color:${c}">${sign}${v.toFixed(1)}%</span>`;
+          };
+          const retHtml = `<div class="grid-tile-returns">${fmtRet(s.ret1d,'1D')}${fmtRet(s.ret5d,'5D')}${fmtRet(s.ret1m,'1M')}</div>`;
+
+          html += `<div class="grid-tile" data-sym="${s.sym}" data-pi="${s.panelIndex}" onclick="showGridInfoPanel('${s.sym}')">
+          <div class="grid-tile-header">
+            <span class="grid-tile-sym">${s.sym}</span>
+            <span class="grid-tile-sector">${s.sectorName}</span>
+          </div>
+          <div class="grid-tile-tags">${momentumTag}${rotTag}${crossingTag}${fromTag}${emaTags}${rsTag}</div>
+          ${retHtml}
+          <canvas class="grid-spark" height="${sparkH}" style="height:${sparkH}px"></canvas>
+          <div class="grid-tile-label">RSI <span class="grid-rsi-val"></span></div>
+          <canvas class="grid-rsi" height="60" style="height:60px"></canvas>
+          <div class="grid-tile-label">AO</div>
+          <canvas class="grid-ao" height="55" style="height:55px"></canvas>
+        </div>`;
+        }
+        html += `</div></div>`; // close grid-tiles-grid + grid-quadrant-section
+      }
+
+      container.innerHTML = html;
+
+      // Lazy draw with IntersectionObserver
+      const tiles = container.querySelectorAll('.grid-tile');
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            const tile = entry.target;
+            const sym = tile.dataset.sym;
+            const pi = parseInt(tile.dataset.pi);
+            const d = panelDataCache[pi];
+            if (d) drawGridTileCharts(tile, sym, d);
+            observer.unobserve(tile);
+          }
+        });
+      }, { root: container, rootMargin: '200px' });
+      tiles.forEach(t => observer.observe(t));
+    }
+
+    function drawGridTileCharts(tile, sym, data) {
+      const tc = getThemeColors();
+      const prices = data.prices[sym];
+      if (!prices) return;
+
+      const rangeEnd = prices.length - 1;
+      let lastIdx = rangeEnd;
+      for (let i = rangeEnd; i >= 0; i--) {
+        if (prices[i] != null) { lastIdx = i; break; }
+      }
+
+      const sparkStart = getRangeStartDate(gridRange, data.dates);
+      const sparkIdx = findStartIndex(data.dates, sparkStart);
+      const ohlcSym = data.ohlc && data.ohlc[sym];
+
+      // Price data
+      const sparkPrices = [];
+      const sparkOhlc = [];
+      for (let i = sparkIdx; i <= lastIdx; i++) {
+        if (prices[i] != null) {
+          sparkPrices.push(prices[i]);
+          sparkOhlc.push({
+            o: ohlcSym && ohlcSym.o && ohlcSym.o[i] != null ? ohlcSym.o[i] : prices[i],
+            h: ohlcSym && ohlcSym.h && ohlcSym.h[i] != null ? ohlcSym.h[i] : prices[i],
+            l: ohlcSym && ohlcSym.l && ohlcSym.l[i] != null ? ohlcSym.l[i] : prices[i],
+            c: prices[i],
+          });
+        }
+      }
+
+      // RSI
+      const rsiPeriod = 14;
+      const validForRsi = [];
+      const validForRsiIdx = [];
+      for (let i = 0; i <= rangeEnd; i++) {
+        if (prices[i] != null) { validForRsi.push(prices[i]); validForRsiIdx.push(i); }
+      }
+      const rsiSeries = [];
+      if (validForRsi.length > rsiPeriod) {
+        let avgGain = 0, avgLoss = 0;
+        for (let i = 1; i <= rsiPeriod; i++) {
+          const change = validForRsi[i] - validForRsi[i - 1];
+          if (change > 0) avgGain += change; else avgLoss -= change;
+        }
+        avgGain /= rsiPeriod; avgLoss /= rsiPeriod;
+        for (let i = 0; i <= rsiPeriod; i++) rsiSeries.push(null);
+        rsiSeries[rsiPeriod] = avgLoss === 0 ? 100 : 100 - (100 / (1 + avgGain / avgLoss));
+        for (let i = rsiPeriod + 1; i < validForRsi.length; i++) {
+          const change = validForRsi[i] - validForRsi[i - 1];
+          avgGain = (avgGain * (rsiPeriod - 1) + (change > 0 ? change : 0)) / rsiPeriod;
+          avgLoss = (avgLoss * (rsiPeriod - 1) + (change < 0 ? -change : 0)) / rsiPeriod;
+          rsiSeries[i] = avgLoss === 0 ? 100 : 100 - (100 / (1 + avgGain / avgLoss));
+        }
+      }
+      const sparkRsi = [];
+      for (let i = 0; i < validForRsiIdx.length; i++) {
+        if (validForRsiIdx[i] >= sparkIdx && rsiSeries[i] != null) sparkRsi.push(rsiSeries[i]);
+      }
+
+      // AO
+      const aoMedian = [];
+      for (let i = 0; i < validForRsiIdx.length; i++) {
+        const oi = validForRsiIdx[i];
+        if (ohlcSym && ohlcSym.h && ohlcSym.l && ohlcSym.h[oi] != null && ohlcSym.l[oi] != null) {
+          aoMedian.push((ohlcSym.h[oi] + ohlcSym.l[oi]) / 2);
+        } else {
+          aoMedian.push(validForRsi[i]);
+        }
+      }
+      const aoSeries = [];
+      if (aoMedian.length >= 34) {
+        for (let i = 0; i < aoMedian.length; i++) {
+          if (i < 33) { aoSeries.push(null); continue; }
+          let sum5 = 0, sum34 = 0;
+          for (let j = i - 4; j <= i; j++) sum5 += aoMedian[j];
+          for (let j = i - 33; j <= i; j++) sum34 += aoMedian[j];
+          aoSeries.push(sum5 / 5 - sum34 / 34);
+        }
+      }
+      const sparkAo = [];
+      for (let i = 0; i < validForRsiIdx.length; i++) {
+        if (validForRsiIdx[i] >= sparkIdx && aoSeries[i] != null) sparkAo.push(aoSeries[i]);
+      }
+
+      // ── Draw price canvas ──
+      const canvas = tile.querySelector('.grid-spark');
+      if (canvas && sparkPrices.length > 1) {
+        const ctx = canvas.getContext('2d');
+        const dpr = window.devicePixelRatio || 1;
+        canvas.width = canvas.clientWidth * dpr;
+        canvas.height = canvas.clientHeight * dpr;
+        ctx.scale(dpr, dpr);
+        const w = canvas.clientWidth, h = canvas.clientHeight;
+
+        if (gridChartMode === 'candle' && sparkOhlc.length > 1) {
+          const bars = sparkOhlc;
+          let allMin = Infinity, allMax = -Infinity;
+          for (const b of bars) { allMin = Math.min(allMin, b.l); allMax = Math.max(allMax, b.h); }
+          const range = allMax - allMin || 1;
+          const pad = 4;
+          const fillRatio = bars.length < 40 ? 0.92 : bars.length < 80 ? 0.85 : 0.7;
+          const barW = Math.max(1, (w / bars.length) * fillRatio);
+          const gap = w / bars.length;
+          for (let i = 0; i < bars.length; i++) {
+            const b = bars[i];
+            const isUp = b.c >= b.o;
+            const bodyColor = isUp ? tc.semanticBullish : tc.semanticBearish;
+            const cx = gap * i + gap / 2;
+            const toY = v => pad + ((allMax - v) / range) * (h - 2 * pad);
+            const oY = toY(b.o), cY = toY(b.c);
+            const bodyTop = Math.min(oY, cY);
+            const bodyBot = Math.max(oY, cY);
+            const bodyH = Math.max(1, bodyBot - bodyTop);
+            ctx.strokeStyle = bodyColor;
+            ctx.lineWidth = 1;
+            // Upper wick (high to body top)
+            ctx.beginPath(); ctx.moveTo(cx, toY(b.h)); ctx.lineTo(cx, bodyTop); ctx.stroke();
+            // Lower wick (body bottom to low)
+            ctx.beginPath(); ctx.moveTo(cx, bodyBot); ctx.lineTo(cx, toY(b.l)); ctx.stroke();
+            // Body
+            ctx.fillStyle = bodyColor;
+            ctx.fillRect(cx - barW / 2, bodyTop, barW, bodyH);
+          }
+        } else {
+          const sp = sparkPrices;
+          const min = Math.min(...sp), max = Math.max(...sp);
+          const range = max - min || 1;
+          const pad = 2;
+          const isUp = sp[sp.length - 1] >= sp[0];
+          const color = isUp ? tc.semanticBullish : tc.semanticBearish;
+          ctx.strokeStyle = color; ctx.lineWidth = 1.5;
+          ctx.beginPath();
+          for (let i = 0; i < sp.length; i++) {
+            const x = (i / (sp.length - 1)) * w;
+            const y = pad + ((max - sp[i]) / range) * (h - 2 * pad);
+            i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+          }
+          ctx.stroke();
+          ctx.lineTo(w, h); ctx.lineTo(0, h); ctx.closePath();
+          const hex = color.replace('#', '');
+          const r = parseInt(hex.slice(0, 2), 16), g = parseInt(hex.slice(2, 4), 16), b2 = parseInt(hex.slice(4, 6), 16);
+          ctx.fillStyle = `rgba(${r},${g},${b2},0.15)`;
+          ctx.fill();
+        }
+      }
+
+      // ── Draw RSI canvas (auto-scaled) ──
+      const rsiCanvas = tile.querySelector('.grid-rsi');
+      if (rsiCanvas && sparkRsi.length > 1) {
+        const rCtx = rsiCanvas.getContext('2d');
+        const rDpr = window.devicePixelRatio || 1;
+        rsiCanvas.width = rsiCanvas.clientWidth * rDpr;
+        rsiCanvas.height = rsiCanvas.clientHeight * rDpr;
+        rCtx.scale(rDpr, rDpr);
+        const rW = rsiCanvas.clientWidth, rH = rsiCanvas.clientHeight;
+        const rPad = 3;
+        // Auto-scale: find data min/max and add 10% padding, clamped to 0-100
+        let rMin = Math.min(...sparkRsi), rMax = Math.max(...sparkRsi);
+        const rRange = rMax - rMin || 10;
+        rMin = Math.max(0, rMin - rRange * 0.15);
+        rMax = Math.min(100, rMax + rRange * 0.15);
+        const toY = (v) => rPad + ((rMax - v) / (rMax - rMin)) * (rH - 2 * rPad);
+        // 50-line reference (only if in visible range)
+        if (50 >= rMin && 50 <= rMax) {
+          rCtx.strokeStyle = 'rgba(255,255,255,0.3)';
+          rCtx.lineWidth = 1.5;
+          rCtx.beginPath(); rCtx.moveTo(0, toY(50)); rCtx.lineTo(rW, toY(50)); rCtx.stroke();
+        }
+        // 30/70 overbought/oversold zones
+        if (70 <= rMax && 70 >= rMin) {
+          rCtx.strokeStyle = 'rgba(240,97,109,0.15)'; rCtx.lineWidth = 0.5;
+          rCtx.beginPath(); rCtx.moveTo(0, toY(70)); rCtx.lineTo(rW, toY(70)); rCtx.stroke();
+        }
+        if (30 >= rMin && 30 <= rMax) {
+          rCtx.strokeStyle = 'rgba(77,216,180,0.15)'; rCtx.lineWidth = 0.5;
+          rCtx.beginPath(); rCtx.moveTo(0, toY(30)); rCtx.lineTo(rW, toY(30)); rCtx.stroke();
+        }
+        const lastRsi = sparkRsi[sparkRsi.length - 1];
+        const rsiColor = lastRsi >= 50 ? tc.semanticBullish : tc.semanticBearish;
+        rCtx.setLineDash([]);
+        rCtx.strokeStyle = rsiColor; rCtx.lineWidth = 1.5;
+        rCtx.beginPath();
+        for (let i = 0; i < sparkRsi.length; i++) {
+          const x = (i / (sparkRsi.length - 1)) * rW;
+          const y = toY(sparkRsi[i]);
+          i === 0 ? rCtx.moveTo(x, y) : rCtx.lineTo(x, y);
+        }
+        rCtx.stroke();
+        // RSI value in label
+        const rsiValEl = tile.querySelector('.grid-rsi-val');
+        if (rsiValEl) {
+          rsiValEl.textContent = Math.round(lastRsi);
+          rsiValEl.style.color = rsiColor;
+          rsiValEl.style.fontWeight = '700';
+        }
+      }
+
+      // ── Draw AO canvas ──
+      const aoCanvas = tile.querySelector('.grid-ao');
+      if (aoCanvas && sparkAo.length > 1) {
+        const aCtx = aoCanvas.getContext('2d');
+        const aDpr = window.devicePixelRatio || 1;
+        aoCanvas.width = aoCanvas.clientWidth * aDpr;
+        aoCanvas.height = aoCanvas.clientHeight * aDpr;
+        aCtx.scale(aDpr, aDpr);
+        const aW = aoCanvas.clientWidth, aH = aoCanvas.clientHeight;
+        const aPad = 3;
+        const aMax = Math.max(...sparkAo.map(v => Math.abs(v))) || 1;
+        const zeroY = aH / 2;
+        const barW = Math.max(1, (aW / sparkAo.length) - 0.5);
+        aCtx.strokeStyle = 'rgba(255,255,255,0.2)';
+        aCtx.lineWidth = 0.75;
+        aCtx.beginPath(); aCtx.moveTo(0, zeroY); aCtx.lineTo(aW, zeroY); aCtx.stroke();
+        for (let i = 0; i < sparkAo.length; i++) {
+          const x = (i / sparkAo.length) * aW;
+          const val = sparkAo[i];
+          const barH = (Math.abs(val) / aMax) * (aH / 2 - aPad);
+          const rising = i === 0 ? val >= 0 : val >= sparkAo[i - 1];
+          aCtx.fillStyle = rising ? tc.semanticBullish : tc.semanticBearish;
+          if (val >= 0) { aCtx.fillRect(x, zeroY - barH, barW, barH); }
+          else { aCtx.fillRect(x, zeroY, barW, barH); }
+        }
+      }
+    }
+
+    function setGridColumns(n) {
+      gridColumns = n;
+      buildGridView();
+    }
+
+    function setGridSector(val) {
+      gridSectorFilter = val;
+      buildGridView();
+    }
+
+    function setGridChartMode(mode) {
+      gridChartMode = mode;
+      buildGridView();
+    }
+
+    function setGridRange(r) {
+      gridRange = r;
+      buildGridView();
+    }
+
+    function setGridFilter(type, val) {
+      if (type === 'quadrant') gridFilterQuadrant = val;
+      else if (type === 'momentum') gridFilterMomentum = val;
+      buildGridView();
+    }
+
+    function showGridInfoPanel(sym) {
+      const panel = document.getElementById('grid-info-panel');
+      // Toggle: clicking same symbol again closes the panel
+      if (panel.classList.contains('visible') && panel.dataset.sym === sym) {
+        hideGridInfoPanel();
+        return;
+      }
+      panel.dataset.sym = sym;
+      // Ensure srrg-sector has 'all' option so computeStockRRGStats can iterate all panels
+      const sectorSel = document.getElementById('srrg-sector');
+      if (sectorSel && sectorSel.options.length === 0) {
+        const opt = document.createElement('option');
+        opt.value = 'all'; opt.textContent = 'All Sectors';
+        sectorSel.appendChild(opt);
+      }
+      const prevVal = sectorSel ? sectorSel.value : 'all';
+      if (sectorSel) sectorSel.value = 'all';
+      const stats = computeStockRRGStats(sym);
+      if (sectorSel) sectorSel.value = prevVal;
+      if (!stats) { hideGridInfoPanel(); return; }
+
+      const fmt = (v, decimals = 1) => {
+        if (v == null) return '\u2014';
+        const sign = v >= 0 ? '+' : '';
+        return sign + v.toFixed(decimals) + '%';
+      };
+      const cls = (v) => v == null ? '' : (v >= 0 ? ' positive' : ' negative');
+      const sectionTitle = (t) => `<div class="modal-stats-divider"></div><div style="font-size:var(--fs-sm);color:var(--text-quaternary);text-transform:uppercase;letter-spacing:0.5px;padding:2px 0 1px">${t}</div>`;
+
+      let rows = '';
+      // Rotation tag for info panel
+      const swing = swingScoreCache[sym];
+      const rot = swing ? swing.rotation : null;
+      const rotStage = rot ? ROTATION_STAGES[rot] : null;
+      const rotHtml = rotStage ? ` <span style="font-size:9px;font-weight:600;padding:1px 5px;border-radius:3px;background:${rotStage.color}22;color:${rotStage.color}">${rotStage.label}</span>` : '';
+
+      rows += `<div class="modal-stats-header" style="position:relative"><span class="modal-stats-sym">${sym}</span>${rotHtml}<span style="position:absolute;top:4px;right:4px;font-size:var(--fs-sm);color:var(--text-tertiary);cursor:pointer;padding:2px 6px;border-radius:3px;line-height:1" onclick="event.stopPropagation();hideGridInfoPanel()" onmouseenter="this.style.color='var(--text-primary)';this.style.background='var(--bg-tertiary)'" onmouseleave="this.style.color='var(--text-tertiary)';this.style.background='none'">✕</span><div style="font-size:var(--fs-sm);color:var(--text-quaternary);margin-top:1px">${stats.sectorName}</div></div>`;
+
+      rows += sectionTitle('Returns');
+      for (const r of stats.returns) {
+        rows += `<div class="modal-stats-row"><span class="modal-stats-label">${r.label}</span><span class="modal-stats-value${cls(r.value)}">${fmt(r.value)}</span></div>`;
+      }
+
+      rows += sectionTitle('Moving Avgs');
+      rows += `<div class="modal-stats-row"><span class="modal-stats-label">% from EMA8</span><span class="modal-stats-value${cls(stats.pctFromEma8)}">${fmt(stats.pctFromEma8)}</span></div>`;
+      rows += `<div class="modal-stats-row"><span class="modal-stats-label">% from EMA21</span><span class="modal-stats-value${cls(stats.pctFromEma21)}">${fmt(stats.pctFromEma21)}</span></div>`;
+      rows += `<div class="modal-stats-row"><span class="modal-stats-label">% from 50MA</span><span class="modal-stats-value${cls(stats.pctFrom50MA)}">${fmt(stats.pctFrom50MA)}</span></div>`;
+
+      if (stats.rsRating != null || stats.divergence) {
+        rows += sectionTitle('Momentum');
+        if (stats.rsRating != null) {
+          const rsCls = stats.rsRating >= 50 ? ' positive' : ' negative';
+          rows += `<div class="modal-stats-row"><span class="modal-stats-label">RS Rating</span><span class="modal-stats-value${rsCls}">${stats.rsRating.toFixed(0)}</span></div>`;
+        }
+        if (stats.divergence) {
+          const divText = stats.divergence === 'bullish' ? '\u25B2 Bullish' : '\u25BC Bearish';
+          const divCls = stats.divergence === 'bullish' ? ' positive' : ' negative';
+          rows += `<div class="modal-stats-row"><span class="modal-stats-label">Divergence</span><span class="modal-stats-value${divCls}">${divText}</span></div>`;
+        }
+      }
+
+      // Sparkline
+      rows += `<div class="modal-stats-divider"></div><div style="font-size:var(--fs-sm);color:var(--text-quaternary);text-transform:uppercase;letter-spacing:0.5px;padding:2px 0 1px">Price (3M)</div>`;
+      const sparkH = infoPanelChartMode === 'candle' ? 120 : 50;
+      rows += `<canvas id="grid-info-sparkline" width="200" height="${sparkH}" style="width:100%;height:${sparkH}px;display:block;"></canvas>`;
+
+      if (stats.rsi != null) {
+        const rsiCls = stats.rsi >= 50 ? ' positive' : ' negative';
+        rows += sectionTitle(`RSI (14) <span class="modal-stats-value${rsiCls}" style="float:right;font-size:var(--fs-sm)">${stats.rsi.toFixed(1)}</span>`);
+        rows += `<canvas id="grid-info-rsi" width="200" height="60" style="width:100%;height:60px;display:block;"></canvas>`;
+      }
+      if (stats.ao != null) {
+        const aoCls = stats.ao >= 0 ? ' positive' : ' negative';
+        const aoFmt = stats.ao >= 0 ? '+' + stats.ao.toFixed(2) : stats.ao.toFixed(2);
+        rows += sectionTitle(`AO <span class="modal-stats-value${aoCls}" style="float:right;font-size:var(--fs-sm)">${aoFmt}</span>`);
+        rows += `<canvas id="grid-info-ao" width="200" height="50" style="width:100%;height:50px;display:block;"></canvas>`;
+      }
+
+      rows += `<div style="margin-top:8px"><button class="srrg-chart-btn" onclick="openTVChartModal('${sym}')">View Chart</button></div>`;
+
+      panel.innerHTML = `<div class="modal-stats-card">${rows}</div>`;
+      panel.classList.add('visible');
+
+      // Draw charts (reuse same drawing as info panel)
+      const tc = getThemeColors();
+
+      // Price chart
+      const canvas = document.getElementById('grid-info-sparkline');
+      if (canvas && stats.sparkPrices.length > 1) {
+        const ctx = canvas.getContext('2d');
+        const dpr = window.devicePixelRatio || 1;
+        canvas.width = canvas.clientWidth * dpr;
+        canvas.height = canvas.clientHeight * dpr;
+        ctx.scale(dpr, dpr);
+        const w = canvas.clientWidth, h = canvas.clientHeight;
+        const sp = stats.sparkPrices;
+
+        if (infoPanelChartMode === 'candle' && stats.sparkOhlc.length > 1) {
+          const bars = stats.sparkOhlc;
+          let allMin = Infinity, allMax = -Infinity;
+          for (const b of bars) { allMin = Math.min(allMin, b.l); allMax = Math.max(allMax, b.h); }
+          const range = allMax - allMin || 1;
+          const pad = 4;
+          const barW = Math.max(1, (w / bars.length) * 0.7);
+          const gap = w / bars.length;
+          for (let i = 0; i < bars.length; i++) {
+            const b = bars[i];
+            const isUp = b.c >= b.o;
+            const bodyColor = isUp ? tc.semanticBullish : tc.semanticBearish;
+            const cx = gap * i + gap / 2;
+            const toY = v => pad + ((allMax - v) / range) * (h - 2 * pad);
+            const oY = toY(b.o), cY = toY(b.c);
+            const bodyTop = Math.min(oY, cY);
+            const bodyBot = Math.max(oY, cY);
+            const bodyH = Math.max(1, bodyBot - bodyTop);
+            ctx.strokeStyle = bodyColor; ctx.lineWidth = 1;
+            ctx.beginPath(); ctx.moveTo(cx, toY(b.h)); ctx.lineTo(cx, bodyTop); ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(cx, bodyBot); ctx.lineTo(cx, toY(b.l)); ctx.stroke();
+            ctx.fillStyle = bodyColor;
+            ctx.fillRect(cx - barW / 2, bodyTop, barW, bodyH);
+          }
+        } else {
+          const min = Math.min(...sp), max = Math.max(...sp);
+          const range = max - min || 1;
+          const pad = 2;
+          const isUp = sp[sp.length - 1] >= sp[0];
+          const color = isUp ? tc.semanticBullish : tc.semanticBearish;
+          ctx.strokeStyle = color; ctx.lineWidth = 1.5;
+          ctx.beginPath();
+          for (let i = 0; i < sp.length; i++) {
+            const x = (i / (sp.length - 1)) * w;
+            const y = pad + ((max - sp[i]) / range) * (h - 2 * pad);
+            i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+          }
+          ctx.stroke();
+          ctx.lineTo(w, h); ctx.lineTo(0, h); ctx.closePath();
+          const hex = color.replace('#', '');
+          const r = parseInt(hex.slice(0, 2), 16), g = parseInt(hex.slice(2, 4), 16), b2 = parseInt(hex.slice(4, 6), 16);
+          ctx.fillStyle = `rgba(${r},${g},${b2},0.15)`;
+          ctx.fill();
+        }
+      }
+
+      // RSI chart
+      const rsiCanvas = document.getElementById('grid-info-rsi');
+      if (rsiCanvas && stats.sparkRsi.length > 1) {
+        const rCtx = rsiCanvas.getContext('2d');
+        const rDpr = window.devicePixelRatio || 1;
+        rsiCanvas.width = rsiCanvas.clientWidth * rDpr;
+        rsiCanvas.height = rsiCanvas.clientHeight * rDpr;
+        rCtx.scale(rDpr, rDpr);
+        const rW = rsiCanvas.clientWidth, rH = rsiCanvas.clientHeight;
+        const rPad = 2;
+        const toY = (v) => rPad + ((100 - v) / 100) * (rH - 2 * rPad);
+        rCtx.strokeStyle = 'rgba(255,255,255,0.25)'; rCtx.lineWidth = 0.75;
+        rCtx.beginPath(); rCtx.moveTo(0, toY(50)); rCtx.lineTo(rW, toY(50)); rCtx.stroke();
+        const lastRsi = stats.sparkRsi[stats.sparkRsi.length - 1];
+        const rsiColor = lastRsi >= 50 ? tc.semanticBullish : tc.semanticBearish;
+        rCtx.strokeStyle = rsiColor; rCtx.lineWidth = 1.5;
+        rCtx.beginPath();
+        for (let i = 0; i < stats.sparkRsi.length; i++) {
+          const x = (i / (stats.sparkRsi.length - 1)) * rW;
+          const y = toY(stats.sparkRsi[i]);
+          i === 0 ? rCtx.moveTo(x, y) : rCtx.lineTo(x, y);
+        }
+        rCtx.stroke();
+      }
+
+      // AO chart
+      const aoCanvas = document.getElementById('grid-info-ao');
+      if (aoCanvas && stats.sparkAo.length > 1) {
+        const aCtx = aoCanvas.getContext('2d');
+        const aDpr = window.devicePixelRatio || 1;
+        aoCanvas.width = aoCanvas.clientWidth * aDpr;
+        aoCanvas.height = aoCanvas.clientHeight * aDpr;
+        aCtx.scale(aDpr, aDpr);
+        const aW = aoCanvas.clientWidth, aH = aoCanvas.clientHeight;
+        const aData = stats.sparkAo;
+        const aMax = Math.max(...aData.map(v => Math.abs(v))) || 1;
+        const zeroY = aH / 2;
+        const barW = Math.max(1, (aW / aData.length) - 0.5);
+        aCtx.strokeStyle = 'rgba(255,255,255,0.25)'; aCtx.lineWidth = 0.75;
+        aCtx.beginPath(); aCtx.moveTo(0, zeroY); aCtx.lineTo(aW, zeroY); aCtx.stroke();
+        for (let i = 0; i < aData.length; i++) {
+          const x = (i / aData.length) * aW;
+          const val = aData[i];
+          const barH = (Math.abs(val) / aMax) * (aH / 2 - 2);
+          const rising = i === 0 ? val >= 0 : val >= aData[i - 1];
+          aCtx.fillStyle = rising ? tc.semanticBullish : tc.semanticBearish;
+          if (val >= 0) { aCtx.fillRect(x, zeroY - barH, barW, barH); }
+          else { aCtx.fillRect(x, zeroY, barW, barH); }
+        }
+      }
+    }
+
+    function hideGridInfoPanel() {
+      const panel = document.getElementById('grid-info-panel');
+      if (panel) { panel.classList.remove('visible'); panel.innerHTML = ''; delete panel.dataset.sym; }
+    }
+
+    // Close grid info panel on Escape or outside click
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape' && currentView === 'grid') hideGridInfoPanel();
+    });
+    document.addEventListener('click', function(e) {
+      if (currentView !== 'grid') return;
+      const panel = document.getElementById('grid-info-panel');
+      if (!panel || !panel.classList.contains('visible')) return;
+      if (panel.contains(e.target)) return;
+      if (e.target.closest('.grid-tile')) return;
+      hideGridInfoPanel();
+    });
+
     // ── Relative Rotation Graph (RRG) ──
     // RS-Ratio: rolling relative strength of sector vs benchmark, normalized to 100
     // RS-Momentum: rate of change of RS-Ratio
@@ -4164,6 +5049,82 @@
         if (smoothed[i] != null) return smoothed[i];
       }
       return null;
+    }
+
+    // Full-array SMA (returns array same length as input, null for insufficient data)
+    function computeSMAArray(arr, period) {
+      const result = [];
+      let sum = 0, count = 0;
+      for (let i = 0; i < arr.length; i++) {
+        if (arr[i] != null) { sum += arr[i]; count++; }
+        if (i >= period) {
+          if (arr[i - period] != null) { sum -= arr[i - period]; count--; }
+        }
+        if (i >= period - 1 && count === period) {
+          result.push(sum / period);
+        } else {
+          result.push(null);
+        }
+      }
+      return result;
+    }
+
+    // Full-array RSI using Wilder smoothing
+    function computeRSIArray(prices, period) {
+      const result = [];
+      // Collect valid prices with their indices
+      const valid = [];
+      for (let i = 0; i < prices.length; i++) {
+        if (prices[i] != null) valid.push({ idx: i, val: prices[i] });
+      }
+      if (valid.length <= period) {
+        return new Array(prices.length).fill(null);
+      }
+      // Initialize with nulls
+      for (let i = 0; i < prices.length; i++) result.push(null);
+      // Seed average gain/loss
+      let avgGain = 0, avgLoss = 0;
+      for (let i = 1; i <= period; i++) {
+        const change = valid[i].val - valid[i - 1].val;
+        if (change > 0) avgGain += change; else avgLoss -= change;
+      }
+      avgGain /= period;
+      avgLoss /= period;
+      result[valid[period].idx] = avgLoss === 0 ? 100 : 100 - (100 / (1 + avgGain / avgLoss));
+      for (let i = period + 1; i < valid.length; i++) {
+        const change = valid[i].val - valid[i - 1].val;
+        avgGain = (avgGain * (period - 1) + (change > 0 ? change : 0)) / period;
+        avgLoss = (avgLoss * (period - 1) + (change < 0 ? -change : 0)) / period;
+        result[valid[i].idx] = avgLoss === 0 ? 100 : 100 - (100 / (1 + avgGain / avgLoss));
+      }
+      return result;
+    }
+
+    // Full-array Awesome Oscillator: SMA(5, median) - SMA(34, median)
+    // Uses (H+L)/2 if OHLC available, otherwise falls back to close
+    function computeAOArray(highs, lows, closes) {
+      const len = closes.length;
+      const median = [];
+      for (let i = 0; i < len; i++) {
+        if (highs && lows && highs[i] != null && lows[i] != null) {
+          median.push((highs[i] + lows[i]) / 2);
+        } else if (closes[i] != null) {
+          median.push(closes[i]);
+        } else {
+          median.push(null);
+        }
+      }
+      const sma5 = computeSMAArray(median, 5);
+      const sma34 = computeSMAArray(median, 34);
+      const result = [];
+      for (let i = 0; i < len; i++) {
+        if (sma5[i] != null && sma34[i] != null) {
+          result.push(sma5[i] - sma34[i]);
+        } else {
+          result.push(null);
+        }
+      }
+      return result;
     }
 
     // Sample every 5th trading day to get weekly prices
@@ -5049,8 +6010,18 @@
       const sparkStart = getRangeStartDate('3M', data.dates);
       const sparkIdx = findStartIndex(data.dates, sparkStart);
       const sparkPrices = [];
+      const sparkOhlc = []; // {o,h,l,c} per bar for candlestick view
+      const ohlcSym2 = data.ohlc && data.ohlc[sym];
       for (let i = sparkIdx; i <= lastIdx; i++) {
-        if (prices[i] != null) sparkPrices.push(prices[i]);
+        if (prices[i] != null) {
+          sparkPrices.push(prices[i]);
+          sparkOhlc.push({
+            o: ohlcSym2 && ohlcSym2.o && ohlcSym2.o[i] != null ? ohlcSym2.o[i] : prices[i],
+            h: ohlcSym2 && ohlcSym2.h && ohlcSym2.h[i] != null ? ohlcSym2.h[i] : prices[i],
+            l: ohlcSym2 && ohlcSym2.l && ohlcSym2.l[i] != null ? ohlcSym2.l[i] : prices[i],
+            c: prices[i],
+          });
+        }
       }
 
       // 14-day RSI — compute full series then extract 3M window
@@ -5089,14 +6060,24 @@
         }
       }
 
-      // Awesome Oscillator: SMA(5) - SMA(34) of close prices
+      // Awesome Oscillator: SMA(5) - SMA(34) of median price (H+L)/2
+      const ohlcSym = data.ohlc && data.ohlc[sym];
+      const aoMedian = [];
+      for (let i = 0; i < validForRsiIdx.length; i++) {
+        const oi = validForRsiIdx[i];
+        if (ohlcSym && ohlcSym.h && ohlcSym.l && ohlcSym.h[oi] != null && ohlcSym.l[oi] != null) {
+          aoMedian.push((ohlcSym.h[oi] + ohlcSym.l[oi]) / 2);
+        } else {
+          aoMedian.push(validForRsi[i]);
+        }
+      }
       const aoSeries = [];
-      if (validForRsi.length >= 34) {
-        for (let i = 0; i < validForRsi.length; i++) {
+      if (aoMedian.length >= 34) {
+        for (let i = 0; i < aoMedian.length; i++) {
           if (i < 33) { aoSeries.push(null); continue; }
           let sum5 = 0, sum34 = 0;
-          for (let j = i - 4; j <= i; j++) sum5 += validForRsi[j];
-          for (let j = i - 33; j <= i; j++) sum34 += validForRsi[j];
+          for (let j = i - 4; j <= i; j++) sum5 += aoMedian[j];
+          for (let j = i - 33; j <= i; j++) sum34 += aoMedian[j];
           aoSeries.push(sum5 / 5 - sum34 / 34);
         }
       }
@@ -5109,7 +6090,7 @@
       const ao = sparkAo.length > 0 ? sparkAo[sparkAo.length - 1] : null;
 
       const sectorName = SECTOR_SHORT_NAMES[data.baseSymbol] || data.title.replace(/^\d+\.\s*/, '');
-      return { returns, pctFrom50MA, pctFromEma8, pctFromEma21, rsRating, divergence, sparkPrices, rsi, sparkRsi, ao, sparkAo, sectorName };
+      return { returns, pctFrom50MA, pctFromEma8, pctFromEma21, rsRating, divergence, sparkPrices, sparkOhlc, rsi, sparkRsi, ao, sparkAo, sectorName };
     }
 
     function showStockInfoPanel(sym) {
@@ -5155,9 +6136,10 @@
         }
       }
 
-      // Sparkline canvas
-      rows += sectionTitle('Price (3 Month)');
-      rows += `<canvas id="srrg-sparkline" width="161" height="50" style="width:100%;height:50px;display:block;"></canvas>`;
+      // Sparkline with toggle
+      rows += `<div class="modal-stats-divider"></div><div style="display:flex;align-items:center;justify-content:space-between;padding:2px 0 1px"><span style="font-size:var(--fs-sm);color:var(--text-quaternary);text-transform:uppercase;letter-spacing:0.5px">Price (3M)</span><span style="display:inline-flex;gap:1px;font-size:var(--fs-xs)"><button class="srrg-spark-toggle${infoPanelChartMode==='line'?' active':''}" data-mode="line" onclick="infoPanelChartMode='line';showStockInfoPanel('${sym}')">Line</button><button class="srrg-spark-toggle${infoPanelChartMode==='candle'?' active':''}" data-mode="candle" onclick="infoPanelChartMode='candle';showStockInfoPanel('${sym}')">Candle</button></span></div>`;
+      const sparkH = infoPanelChartMode === 'candle' ? 120 : 50;
+      rows += `<canvas id="srrg-sparkline" width="161" height="${sparkH}" style="width:100%;height:${sparkH}px;display:block;"></canvas>`;
 
       // RSI chart
       if (stats.rsi != null) {
@@ -5174,6 +6156,7 @@
         rows += `<canvas id="srrg-ao-chart" width="161" height="50" style="width:100%;height:50px;display:block;"></canvas>`;
       }
 
+      rows += `<div style="margin-top:8px"><button class="srrg-chart-btn" onclick="openTVChartModal('${sym}')">View Chart</button></div>`;
       panel.innerHTML = `<div class="modal-stats-card">${rows}</div>`;
       panel.classList.add('visible');
 
@@ -5187,7 +6170,7 @@
         panel.style.left = '';
       }
 
-      // Draw sparkline
+      // Draw sparkline / candlestick
       const canvas = document.getElementById('srrg-sparkline');
       if (canvas && stats.sparkPrices.length > 1) {
         const ctx = canvas.getContext('2d');
@@ -5197,29 +6180,60 @@
         ctx.scale(dpr, dpr);
         const w = canvas.clientWidth, h = canvas.clientHeight;
         const sp = stats.sparkPrices;
-        const min = Math.min(...sp), max = Math.max(...sp);
-        const range = max - min || 1;
-        const pad = 2;
-        const isUp = sp[sp.length - 1] >= sp[0];
         const tc = getThemeColors();
-        const color = isUp ? tc.semanticBullish : tc.semanticBearish;
-        ctx.strokeStyle = color;
-        ctx.lineWidth = 1.5;
-        ctx.beginPath();
-        for (let i = 0; i < sp.length; i++) {
-          const x = (i / (sp.length - 1)) * w;
-          const y = pad + ((max - sp[i]) / range) * (h - 2 * pad);
-          i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+
+        if (infoPanelChartMode === 'candle' && stats.sparkOhlc.length > 1) {
+          // Candlestick mode
+          const bars = stats.sparkOhlc;
+          let allMin = Infinity, allMax = -Infinity;
+          for (const b of bars) { allMin = Math.min(allMin, b.l); allMax = Math.max(allMax, b.h); }
+          const range = allMax - allMin || 1;
+          const pad = 4;
+          const barW = Math.max(1, (w / bars.length) * 0.7);
+          const gap = w / bars.length;
+          for (let i = 0; i < bars.length; i++) {
+            const b = bars[i];
+            const isUp = b.c >= b.o;
+            const bodyColor = isUp ? tc.semanticBullish : tc.semanticBearish;
+            const cx = gap * i + gap / 2;
+            const toY = v => pad + ((allMax - v) / range) * (h - 2 * pad);
+            const oY = toY(b.o), cY = toY(b.c);
+            const bodyTop = Math.min(oY, cY);
+            const bodyBot = Math.max(oY, cY);
+            const bodyH = Math.max(1, bodyBot - bodyTop);
+            // Wicks (above and below body only)
+            ctx.strokeStyle = bodyColor;
+            ctx.lineWidth = 1;
+            ctx.beginPath(); ctx.moveTo(cx, toY(b.h)); ctx.lineTo(cx, bodyTop); ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(cx, bodyBot); ctx.lineTo(cx, toY(b.l)); ctx.stroke();
+            // Body
+            ctx.fillStyle = bodyColor;
+            ctx.fillRect(cx - barW / 2, bodyTop, barW, bodyH);
+          }
+        } else {
+          // Line mode
+          const min = Math.min(...sp), max = Math.max(...sp);
+          const range = max - min || 1;
+          const pad = 2;
+          const isUp = sp[sp.length - 1] >= sp[0];
+          const color = isUp ? tc.semanticBullish : tc.semanticBearish;
+          ctx.strokeStyle = color;
+          ctx.lineWidth = 1.5;
+          ctx.beginPath();
+          for (let i = 0; i < sp.length; i++) {
+            const x = (i / (sp.length - 1)) * w;
+            const y = pad + ((max - sp[i]) / range) * (h - 2 * pad);
+            i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+          }
+          ctx.stroke();
+          ctx.lineTo(w, h);
+          ctx.lineTo(0, h);
+          ctx.closePath();
+          const hex = color.replace('#', '');
+          const r = parseInt(hex.slice(0, 2), 16), g = parseInt(hex.slice(2, 4), 16), b = parseInt(hex.slice(4, 6), 16);
+          ctx.fillStyle = `rgba(${r},${g},${b},0.15)`;
+          ctx.fill();
         }
-        ctx.stroke();
-        // Fill under the line
-        ctx.lineTo(w, h);
-        ctx.lineTo(0, h);
-        ctx.closePath();
-        const hex = color.replace('#', '');
-        const r = parseInt(hex.slice(0, 2), 16), g = parseInt(hex.slice(2, 4), 16), b = parseInt(hex.slice(4, 6), 16);
-        ctx.fillStyle = `rgba(${r},${g},${b},0.15)`;
-        ctx.fill();
       }
 
       // Draw RSI chart
@@ -5305,6 +6319,215 @@
       panel.classList.remove('visible');
       panel.innerHTML = '';
       delete panel.dataset.dragged;
+    }
+
+    function findPanelDataForSymbol(sym) {
+      for (let i = 0; i < PANEL_COUNT; i++) {
+        const d = panelDataCache[i];
+        if (d && d.symbols.includes(sym)) return d;
+      }
+      return null;
+    }
+
+    function openTVChartModal(sym) {
+      const modal = document.getElementById('tv-chart-modal');
+      const container = document.getElementById('tv-chart-container');
+      document.getElementById('tv-chart-title').textContent = sym + (stockNamesMap[sym] ? ' — ' + stockNamesMap[sym] : '');
+      container.innerHTML = '';
+      modal.classList.add('visible');
+      tvChartSymbol = sym;
+
+      const panelData = findPanelDataForSymbol(sym);
+      if (!panelData) return;
+
+      const tc = currentThemeColors;
+      const dates = panelData.dates;
+      const closes = panelData.prices[sym];
+      const ohlcData = panelData.ohlc && panelData.ohlc[sym];
+      const opens = ohlcData && ohlcData.o ? ohlcData.o : null;
+      const highs = ohlcData && ohlcData.h ? ohlcData.h : null;
+      const lows = ohlcData && ohlcData.l ? ohlcData.l : null;
+
+      // Build candlestick data (fall back to doji if no OHLC)
+      const candleData = [];
+      for (let i = 0; i < dates.length; i++) {
+        if (closes[i] == null) continue;
+        candleData.push({
+          time: dates[i],
+          open: opens && opens[i] != null ? opens[i] : closes[i],
+          high: highs && highs[i] != null ? highs[i] : closes[i],
+          low: lows && lows[i] != null ? lows[i] : closes[i],
+          close: closes[i],
+        });
+      }
+
+      // Common chart options factory
+      function makeChartOptions(showTimeScale) {
+        return {
+          layout: {
+            background: { type: 'solid', color: '#fefefe' },
+            textColor: '#999999',
+            fontSize: 10,
+          },
+          grid: {
+            vertLines: { visible: false },
+            horzLines: { visible: false },
+          },
+          crosshair: {
+            mode: LightweightCharts.CrosshairMode.Normal,
+            vertLine: { color: 'rgba(0,0,0,0.2)', width: 1, style: 0 },
+            horzLine: { color: 'rgba(0,0,0,0.2)', width: 1, style: 0 },
+          },
+          rightPriceScale: {
+            borderColor: '#e0e3eb',
+            scaleMargins: { top: 0.05, bottom: 0.05 },
+          },
+          timeScale: {
+            borderColor: '#e0e3eb',
+            borderVisible: showTimeScale,
+            timeVisible: false,
+            rightOffset: 30,
+            visible: showTimeScale,
+          },
+          handleScale: { axisPressedMouseMove: true },
+          handleScroll: { vertTouchDrag: false },
+        };
+      }
+
+      // Create chart containers
+      const mainDiv = document.createElement('div');
+      mainDiv.style.cssText = 'flex:7;min-height:0;position:relative;';
+      const rsiDiv = document.createElement('div');
+      rsiDiv.style.cssText = 'flex:1.5;min-height:0;position:relative;border-top:1px solid #e0e3eb;';
+      const aoDiv = document.createElement('div');
+      aoDiv.style.cssText = 'flex:1.5;min-height:0;position:relative;border-top:1px solid #e0e3eb;';
+      container.appendChild(mainDiv);
+      container.appendChild(rsiDiv);
+      container.appendChild(aoDiv);
+
+      // ── Main candlestick chart ──
+      const mainChart = LightweightCharts.createChart(mainDiv, { ...makeChartOptions(false), autoSize: true });
+      const candleSeries = mainChart.addCandlestickSeries({
+        upColor: '#eaebea',
+        downColor: '#5d606b',
+        borderUpColor: '#444444',
+        borderDownColor: '#444444',
+        wickUpColor: '#151623',
+        wickDownColor: '#151623',
+      });
+      candleSeries.setData(candleData);
+
+      // EMA 8 overlay
+      const ema8Arr = emaSmooth(closes, 8);
+      const ema8Data = [];
+      for (let i = 0; i < dates.length; i++) {
+        if (ema8Arr[i] != null) ema8Data.push({ time: dates[i], value: ema8Arr[i] });
+      }
+      const ema8Series = mainChart.addLineSeries({ color: '#b4a0cc', lineWidth: 1, priceLineVisible: false, lastValueVisible: false });
+      ema8Series.setData(ema8Data);
+
+      // EMA 21 overlay
+      const ema21Arr = emaSmooth(closes, 21);
+      const ema21Data = [];
+      for (let i = 0; i < dates.length; i++) {
+        if (ema21Arr[i] != null) ema21Data.push({ time: dates[i], value: ema21Arr[i] });
+      }
+      const ema21Series = mainChart.addLineSeries({ color: '#4488cc', lineWidth: 1, priceLineVisible: false, lastValueVisible: false });
+      ema21Series.setData(ema21Data);
+
+      // SMA 50 overlay
+      const sma50Arr = computeSMAArray(closes, 50);
+      const sma50Data = [];
+      for (let i = 0; i < dates.length; i++) {
+        if (sma50Arr[i] != null) sma50Data.push({ time: dates[i], value: sma50Arr[i] });
+      }
+      const sma50Series = mainChart.addLineSeries({ color: '#d66b8a', lineWidth: 1, priceLineVisible: false, lastValueVisible: false });
+      sma50Series.setData(sma50Data);
+
+      // ── RSI chart ──
+      const rsiChart = LightweightCharts.createChart(rsiDiv, {
+        ...makeChartOptions(false),
+        autoSize: true,
+        rightPriceScale: { borderColor: '#e0e3eb', scaleMargins: { top: 0.05, bottom: 0.05 } },
+      });
+      const rsiArr = computeRSIArray(closes, 14);
+      const rsiData = [];
+      for (let i = 0; i < dates.length; i++) {
+        if (rsiArr[i] != null) rsiData.push({ time: dates[i], value: rsiArr[i] });
+      }
+      const rsiSeries = rsiChart.addLineSeries({ color: '#0f0f0f', lineWidth: 1, priceLineVisible: false, lastValueVisible: false });
+      rsiSeries.setData(rsiData);
+
+      // RSI reference lines (70, 50, 30) and range anchors
+      if (candleData.length >= 2) {
+        const firstDate = candleData[0].time;
+        const lastDate = candleData[candleData.length - 1].time;
+        const rsiLineOpts = { color: 'rgba(120,123,134,0.4)', lineWidth: 1, lineStyle: 2, priceLineVisible: false, lastValueVisible: false };
+        const lvl70 = rsiChart.addLineSeries(rsiLineOpts);
+        lvl70.setData([{ time: firstDate, value: 70 }, { time: lastDate, value: 70 }]);
+        const lvl50 = rsiChart.addLineSeries(rsiLineOpts);
+        lvl50.setData([{ time: firstDate, value: 50 }, { time: lastDate, value: 50 }]);
+        const lvl30 = rsiChart.addLineSeries(rsiLineOpts);
+        lvl30.setData([{ time: firstDate, value: 30 }, { time: lastDate, value: 30 }]);
+        // Invisible anchors to force 0-100 range
+        const anchorLo = rsiChart.addLineSeries({ color: 'transparent', lineWidth: 0, priceLineVisible: false, lastValueVisible: false, visible: false });
+        anchorLo.setData([{ time: firstDate, value: 0 }, { time: lastDate, value: 0 }]);
+        const anchorHi = rsiChart.addLineSeries({ color: 'transparent', lineWidth: 0, priceLineVisible: false, lastValueVisible: false, visible: false });
+        anchorHi.setData([{ time: firstDate, value: 100 }, { time: lastDate, value: 100 }]);
+      }
+
+      // ── AO chart ──
+      const aoChart = LightweightCharts.createChart(aoDiv, { ...makeChartOptions(true), autoSize: true });
+      const aoArr = computeAOArray(highs, lows, closes);
+      const aoData = [];
+      for (let i = 0; i < dates.length; i++) {
+        if (aoArr[i] != null) {
+          const rising = i === 0 || aoArr[i - 1] == null ? aoArr[i] >= 0 : aoArr[i] >= aoArr[i - 1];
+          aoData.push({ time: dates[i], value: aoArr[i], color: rising ? '#b8b8b8' : '#0f0f0f' });
+        }
+      }
+      const aoSeries = aoChart.addHistogramSeries({ priceLineVisible: false, lastValueVisible: false });
+      aoSeries.setData(aoData);
+
+      // ── Time scale sync (time-based to keep all panes aligned) ──
+      const allCharts = [mainChart, rsiChart, aoChart];
+      let syncing = false;
+      allCharts.forEach((chart, idx) => {
+        chart.timeScale().subscribeVisibleTimeRangeChange(range => {
+          if (syncing || !range) return;
+          syncing = true;
+          allCharts.forEach((c, ci) => {
+            if (ci !== idx) {
+              try { c.timeScale().setVisibleRange(range); } catch(e) {}
+            }
+          });
+          syncing = false;
+        });
+      });
+
+      // Default view: last ~252 bars (1 year) with ~1 week left padding
+      if (candleData.length > 0) {
+        const fromIdx = Math.max(0, candleData.length - 252 - 5);
+        const timeFrom = candleData[fromIdx].time;
+        const timeTo = candleData[candleData.length - 1].time;
+        mainChart.timeScale().setVisibleRange({ from: timeFrom, to: timeTo });
+      }
+
+      tvChartInstances = { main: mainChart, rsi: rsiChart, ao: aoChart };
+    }
+
+    function closeTVChartModal(event) {
+      if (event && event.target !== document.getElementById('tv-chart-modal')) return;
+      const modal = document.getElementById('tv-chart-modal');
+      modal.classList.remove('visible');
+      if (tvChartInstances) {
+        try { tvChartInstances.main.remove(); } catch(e) {}
+        try { tvChartInstances.rsi.remove(); } catch(e) {}
+        try { tvChartInstances.ao.remove(); } catch(e) {}
+        tvChartInstances = null;
+      }
+      tvChartSymbol = null;
+      document.getElementById('tv-chart-container').innerHTML = '';
     }
 
     // Draggable info panel
@@ -5482,6 +6705,25 @@
           }
 
           if (trail.length > 0) {
+            // Compute EMA proximity tags
+            let nearEma8 = false, nearEma21 = false;
+            const len = prices.length;
+            let last = null;
+            for (let i = len - 1; i >= 0; i--) { if (prices[i] != null) { last = prices[i]; break; } }
+            if (last != null) {
+              const calcEma = (period) => {
+                const k = 2 / (period + 1);
+                let ema = null;
+                for (let i = 0; i < len; i++) {
+                  if (prices[i] == null) continue;
+                  ema = ema == null ? prices[i] : prices[i] * k + ema * (1 - k);
+                }
+                return ema;
+              };
+              const e8 = calcEma(8), e21 = calcEma(21);
+              if (e8 != null) { const pct = ((last - e8) / e8) * 100; nearEma8 = pct >= 0 && pct <= 3; }
+              if (e21 != null) { const pct = ((last - e21) / e21) * 100; nearEma21 = pct >= 0 && pct <= 5; }
+            }
             const sectorName = SECTOR_SHORT_NAMES[data.baseSymbol] || data.title.replace(/^\d+\.\s*/, '');
             const sectorColor = SECTOR_COLORS[panelIdx % SECTOR_COLORS.length];
             results.push({
@@ -5490,6 +6732,8 @@
               trail,
               sectorName,
               sectorColor,
+              nearEma8,
+              nearEma21,
             });
             colorIdx++;
           }
@@ -5759,7 +7003,7 @@
             <span class="rrg-legend-dot" style="background:${s.color}"></span>
             <span class="rrg-legend-sym">${s.sym}</span>
             <span class="rrg-heading" style="color:${arrowColor}">${s.arrow}</span>
-            <span class="rrg-legend-tags">${s.isCrossing ? `<span class="rrg-crossing" style="color:${qColor};background:${qColor}22">NEW</span><span class="rrg-from" style="color:${tc[QUADRANT_META[s.prevQ].colorVar]}">from ${QUADRANT_META[s.prevQ].short}</span>` : ''}</span>
+            <span class="rrg-legend-tags">${s.isCrossing ? `<span class="rrg-crossing" style="color:${qColor};background:${qColor}22">NEW</span><span class="rrg-from" style="color:${tc[QUADRANT_META[s.prevQ].colorVar]}">from ${QUADRANT_META[s.prevQ].short}</span>` : ''}${s.nearEma21 ? '<span class="rrg-ema-tag">E21</span>' : ''}${s.nearEma8 ? '<span class="rrg-ema-tag">E8</span>' : ''}</span>
             <span class="rrg-distance-bar"><span class="fill" style="width:${distPct}%;background:${qColor}"></span></span>
             <span class="rrg-legend-sector"${s.sectorColor ? ` style="color:${s.sectorColor}"` : ''}>${s.sectorName || ''}</span>
           </div>`;
@@ -5876,6 +7120,10 @@
       if (e.target.tagName === 'SELECT' || e.target.tagName === 'INPUT') return;
 
       if (e.key === 'Escape') {
+        if (document.getElementById('tv-chart-modal').classList.contains('visible')) {
+          closeTVChartModal();
+          return;
+        }
         if (srrg_lockedStock) {
           srrg_lockedStock = null;
           srrg_hoveredStock = null;
