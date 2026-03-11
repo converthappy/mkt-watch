@@ -389,6 +389,12 @@
     .grid-spark-wrap:hover .grid-spark-hover { opacity: 1; }
     .grid-tile.favorited { border-color: var(--text-positive, #4dd8b4); }
     .grid-tile.favorited:hover { border-color: #6ee8c8; }
+    .grid-tile.rs-leading { border-left: 3px solid #b8923a; box-shadow: inset 3px 0 8px -4px rgba(184,146,58,0.3); }
+    .grid-tile.rs-leading:hover { border-left-color: #cca64e; }
+    .grid-tile.pullback { border-left: 3px solid #9b7db8; box-shadow: inset 3px 0 8px -4px rgba(155,125,184,0.3); }
+    .grid-tile.pullback:hover { border-left-color: #b094cc; }
+    .grid-tile.pocket-pivot { border-left: 3px solid #1e6aae; box-shadow: inset 3px 0 8px -4px rgba(30,106,174,0.3); }
+    .grid-tile.pocket-pivot:hover { border-left-color: #2a82da; }
     .grid-fav-btn {
       position: absolute; bottom: 6px; right: 6px;
       background: var(--bg-tertiary); cursor: pointer;
@@ -2553,7 +2559,7 @@
       if (!data) {
         const filename = `data/panel_${String(panelIndex + 1).padStart(2, '0')}.json`;
         try {
-          const resp = await fetch(filename);
+          const resp = await fetch(filename, { cache: 'no-store' });
           if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
           data = await resp.json();
           panelDataCache[panelIndex] = data;
@@ -2731,7 +2737,7 @@
           if (!panelDataCache[i]) {
             const filename = `data/panel_${String(i + 1).padStart(2, '0')}.json`;
             loadPromises.push(
-              fetch(filename).then(r => r.json()).then(d => { panelDataCache[i] = d; }).catch(() => {})
+              fetch(filename, { cache: 'no-store' }).then(r => r.json()).then(d => { panelDataCache[i] = d; }).catch(() => {})
             );
           }
         }
@@ -2776,7 +2782,7 @@
           if (!panelDataCache[i]) {
             const filename = `data/panel_${String(i + 1).padStart(2, '0')}.json`;
             loadPromises.push(
-              fetch(filename).then(r => r.json()).then(d => { panelDataCache[i] = d; }).catch(() => {})
+              fetch(filename, { cache: 'no-store' }).then(r => r.json()).then(d => { panelDataCache[i] = d; }).catch(() => {})
             );
           }
         }
@@ -3552,7 +3558,7 @@
           if (!panelDataCache[i]) {
             const filename = `data/panel_${String(i + 1).padStart(2, '0')}.json`;
             try {
-              const resp = await fetch(filename);
+              const resp = await fetch(filename, { cache: 'no-store' });
               if (resp.ok) panelDataCache[i] = await resp.json();
             } catch (e) {}
           }
@@ -4407,7 +4413,89 @@
             }
             if (adrN > 0 && lSum > 0) adrPct = ((hSum / adrN) / (lSum / adrN) - 1) * 100;
           }
-          stocks.push({ sym, panelIndex: pi, sectorName, data: d, rsRating: swing.rsRating != null ? swing.rsRating : null, rotation: swing.rotation || null, swingScore: swing.total != null ? swing.total : null, nearEma8, nearEma21, ema8Dist, ema21Dist, ret1d, ret5d, ret1m, ret3m, rsiDelta, ma50Dist, adrPct });
+          // RS leading price: RS Rating climbing ranks while price flat/down
+          let rsLeading = false;
+          const rsArr = rsRatingCache ? rsRatingCache[sym] : null;
+          if (rsArr && len > 20) {
+            let rsNow = null, rs20ago = null;
+            for (let i = len - 1; i >= 0; i--) { if (rsArr[i] != null) { rsNow = rsArr[i]; break; } }
+            const ago20 = len - 21;
+            if (ago20 >= 0) rs20ago = rsArr[ago20];
+            const rsRising = rsNow != null && rs20ago != null && rsNow - rs20ago >= 5;
+            const priceFlat = ret1m != null && ret1m <= 2;
+            rsLeading = rsRising && priceFlat;
+          }
+          // Pullback detection: strong stock pulling back to EMA with RSI cooling
+          let isPullback = false;
+          if (last != null && swing.rsRating != null && swing.rsRating >= 60 && (swing.rotation === 2 || swing.rotation === 1)) {
+            const nearMA = (ema8Dist != null && ema8Dist >= -3 && ema8Dist <= 1) || (ema21Dist != null && ema21Dist >= -3 && ema21Dist <= 2);
+            const rsiCooled = rsiDelta != null && rsiDelta < 0;
+            isPullback = nearMA && rsiCooled;
+          }
+          // Volatility contraction: recent ATR shrinking vs historical
+          let volContraction = false;
+          if (last != null && ohlcSymAdr && ohlcSymAdr.h && ohlcSymAdr.l && len >= 40) {
+            let atr5 = 0, n5 = 0, atr20 = 0, n20 = 0;
+            for (let i = len - 5; i < len; i++) {
+              if (i < 1 || prices[i] == null || prices[i-1] == null) continue;
+              const hv = ohlcSymAdr.h[i] != null ? ohlcSymAdr.h[i] : prices[i];
+              const lv = ohlcSymAdr.l[i] != null ? ohlcSymAdr.l[i] : prices[i];
+              atr5 += Math.max(hv - lv, Math.abs(hv - prices[i-1]), Math.abs(lv - prices[i-1]));
+              n5++;
+            }
+            for (let i = len - 20; i < len; i++) {
+              if (i < 1 || prices[i] == null || prices[i-1] == null) continue;
+              const hv = ohlcSymAdr.h[i] != null ? ohlcSymAdr.h[i] : prices[i];
+              const lv = ohlcSymAdr.l[i] != null ? ohlcSymAdr.l[i] : prices[i];
+              atr20 += Math.max(hv - lv, Math.abs(hv - prices[i-1]), Math.abs(lv - prices[i-1]));
+              n20++;
+            }
+            if (n5 > 0 && n20 > 0) {
+              const ratio = (atr5 / n5) / (atr20 / n20);
+              volContraction = ratio < 0.7;
+            }
+          }
+          // 52-week high proximity
+          let near52wHigh = false, at52wHigh = false;
+          if (last != null && len >= 252) {
+            let high52 = -Infinity;
+            for (let i = len - 252; i < len; i++) {
+              if (prices[i] != null && prices[i] > high52) high52 = prices[i];
+            }
+            if (high52 > 0) {
+              const pctFrom52 = ((last - high52) / high52) * 100;
+              at52wHigh = pctFrom52 >= -2;
+              near52wHigh = pctFrom52 >= -5 && !at52wHigh;
+            }
+          }
+          // Relative volume and pocket pivot
+          let relVolume = null, pocketPivot = false;
+          const volArr = d.volume && d.volume[sym];
+          if (volArr && len >= 50) {
+            const todayVol = volArr[len - 1];
+            if (todayVol != null && todayVol > 0) {
+              let volSum = 0, volN = 0;
+              for (let i = len - 51; i < len - 1; i++) {
+                if (i >= 0 && volArr[i] != null) { volSum += volArr[i]; volN++; }
+              }
+              if (volN > 0) relVolume = todayVol / (volSum / volN);
+              // Pocket pivot: up-day volume > highest down-day volume of prior 10 sessions
+              const todayClose = prices[len - 1];
+              const yesterdayClose = prices[len - 2];
+              if (todayClose != null && yesterdayClose != null && todayClose > yesterdayClose) {
+                let maxDownVol = 0;
+                for (let i = len - 11; i < len - 1; i++) {
+                  if (i < 1 || prices[i] == null || prices[i-1] == null || volArr[i] == null) continue;
+                  if (prices[i] < prices[i-1]) maxDownVol = Math.max(maxDownVol, volArr[i]);
+                }
+                if (maxDownVol > 0 && todayVol > maxDownVol) {
+                  const nearMA2 = (ema8Dist != null && Math.abs(ema8Dist) <= 5) || (ema21Dist != null && Math.abs(ema21Dist) <= 5);
+                  pocketPivot = nearMA2;
+                }
+              }
+            }
+          }
+          stocks.push({ sym, panelIndex: pi, sectorName, data: d, rsRating: swing.rsRating != null ? swing.rsRating : null, rotation: swing.rotation || null, swingScore: swing.total != null ? swing.total : null, nearEma8, nearEma21, ema8Dist, ema21Dist, ret1d, ret5d, ret1m, ret3m, rsiDelta, ma50Dist, adrPct, rsLeading, isPullback, volContraction, near52wHigh, at52wHigh, relVolume, pocketPivot });
         }
       }
 
@@ -4493,7 +4581,7 @@
       }
 
       // Sort-by dropdown
-      const sortOpts = [['default','Quadrant'],['rsRating','RS Rating'],['swingScore','Swing Score'],['ret1d','1D Return'],['rsiDelta','RSI Delta'],['ma50Dist','MA50 (ATR)']].map(([v,l]) =>
+      const sortOpts = [['default','Quadrant'],['rsRating','RS Rating'],['swingScore','Swing Score'],['ret1d','1D Return'],['rsiDelta','RSI Delta'],['ma50Dist','MA50 (ATR)'],['relVolume','Rel Volume'],['near52w','52w High'],['volContract','Tight'],['pullback','Pullbacks'],['pocketPivot','Pocket Pivots']].map(([v,l]) =>
         `<option value="${v}"${gridSortBy===v?' selected':''}>${l}</option>`
       ).join('');
 
@@ -4572,7 +4660,7 @@
         <span style="font-size:var(--fs-sm);color:var(--text-quaternary)">${filtered.length} stocks</span>
       </div>`;
 
-      const sparkH = gridChartMode === 'candle' ? 140 : 80;
+      const sparkH = gridChartMode === 'candle' ? 180 : 100;
 
       const fmtRet = (v, label) => {
         if (v == null) return '';
@@ -4600,14 +4688,22 @@
         const fromTag = s.isCrossing ? `<span class="rrg-from" style="color:${tc[QUADRANT_META[s.prevQ].colorVar]}">from ${QUADRANT_META[s.prevQ].short}</span>` : '';
         const adrHigh = s.adrPct != null && s.adrPct >= 4;
         const adrTag = s.adrPct != null ? `<span style="font-size:9px;font-weight:600;padding:1px 4px;border-radius:3px;color:${adrHigh ? 'var(--text-positive,#4dd8b4)' : 'var(--text-tertiary)'};background:${adrHigh ? 'rgba(77,216,180,0.12)' : 'rgba(255,255,255,0.06)'}">ADR ${s.adrPct.toFixed(1)}%</span>` : '';
+        const rsLeadTag = s.rsLeading ? `<span style="font-size:9px;font-weight:600;padding:1px 4px;border-radius:3px;color:#f5a623;background:rgba(245,166,35,0.12)">RS Lead</span>` : '';
+        const pullbackTag = s.isPullback && gridSortBy !== 'pullback' ? `<span style="font-size:9px;font-weight:600;padding:1px 4px;border-radius:3px;color:#9b7db8;background:rgba(155,125,184,0.12)">Pullback</span>` : '';
+        const tightTag = s.volContraction && gridSortBy !== 'volContract' ? `<span style="font-size:9px;font-weight:600;padding:1px 4px;border-radius:3px;color:#b48efa;background:rgba(180,142,250,0.12)">Tight</span>` : '';
+        const highTag = gridSortBy !== 'near52w' ? (s.at52wHigh ? `<span style="font-size:9px;font-weight:600;padding:1px 4px;border-radius:3px;color:var(--text-positive,#4dd8b4);background:rgba(77,216,180,0.12)">52w Hi</span>` : s.near52wHigh ? `<span style="font-size:9px;font-weight:600;padding:1px 4px;border-radius:3px;color:var(--text-tertiary);background:rgba(255,255,255,0.06)">Nr 52w</span>` : '') : '';
+        const rVolTag = s.relVolume != null && s.relVolume >= 1.5 ? `<span style="font-size:9px;font-weight:600;padding:1px 4px;border-radius:3px;color:${s.ret1d >= 0 ? 'var(--text-positive,#4dd8b4)' : 'var(--text-negative,#f0616d)'};background:${s.ret1d >= 0 ? 'rgba(77,216,180,0.12)' : 'rgba(240,97,109,0.12)'}">Vol ${s.relVolume.toFixed(1)}x</span>` : '';
+        const ppTag = s.pocketPivot && gridSortBy !== 'pocketPivot' ? `<span style="font-size:9px;font-weight:700;padding:1px 4px;border-radius:3px;color:#2a82da;background:rgba(42,130,218,0.15);border:1px solid rgba(42,130,218,0.3)">PP</span>` : '';
         const retHtml = `<div class="grid-tile-returns">${fmtRet(s.ret1d,'1D')}${fmtRet(s.ret5d,'5D')}${fmtRet(s.ret1m,'1M')}${fmtRet(s.ret3m,'3M')}</div>`;
         const isFav = gridFavorites.has(s.sym);
-        return `<div class="grid-tile${isFav ? ' favorited' : ''}" data-sym="${s.sym}" data-pi="${s.panelIndex}">
+        const noHighlight = gridSortBy !== 'default';
+        const tileClasses = ['grid-tile', isFav && 'favorited', !noHighlight && s.rsLeading && 'rs-leading', !noHighlight && s.isPullback && 'pullback', !noHighlight && s.pocketPivot && 'pocket-pivot'].filter(Boolean).join(' ');
+        return `<div class="${tileClasses}" data-sym="${s.sym}" data-pi="${s.panelIndex}">
           <div class="grid-tile-header">
             <span class="grid-tile-sym">${s.sym}</span>
             <span class="grid-tile-sector">${s.sectorName}</span>
           </div>
-          <div class="grid-tile-tags">${momentumTag}${rotTag}${crossingTag}${fromTag}${emaTags}${rsTag}${adrTag}</div>
+          <div class="grid-tile-tags">${momentumTag}${rotTag}${crossingTag}${fromTag}${emaTags}${rsTag}${adrTag}${rsLeadTag}${pullbackTag}${tightTag}${highTag}${rVolTag}${ppTag}</div>
           ${retHtml}
           <div class="grid-spark-wrap">
             <canvas class="grid-spark" height="${sparkH}" style="height:${sparkH}px"></canvas>
@@ -4623,11 +4719,11 @@
 
       if (gridSortBy !== 'default') {
         // Flat sorted list
-        const sortKey = { rsRating: s => s.rsRating ?? -1, swingScore: s => s.swingScore ?? -1, ret1d: s => s.ret1d ?? -999, rsiDelta: s => s.rsiDelta ?? -999, ma50Dist: s => s.ma50Dist ?? -999 }[gridSortBy];
+        const sortKey = { rsRating: s => s.rsRating ?? -1, swingScore: s => s.swingScore ?? -1, ret1d: s => s.ret1d ?? -999, rsiDelta: s => s.rsiDelta ?? -999, ma50Dist: s => s.ma50Dist ?? -999, relVolume: s => s.relVolume ?? -1, near52w: s => s.at52wHigh ? 2 : s.near52wHigh ? 1 : 0, volContract: s => s.volContraction ? 1 : 0, pullback: s => s.isPullback ? 1 : 0, pocketPivot: s => s.pocketPivot ? 1 : 0 }[gridSortBy];
         const allItems = [];
         for (const q of QUADRANT_ORDER) allItems.push(...groups[q]);
         allItems.sort((a, b) => sortKey(b) - sortKey(a));
-        const sortLabels = { rsRating: 'RS Rating', swingScore: 'Swing Score', ret1d: '1D Return', rsiDelta: 'RSI Delta (5-bar)', ma50Dist: 'MA50 Distance (ATR)' };
+        const sortLabels = { rsRating: 'RS Rating', swingScore: 'Swing Score', ret1d: '1D Return', rsiDelta: 'RSI Delta (5-bar)', ma50Dist: 'MA50 Distance (ATR)', relVolume: 'Relative Volume', near52w: '52-Week High', volContract: 'Volatility Contraction', pullback: 'Pullbacks', pocketPivot: 'Pocket Pivots' };
         html += `<div class="grid-quadrant-section" style="border-color:var(--border-medium)">`;
         html += `<div class="grid-group-header" style="color:var(--text-secondary)">Sorted by ${sortLabels[gridSortBy]} <span class="count">${allItems.length}</span></div>`;
         html += `<div class="grid-tiles-grid" style="grid-template-columns:repeat(${gridColumns}, 1fr)">`;
@@ -4685,6 +4781,7 @@
       const sparkStart = getRangeStartDate(gridRange, data.dates);
       const sparkIdx = findStartIndex(data.dates, sparkStart);
       const ohlcSym = data.ohlc && data.ohlc[sym];
+      const volSym = data.volume && data.volume[sym];
 
       // Price data
       const ema8Full = [], ema21Full = [], ma50Full = [];
@@ -4710,6 +4807,7 @@
 
       const sparkPrices = [];
       const sparkOhlc = [];
+      const sparkVol = [];
       for (let i = sparkIdx; i <= lastIdx; i++) {
         if (prices[i] != null) {
           sparkPrices.push(prices[i]);
@@ -4722,6 +4820,7 @@
             l: ohlcSym && ohlcSym.l && ohlcSym.l[i] != null ? ohlcSym.l[i] : prices[i],
             c: prices[i],
           });
+          sparkVol.push(volSym ? (volSym[i] || 0) : 0);
         }
       }
 
@@ -4787,7 +4886,9 @@
         canvas.width = canvas.clientWidth * dpr;
         canvas.height = canvas.clientHeight * dpr;
         ctx.scale(dpr, dpr);
-        const w = canvas.clientWidth, h = canvas.clientHeight;
+        const w = canvas.clientWidth, fullH = canvas.clientHeight;
+        const volZoneH = fullH * 0.2;
+        const h = fullH - volZoneH - 2; // price zone with 2px gap
 
         let chartMin = Infinity, chartMax = -Infinity;
         const chartPad = gridChartMode === 'candle' ? 4 : 2;
@@ -4803,6 +4904,42 @@
         if (gridShowMa50) for (const v of sparkMa50) { if (v != null) { chartMin = Math.min(chartMin, v); chartMax = Math.max(chartMax, v); } }
         const chartRange = chartMax - chartMin || 1;
         const chartToY = v => chartPad + ((chartMax - v) / chartRange) * (h - 2 * chartPad);
+
+        // Volume bars (separate zone below price chart)
+        if (sparkVol.length > 0) {
+          let maxVol = 0;
+          for (const v of sparkVol) if (v > maxVol) maxVol = v;
+          if (maxVol > 0) {
+            // Pre-compute pocket pivot bars: up-day vol > max down-day vol of prior 10
+            const ppBars = new Set();
+            for (let i = 1; i < sparkVol.length; i++) {
+              const isUpDay = sparkOhlc[i] ? sparkOhlc[i].c > sparkOhlc[i].o : sparkPrices[i] > sparkPrices[i-1];
+              if (!isUpDay || sparkVol[i] <= 0) continue;
+              let maxDownVol = 0;
+              for (let j = Math.max(0, i - 10); j < i; j++) {
+                const jDown = sparkOhlc[j] ? sparkOhlc[j].c < sparkOhlc[j].o : (j > 0 && sparkPrices[j] < sparkPrices[j-1]);
+                if (jDown && sparkVol[j] > maxDownVol) maxDownVol = sparkVol[j];
+              }
+              if (maxDownVol > 0 && sparkVol[i] > maxDownVol) ppBars.add(i);
+            }
+            const volTop = h + 2;
+            const volBase = fullH;
+            const barCount = sparkVol.length;
+            const vGap = w / barCount;
+            const vBarW = Math.max(1, vGap * 0.7);
+            for (let i = 0; i < barCount; i++) {
+              if (sparkVol[i] <= 0) continue;
+              const bh = (sparkVol[i] / maxVol) * volZoneH;
+              const isUp = sparkOhlc[i] ? sparkOhlc[i].c >= sparkOhlc[i].o : (i > 0 ? sparkPrices[i] >= sparkPrices[i-1] : true);
+              if (ppBars.has(i)) {
+                ctx.fillStyle = 'rgba(42,130,218,0.7)';
+              } else {
+                ctx.fillStyle = isUp ? 'rgba(77,216,180,0.35)' : 'rgba(240,97,109,0.35)';
+              }
+              ctx.fillRect(vGap * i + vGap / 2 - vBarW / 2, volBase - bh, vBarW, bh);
+            }
+          }
+        }
 
         if (gridChartMode === 'candle' && sparkOhlc.length > 1) {
           const bars = sparkOhlc;

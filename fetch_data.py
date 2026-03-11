@@ -132,6 +132,7 @@ def fetch_all_data(tickers, period=None, start=None, end=None):
     all_open = None
     all_high = None
     all_low = None
+    all_volume = None
 
     for i in range(0, len(tickers), batch_size):
         batch = tickers[i:i + batch_size]
@@ -168,6 +169,7 @@ def fetch_all_data(tickers, period=None, start=None, end=None):
             opn = extract_field("Open")
             high = extract_field("High")
             low = extract_field("Low")
+            vol = extract_field("Volume")
 
             def merge(existing, new):
                 if new is None:
@@ -181,12 +183,13 @@ def fetch_all_data(tickers, period=None, start=None, end=None):
             all_open = merge(all_open, opn)
             all_high = merge(all_high, high)
             all_low = merge(all_low, low)
+            all_volume = merge(all_volume, vol)
 
         except Exception as e:
             print(f"  Error in batch {i // batch_size + 1}: {e}")
 
     # Deduplicate and trim trailing sparse dates using close as reference
-    for frame_name, frame in [("close", all_close), ("open", all_open), ("high", all_high), ("low", all_low)]:
+    for frame_name, frame in [("close", all_close), ("open", all_open), ("high", all_high), ("low", all_low), ("volume", all_volume)]:
         if frame is not None and frame.index.duplicated().any():
             if frame_name == "close":
                 all_close = frame[~frame.index.duplicated(keep="last")]
@@ -196,6 +199,8 @@ def fetch_all_data(tickers, period=None, start=None, end=None):
                 all_high = frame[~frame.index.duplicated(keep="last")]
             elif frame_name == "low":
                 all_low = frame[~frame.index.duplicated(keep="last")]
+            elif frame_name == "volume":
+                all_volume = frame[~frame.index.duplicated(keep="last")]
 
     if all_close is not None:
         while len(all_close) > 0:
@@ -207,24 +212,27 @@ def fetch_all_data(tickers, period=None, start=None, end=None):
                 if all_open is not None: all_open = all_open.iloc[:-1]
                 if all_high is not None: all_high = all_high.iloc[:-1]
                 if all_low is not None: all_low = all_low.iloc[:-1]
+                if all_volume is not None: all_volume = all_volume.iloc[:-1]
                 print(f"  Dropped sparse trailing date {dropped} ({valid_pct:.0%} coverage)")
             else:
                 break
 
-    return {"Close": all_close, "Open": all_open, "High": all_high, "Low": all_low}
+    return {"Close": all_close, "Open": all_open, "High": all_high, "Low": all_low, "Volume": all_volume}
 
 
 def build_panel_json(panel, all_data, panel_index):
-    """Build the columnar JSON for a single panel including OHLC."""
+    """Build the columnar JSON for a single panel including OHLC and volume."""
     close_data = all_data["Close"]
     open_data = all_data["Open"]
     high_data = all_data["High"]
     low_data = all_data["Low"]
+    volume_data = all_data.get("Volume")
 
     dates = [d.strftime("%Y-%m-%d") for d in close_data.index]
 
     prices = {}
     ohlc = {}
+    volume = {}
     included_symbols = []
 
     def to_list(series):
@@ -255,6 +263,14 @@ def build_panel_json(panel, all_data, panel_index):
                 sym_ohlc["l"] = to_list(low_data[col])
             if sym_ohlc:
                 ohlc[sym] = sym_ohlc
+            if volume_data is not None and col in volume_data.columns:
+                vol_list = []
+                for val in volume_data[col]:
+                    if val is not None and not (isinstance(val, float) and val != val):
+                        vol_list.append(int(val))
+                    else:
+                        vol_list.append(None)
+                volume[sym] = vol_list
             included_symbols.append(sym)
         else:
             print(f"  Panel {panel_index + 1}: ticker '{sym}' not found in data, skipping")
@@ -268,6 +284,8 @@ def build_panel_json(panel, all_data, panel_index):
     }
     if ohlc:
         result["ohlc"] = ohlc
+    if volume:
+        result["volume"] = volume
     return result
 
 
@@ -350,6 +368,7 @@ def incremental_update():
     open_data = all_data["Open"]
     high_data = all_data["High"]
     low_data = all_data["Low"]
+    volume_data = all_data.get("Volume")
 
     if close_data is None or close_data.empty:
         print("No new trading data available (weekend/holiday?).")
@@ -361,6 +380,11 @@ def incremental_update():
     def round_val(val):
         if val is not None and not (isinstance(val, float) and val != val):
             return round(float(val), 4)
+        return None
+
+    def int_val(val):
+        if val is not None and not (isinstance(val, float) and val != val):
+            return int(val)
         return None
 
     # Append to each panel JSON
@@ -387,11 +411,13 @@ def incremental_update():
         # Append new dates
         existing["dates"].extend(dates_to_add)
 
-        # Ensure ohlc dict exists
+        # Ensure ohlc and volume dicts exist
         if "ohlc" not in existing:
             existing["ohlc"] = {}
+        if "volume" not in existing:
+            existing["volume"] = {}
 
-        # Append new prices + OHLC for each symbol already in the panel
+        # Append new prices + OHLC + volume for each symbol already in the panel
         symbols_in_new_data = set()
         for sym in existing["symbols"]:
             yf_sym = sym.replace("/", "-")
@@ -407,16 +433,18 @@ def incremental_update():
                 o_series = open_data[col] if open_data is not None and col in open_data.columns else None
                 h_series = high_data[col] if high_data is not None and col in high_data.columns else None
                 l_series = low_data[col] if low_data is not None and col in low_data.columns else None
+                v_series = volume_data[col] if volume_data is not None and col in volume_data.columns else None
 
                 # Ensure ohlc arrays exist for this symbol
+                n_existing = len(existing["dates"]) - len(dates_to_add)
                 if sym not in existing["ohlc"]:
-                    # Backfill with nulls for existing dates
-                    n_existing = len(existing["dates"]) - len(dates_to_add)
                     existing["ohlc"][sym] = {
                         "o": [None] * n_existing,
                         "h": [None] * n_existing,
                         "l": [None] * n_existing,
                     }
+                if sym not in existing["volume"]:
+                    existing["volume"][sym] = [None] * n_existing
 
                 for j, val in enumerate(c_series):
                     if not date_mask[j]:
@@ -425,6 +453,7 @@ def incremental_update():
                     existing["ohlc"][sym]["o"].append(round_val(o_series.iloc[j]) if o_series is not None else None)
                     existing["ohlc"][sym]["h"].append(round_val(h_series.iloc[j]) if h_series is not None else None)
                     existing["ohlc"][sym]["l"].append(round_val(l_series.iloc[j]) if l_series is not None else None)
+                    existing["volume"][sym].append(int_val(v_series.iloc[j]) if v_series is not None else None)
             else:
                 # Symbol not in new download — fill with nulls
                 for _ in dates_to_add:
@@ -433,6 +462,8 @@ def incremental_update():
                         existing["ohlc"][sym]["o"].append(None)
                         existing["ohlc"][sym]["h"].append(None)
                         existing["ohlc"][sym]["l"].append(None)
+                    if sym in existing.get("volume", {}):
+                        existing["volume"][sym].append(None)
 
         # Check for symbols in panel definition but not in existing data
         existing_syms = set(existing["symbols"])
