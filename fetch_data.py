@@ -120,14 +120,18 @@ def get_all_unique_tickers():
 
 
 def fetch_all_data(tickers, period=None, start=None, end=None):
-    """Batch-download daily close prices for all tickers."""
+    """Batch-download daily OHLC prices for all tickers.
+    Returns dict with keys 'Close', 'Open', 'High', 'Low' each being a DataFrame."""
     if start:
         print(f"Downloading {len(tickers)} tickers ({start} to {end or 'today'})...")
     else:
         print(f"Downloading {len(tickers)} tickers ({period} of daily data)...")
 
     batch_size = 200
-    all_data = None
+    all_close = None
+    all_open = None
+    all_high = None
+    all_low = None
 
     for i in range(0, len(tickers), batch_size):
         batch = tickers[i:i + batch_size]
@@ -151,56 +155,88 @@ def fetch_all_data(tickers, period=None, start=None, end=None):
                 print(f"  Warning: empty result for batch {i // batch_size + 1}")
                 continue
 
-            # Extract just the Close prices
-            if isinstance(df.columns, type(df.columns)) and hasattr(df.columns, 'levels'):
-                # Multi-level columns from multi-ticker download
-                if "Close" in df.columns.get_level_values(0):
-                    close = df["Close"]
-                else:
-                    close = df
-            else:
-                close = df
+            has_levels = isinstance(df.columns, type(df.columns)) and hasattr(df.columns, 'levels')
 
-            if all_data is None:
-                all_data = close
-            else:
-                all_data = all_data.join(close, how="outer", rsuffix="_dup")
-                # Remove any duplicate columns
-                all_data = all_data[[c for c in all_data.columns if not c.endswith("_dup")]]
+            def extract_field(field):
+                if has_levels and field in df.columns.get_level_values(0):
+                    return df[field]
+                elif not has_levels:
+                    return df  # single ticker
+                return None
+
+            close = extract_field("Close")
+            opn = extract_field("Open")
+            high = extract_field("High")
+            low = extract_field("Low")
+
+            def merge(existing, new):
+                if new is None:
+                    return existing
+                if existing is None:
+                    return new
+                merged = existing.join(new, how="outer", rsuffix="_dup")
+                return merged[[c for c in merged.columns if not c.endswith("_dup")]]
+
+            all_close = merge(all_close, close)
+            all_open = merge(all_open, opn)
+            all_high = merge(all_high, high)
+            all_low = merge(all_low, low)
 
         except Exception as e:
             print(f"  Error in batch {i // batch_size + 1}: {e}")
 
-    if all_data is not None:
-        # Deduplicate date index (outer join across batches can create dupes)
-        if all_data.index.duplicated().any():
-            all_data = all_data[~all_data.index.duplicated(keep="last")]
+    # Deduplicate and trim trailing sparse dates using close as reference
+    for frame_name, frame in [("close", all_close), ("open", all_open), ("high", all_high), ("low", all_low)]:
+        if frame is not None and frame.index.duplicated().any():
+            if frame_name == "close":
+                all_close = frame[~frame.index.duplicated(keep="last")]
+            elif frame_name == "open":
+                all_open = frame[~frame.index.duplicated(keep="last")]
+            elif frame_name == "high":
+                all_high = frame[~frame.index.duplicated(keep="last")]
+            elif frame_name == "low":
+                all_low = frame[~frame.index.duplicated(keep="last")]
 
-        # Drop trailing dates where <50% of tickers have data
-        # (yfinance often returns partial data for the most recent day)
-        while len(all_data) > 0:
-            last_row = all_data.iloc[-1]
+    if all_close is not None:
+        while len(all_close) > 0:
+            last_row = all_close.iloc[-1]
             valid_pct = last_row.notna().sum() / len(last_row)
             if valid_pct < 0.5:
-                dropped = all_data.index[-1].strftime("%Y-%m-%d")
-                all_data = all_data.iloc[:-1]
+                dropped = all_close.index[-1].strftime("%Y-%m-%d")
+                all_close = all_close.iloc[:-1]
+                if all_open is not None: all_open = all_open.iloc[:-1]
+                if all_high is not None: all_high = all_high.iloc[:-1]
+                if all_low is not None: all_low = all_low.iloc[:-1]
                 print(f"  Dropped sparse trailing date {dropped} ({valid_pct:.0%} coverage)")
             else:
                 break
 
-    return all_data
+    return {"Close": all_close, "Open": all_open, "High": all_high, "Low": all_low}
 
 
-def build_panel_json(panel, close_data, panel_index):
-    """Build the columnar JSON for a single panel."""
-    # Get the dates index
+def build_panel_json(panel, all_data, panel_index):
+    """Build the columnar JSON for a single panel including OHLC."""
+    close_data = all_data["Close"]
+    open_data = all_data["Open"]
+    high_data = all_data["High"]
+    low_data = all_data["Low"]
+
     dates = [d.strftime("%Y-%m-%d") for d in close_data.index]
 
     prices = {}
+    ohlc = {}
     included_symbols = []
 
+    def to_list(series):
+        result = []
+        for val in series:
+            if val is not None and not (isinstance(val, float) and val != val):
+                result.append(round(float(val), 4))
+            else:
+                result.append(None)
+        return result
+
     for sym in panel["symbols"]:
-        # Try the ticker as-is first, then with '/' replaced by '-'
         yf_sym = sym.replace("/", "-")
         col = None
         if yf_sym in close_data.columns:
@@ -209,26 +245,30 @@ def build_panel_json(panel, close_data, panel_index):
             col = sym
 
         if col is not None:
-            series = close_data[col]
-            # Convert to list, replacing NaN with None
-            price_list = []
-            for val in series:
-                if val is not None and not (isinstance(val, float) and val != val):
-                    price_list.append(round(float(val), 4))
-                else:
-                    price_list.append(None)
-            prices[sym] = price_list
+            prices[sym] = to_list(close_data[col])
+            sym_ohlc = {}
+            if open_data is not None and col in open_data.columns:
+                sym_ohlc["o"] = to_list(open_data[col])
+            if high_data is not None and col in high_data.columns:
+                sym_ohlc["h"] = to_list(high_data[col])
+            if low_data is not None and col in low_data.columns:
+                sym_ohlc["l"] = to_list(low_data[col])
+            if sym_ohlc:
+                ohlc[sym] = sym_ohlc
             included_symbols.append(sym)
         else:
             print(f"  Panel {panel_index + 1}: ticker '{sym}' not found in data, skipping")
 
-    return {
+    result = {
         "title": panel["title"],
         "baseSymbol": panel["baseSymbol"],
         "symbols": included_symbols,
         "dates": dates,
         "prices": prices,
     }
+    if ohlc:
+        result["ohlc"] = ohlc
+    return result
 
 
 def save_last_full_refresh():
@@ -302,10 +342,14 @@ def incremental_update():
     print(f"Total unique tickers: {len(all_tickers)}")
 
     # Fetch only the new date range
-    close_data = fetch_all_data(
+    all_data = fetch_all_data(
         all_tickers,
         start=start_date.strftime("%Y-%m-%d"),
     )
+    close_data = all_data["Close"]
+    open_data = all_data["Open"]
+    high_data = all_data["High"]
+    low_data = all_data["Low"]
 
     if close_data is None or close_data.empty:
         print("No new trading data available (weekend/holiday?).")
@@ -313,6 +357,11 @@ def incremental_update():
 
     new_dates = [d.strftime("%Y-%m-%d") for d in close_data.index]
     print(f"\nFetched {len(new_dates)} new trading day(s): {new_dates[0]} to {new_dates[-1]}")
+
+    def round_val(val):
+        if val is not None and not (isinstance(val, float) and val != val):
+            return round(float(val), 4)
+        return None
 
     # Append to each panel JSON
     for i, panel in enumerate(PANELS):
@@ -338,7 +387,11 @@ def incremental_update():
         # Append new dates
         existing["dates"].extend(dates_to_add)
 
-        # Append new prices for each symbol already in the panel
+        # Ensure ohlc dict exists
+        if "ohlc" not in existing:
+            existing["ohlc"] = {}
+
+        # Append new prices + OHLC for each symbol already in the panel
         symbols_in_new_data = set()
         for sym in existing["symbols"]:
             yf_sym = sym.replace("/", "-")
@@ -350,18 +403,36 @@ def incremental_update():
 
             if col is not None:
                 symbols_in_new_data.add(sym)
-                series = close_data[col]
-                for j, val in enumerate(series):
+                c_series = close_data[col]
+                o_series = open_data[col] if open_data is not None and col in open_data.columns else None
+                h_series = high_data[col] if high_data is not None and col in high_data.columns else None
+                l_series = low_data[col] if low_data is not None and col in low_data.columns else None
+
+                # Ensure ohlc arrays exist for this symbol
+                if sym not in existing["ohlc"]:
+                    # Backfill with nulls for existing dates
+                    n_existing = len(existing["dates"]) - len(dates_to_add)
+                    existing["ohlc"][sym] = {
+                        "o": [None] * n_existing,
+                        "h": [None] * n_existing,
+                        "l": [None] * n_existing,
+                    }
+
+                for j, val in enumerate(c_series):
                     if not date_mask[j]:
                         continue
-                    if val is not None and not (isinstance(val, float) and val != val):
-                        existing["prices"][sym].append(round(float(val), 4))
-                    else:
-                        existing["prices"][sym].append(None)
+                    existing["prices"][sym].append(round_val(val))
+                    existing["ohlc"][sym]["o"].append(round_val(o_series.iloc[j]) if o_series is not None else None)
+                    existing["ohlc"][sym]["h"].append(round_val(h_series.iloc[j]) if h_series is not None else None)
+                    existing["ohlc"][sym]["l"].append(round_val(l_series.iloc[j]) if l_series is not None else None)
             else:
                 # Symbol not in new download — fill with nulls
                 for _ in dates_to_add:
                     existing["prices"][sym].append(None)
+                    if sym in existing.get("ohlc", {}):
+                        existing["ohlc"][sym]["o"].append(None)
+                        existing["ohlc"][sym]["h"].append(None)
+                        existing["ohlc"][sym]["l"].append(None)
 
         # Check for symbols in panel definition but not in existing data
         existing_syms = set(existing["symbols"])
@@ -392,7 +463,8 @@ def full_refresh():
     print(f"Total unique tickers: {len(all_tickers)}")
 
     # Fetch all data at once
-    close_data = fetch_all_data(all_tickers, period="5y")
+    all_data = fetch_all_data(all_tickers, period="5y")
+    close_data = all_data["Close"]
 
     if close_data is None or close_data.empty:
         print("ERROR: No data was downloaded. Check your internet connection.")
@@ -403,7 +475,7 @@ def full_refresh():
 
     # Build and write JSON for each panel
     for i, panel in enumerate(PANELS):
-        panel_json = build_panel_json(panel, close_data, i)
+        panel_json = build_panel_json(panel, all_data, i)
         filename = f"panel_{i + 1:02d}.json"
         filepath = os.path.join(DATA_DIR, filename)
 
