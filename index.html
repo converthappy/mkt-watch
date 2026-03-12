@@ -379,6 +379,12 @@
       display: block;
       padding-top: 0;
     }
+    .grid-view-container.active::after {
+      content: ''; position: fixed; bottom: 0; left: 0;
+      width: 100%; height: 90px;
+      background: linear-gradient(to bottom, transparent, color-mix(in srgb, var(--bg-secondary) 60%, transparent) 60%, var(--bg-secondary));
+      pointer-events: none; z-index: 9;
+    }
     .grid-toolbar {
       display: flex; align-items: flex-end; gap: 6px;
       flex-wrap: nowrap; overflow-x: auto;
@@ -389,6 +395,16 @@
       border-bottom: 1px solid var(--border-subtle);
     }
     .grid-fade { display: none; }
+    .grid-scroll-top {
+      position: fixed; bottom: 24px; right: 24px; z-index: 50;
+      width: 36px; height: 36px; border-radius: 4px;
+      background: var(--bg-tertiary); border: 1px solid var(--border-medium);
+      color: var(--text-secondary); font-size: 18px; line-height: 1;
+      cursor: pointer; display: none; align-items: center; justify-content: center;
+      opacity: 0; transition: opacity 0.3s ease;
+    }
+    .grid-scroll-top.visible { display: flex; opacity: 1; }
+    .grid-scroll-top:hover { background: var(--interactive-bg-hover); color: var(--text-primary); }
     .grid-toolbar .topbar-label { font-size: 9px; line-height: 1; color: var(--text-tertiary); font-weight: 500; letter-spacing: 0.3px; }
     .grid-toolbar .separator { display: none; }
     .grid-toolbar .btn-group { display: flex; flex-direction: column; align-items: flex-start; gap: 1px; flex-shrink: 0; white-space: nowrap; }
@@ -408,6 +424,8 @@
       overflow: hidden;
       transition: border-color 0.15s, box-shadow 0.15s;
     }
+    .grid-tiles-grid:has(.grid-tile:hover) .grid-tile { opacity: 0.45; transition: opacity 0.2s, border-color 0.15s, box-shadow 0.15s; }
+    .grid-tiles-grid .grid-tile:hover { opacity: 1 !important; }
     .grid-tile:hover { border-color: var(--border-emphasis); box-shadow: 0 2px 8px rgba(0,0,0,0.15); }
     .grid-spark-wrap { position: relative; }
     .grid-spark-hover {
@@ -1780,7 +1798,7 @@
     let tvChartInstances = null; // { main, rsi, ao } Lightweight Charts for TV modal
     let tvChartSymbol = null;    // currently displayed symbol in TV modal
     let infoPanelChartMode = 'line'; // 'line' | 'candle' for info panel sparkline
-    let gridColumns = 4;
+    let gridColumns = 3;
     let gridChartMode = 'candle'; // 'line' | 'candle'
     let gridSectorFilter = 'all';
     let gridRange = '3M'; // '1M' | '3M' | '6M'
@@ -4613,14 +4631,18 @@
             }
             if (rsMax > -Infinity) rsLineNewHigh = rsCurr >= rsMax * 0.99;
           }
-          // Base Breakout: tight base + price > 10d prior high + volume > 1.2x avg
+          // Base Breakout: tight base + price broke above 10d prior high in last 3 days
           let isBaseBreakout = false;
           if (volContraction && last != null && len >= 12) {
-            let priorHigh = -Infinity;
-            for (let i = len - 12; i < len - 1; i++) {
-              if (i >= 0 && prices[i] != null) priorHigh = Math.max(priorHigh, prices[i]);
+            for (let bo = 0; bo < 3 && bo < len - 1; bo++) {
+              const di = len - 1 - bo;
+              if (prices[di] == null) continue;
+              let priorHigh = -Infinity;
+              for (let i = di - 11; i < di; i++) {
+                if (i >= 0 && prices[i] != null) priorHigh = Math.max(priorHigh, prices[i]);
+              }
+              if (priorHigh > -Infinity && prices[di] > priorHigh) { isBaseBreakout = true; break; }
             }
-            isBaseBreakout = priorHigh > -Infinity && last > priorHigh && relVolume != null && relVolume >= 1.2;
           }
           // Accumulation Days: ratio of up-on-volume vs down-on-volume over 20 sessions
           let accDayRatio = null;
@@ -4746,6 +4768,7 @@
         else if (gridFilterMomentum === 'crossing') filtered = filtered.filter(s => s.isCrossing);
         else if (gridFilterMomentum === 'nearEma8') filtered = filtered.filter(s => s.nearEma8);
         else if (gridFilterMomentum === 'nearEma21') filtered = filtered.filter(s => s.nearEma21);
+        else if (gridFilterMomentum === 'ema21Reclaim') filtered = filtered.filter(s => s.isEma21Reclaim);
       }
 
       // ── Group by quadrant ──
@@ -4764,7 +4787,7 @@
       }
 
       // Sort-by dropdown
-      const sortOpts = [['default','Quadrant'],['rsRating','RS Rating'],['swingScore','Swing Score'],['ret1d','1D Perf'],['ret5d','1W Perf'],['ret2w','2W Perf'],['ret1m','1M Perf'],['ret3m','3M Perf'],['rsiDelta','RSI Delta'],['ma50Dist','MA50 (ATR)'],['relVolume','Rel Volume'],['near52w','52w High'],['volContract','Tight'],['pullback','Pullbacks'],['pocketPivot','Pocket Pivots'],['rsLineHigh','RS New High'],['baseBreakout','Base Breakouts'],['accDays','Acc/Dist Days'],['ema21Reclaim','EMA21 Reclaim'],['new20dHigh','20d High']].map(([v,l]) =>
+      const sortOpts = [['default','Quadrant'],['rsRating','RS Rating'],['swingScore','Swing Score'],['ret1d','1D Perf'],['ret5d','1W Perf'],['ret2w','2W Perf'],['ret1m','1M Perf'],['ret3m','3M Perf'],['rsiDelta','RSI Delta'],['ma50Dist','MA50 (ATR)'],['relVolume','Rel Volume'],['near52w','52w High'],['volContract','Tight'],['pullback','Pullbacks'],['pocketPivot','Pocket Pivots'],['rsLineHigh','RS New High'],['baseBreakout','Base Breakouts'],['accDays','Acc/Dist Days'],['new20dHigh','20d High']].map(([v,l]) =>
         `<option value="${v}"${gridSortBy===v?' selected':''}>${l}</option>`
       ).join('');
 
@@ -4793,7 +4816,7 @@
       ).join('');
 
       // Momentum filter
-      const momOpts = [['all','All'],['bullish','Bullish'],['bearish','Bearish'],['crossing','Crossing'],['nearEma8','Near EMA8'],['nearEma21','Near EMA21']].map(([v,l]) =>
+      const momOpts = [['all','All'],['bullish','Bullish'],['bearish','Bearish'],['crossing','Crossing'],['nearEma8','Near EMA8'],['nearEma21','Near EMA21'],['ema21Reclaim','EMA21 Reclaim']].map(([v,l]) =>
         `<option value="${v}"${gridFilterMomentum===v?' selected':''}>${l}</option>`
       ).join('');
 
@@ -4886,7 +4909,7 @@
         const rsHiTag = s.rsLineNewHigh && gridSortBy !== 'rsLineHigh' ? `<span style="font-size:9px;font-weight:600;padding:1px 4px;border-radius:3px;color:#e8b730;background:rgba(232,183,48,0.12)">RS Hi</span>` : '';
         const boTag = s.isBaseBreakout && gridSortBy !== 'baseBreakout' ? `<span style="font-size:9px;font-weight:700;padding:1px 4px;border-radius:3px;color:#00c9a7;background:rgba(0,201,167,0.12);border:1px solid rgba(0,201,167,0.3)">BO</span>` : '';
         const accTag = s.accDayRatio != null && s.accDayRatio >= 0.6 ? `<span style="font-size:9px;font-weight:600;padding:1px 4px;border-radius:3px;color:var(--text-positive,#4dd8b4);background:rgba(77,216,180,0.12)">Acc ${Math.round(s.accDayRatio * 100)}%</span>` : s.accDayRatio != null && s.accDayRatio <= 0.4 ? `<span style="font-size:9px;font-weight:600;padding:1px 4px;border-radius:3px;color:var(--text-negative,#f0616d);background:rgba(240,97,109,0.12)">Dist ${Math.round(s.accDayRatio * 100)}%</span>` : '';
-        const e21ReclaimTag = s.isEma21Reclaim && gridSortBy !== 'ema21Reclaim' ? `<span style="font-size:9px;font-weight:600;padding:1px 4px;border-radius:3px;color:#5bc0de;background:rgba(91,192,222,0.12)">E21 Reclaim</span>` : '';
+        const e21ReclaimTag = s.isEma21Reclaim && gridFilterMomentum !== 'ema21Reclaim' ? `<span style="font-size:9px;font-weight:600;padding:1px 4px;border-radius:3px;color:#5bc0de;background:rgba(91,192,222,0.12)">E21 Reclaim</span>` : '';
         const new20dTag = s.isNew20dHigh && gridSortBy !== 'new20dHigh' ? `<span style="font-size:9px;font-weight:600;padding:1px 4px;border-radius:3px;color:#c8e64d;background:rgba(200,230,77,0.12)">20d Hi</span>` : '';
         const retHtml = `<div class="grid-tile-returns">${fmtRet(s.ret1d,'1D')}${fmtRet(s.ret5d,'5D')}${fmtRet(s.ret1m,'1M')}${fmtRet(s.ret3m,'3M')}</div>`;
         const isFav = gridFavorites.has(s.sym);
@@ -4916,18 +4939,18 @@
 
       if (gridSortBy !== 'default') {
         // Flat sorted list
-        const sortKey = { rsRating: s => s.rsRating ?? -1, swingScore: s => s.swingScore ?? -1, ret1d: s => s.ret1d ?? -999, ret5d: s => s.ret5d ?? -999, ret2w: s => s.ret2w ?? -999, ret1m: s => s.ret1m ?? -999, ret3m: s => s.ret3m ?? -999, rsiDelta: s => s.rsiDelta ?? -999, ma50Dist: s => s.ma50Dist ?? -999, relVolume: s => s.relVolume ?? -1, near52w: s => s.at52wHigh ? 2 : s.near52wHigh ? 1 : 0, volContract: s => s.volContraction ? 1 : 0, pullback: s => s.isPullback ? 1 : 0, pocketPivot: s => s.pocketPivot ? 1 : 0, rsLineHigh: s => s.rsLineNewHigh ? 1 : 0, baseBreakout: s => s.isBaseBreakout ? 1 : 0, accDays: s => s.accDayRatio ?? -1, ema21Reclaim: s => s.isEma21Reclaim ? 1 : 0, new20dHigh: s => s.isNew20dHigh ? 1 : 0 }[gridSortBy];
+        const sortKey = { rsRating: s => s.rsRating ?? -1, swingScore: s => s.swingScore ?? -1, ret1d: s => s.ret1d ?? -999, ret5d: s => s.ret5d ?? -999, ret2w: s => s.ret2w ?? -999, ret1m: s => s.ret1m ?? -999, ret3m: s => s.ret3m ?? -999, rsiDelta: s => s.rsiDelta ?? -999, ma50Dist: s => s.ma50Dist ?? -999, relVolume: s => s.relVolume ?? -1, near52w: s => s.at52wHigh ? 2 : s.near52wHigh ? 1 : 0, volContract: s => s.volContraction ? 1 : 0, pullback: s => s.isPullback ? 1 : 0, pocketPivot: s => s.pocketPivot ? 1 : 0, rsLineHigh: s => s.rsLineNewHigh ? 1 : 0, baseBreakout: s => s.isBaseBreakout ? 1 : 0, accDays: s => s.accDayRatio ?? -1, new20dHigh: s => s.isNew20dHigh ? 1 : 0 }[gridSortBy];
         let allItems = [];
         for (const q of QUADRANT_ORDER) allItems.push(...groups[q]);
         // Binary sorts: filter to matching items only
-        const binaryFilter = { near52w: s => s.at52wHigh || s.near52wHigh, volContract: s => s.volContraction, pullback: s => s.isPullback, pocketPivot: s => s.pocketPivot, rsLineHigh: s => s.rsLineNewHigh, baseBreakout: s => s.isBaseBreakout, ema21Reclaim: s => s.isEma21Reclaim, new20dHigh: s => s.isNew20dHigh }[gridSortBy];
+        const binaryFilter = { near52w: s => s.at52wHigh || s.near52wHigh, volContract: s => s.volContraction, pullback: s => s.isPullback, pocketPivot: s => s.pocketPivot, rsLineHigh: s => s.rsLineNewHigh, baseBreakout: s => s.isBaseBreakout, accDays: s => s.accDayRatio != null && s.accDayRatio >= 0.6, new20dHigh: s => s.isNew20dHigh }[gridSortBy];
         if (binaryFilter) allItems = allItems.filter(binaryFilter);
         if (gridSecondaryRS && gridSortBy !== 'rsRating') {
           allItems.sort((a, b) => (b.rsRating ?? -1) - (a.rsRating ?? -1));
         } else {
           allItems.sort((a, b) => sortKey(b) - sortKey(a));
         }
-        const sortLabels = { rsRating: 'RS Rating', swingScore: 'Swing Score', ret1d: '1D Performance', ret5d: '1W Performance', ret2w: '2W Performance', ret1m: '1M Performance', ret3m: '3M Performance', rsiDelta: 'RSI Delta (5-bar)', ma50Dist: 'MA50 Distance (ATR)', relVolume: 'Relative Volume', near52w: '52-Week High', volContract: 'Volatility Contraction', pullback: 'Pullbacks', pocketPivot: 'Pocket Pivots', rsLineHigh: 'RS Line New High', baseBreakout: 'Base Breakouts', accDays: 'Accumulation / Distribution Days', ema21Reclaim: 'EMA21 Reclaim', new20dHigh: 'New 20-Day High' };
+        const sortLabels = { rsRating: 'RS Rating', swingScore: 'Swing Score', ret1d: '1D Performance', ret5d: '1W Performance', ret2w: '2W Performance', ret1m: '1M Performance', ret3m: '3M Performance', rsiDelta: 'RSI Delta (5-bar)', ma50Dist: 'MA50 Distance (ATR)', relVolume: 'Relative Volume', near52w: '52-Week High', volContract: 'Volatility Contraction', pullback: 'Pullbacks', pocketPivot: 'Pocket Pivots', rsLineHigh: 'RS Line New High', baseBreakout: 'Base Breakouts', accDays: 'Accumulation / Distribution Days', new20dHigh: 'New 20-Day High' };
         html += `<div class="grid-quadrant-section" style="border-color:var(--border-medium)">`;
         const rsTag = gridSecondaryRS && gridSortBy !== 'rsRating' ? ' → RS Rating' : '';
         html += `<div class="grid-group-header" style="color:var(--text-secondary)">${binaryFilter ? '' : 'Sorted by '}${sortLabels[gridSortBy]}${rsTag} <span class="count">${allItems.length}</span></div>`;
@@ -4955,8 +4978,20 @@
       container.innerHTML = html;
       container.classList.toggle('highlight-indicators', gridHighlightIndicators);
       container.classList.remove('scrolled');
+      let scrollTopBtn = document.getElementById('grid-scroll-top');
+      if (!scrollTopBtn) {
+        scrollTopBtn = document.createElement('button');
+        scrollTopBtn.id = 'grid-scroll-top';
+        scrollTopBtn.className = 'grid-scroll-top';
+        scrollTopBtn.innerHTML = '\u25B2';
+        scrollTopBtn.onclick = () => { container.scrollTop = 0; };
+        document.body.appendChild(scrollTopBtn);
+      }
+      scrollTopBtn.classList.remove('visible');
       container.onscroll = () => {
-        container.classList.toggle('scrolled', container.scrollTop > 10);
+        const scrolled = container.scrollTop > 10;
+        container.classList.toggle('scrolled', scrolled);
+        scrollTopBtn.classList.toggle('visible', scrolled);
       };
 
       // Lazy draw with IntersectionObserver
@@ -5466,6 +5501,7 @@
               <dt>Crossing</dt><dd>Stock moved to a different RRG quadrant in the most recent period.</dd>
               <dt>Near EMA8</dt><dd>Price is 0-3% above its 8-period EMA &mdash; short-term support zone.</dd>
               <dt>Near EMA21</dt><dd>Price is 0-5% above its 21-period EMA &mdash; intermediate support zone.</dd>
+              <dt>EMA21 Reclaim</dt><dd>Price crossed back above the 21-EMA in the last 3 days after spending 5+ days below it. Early momentum-shift signal.</dd>
             </dl>
             <h4>Sort / Filter Options</h4>
             <dl>
@@ -5481,9 +5517,8 @@
               <dt>Pullbacks</dt><dd>Stock is pulling back toward a rising moving average &mdash; potential buy-the-dip setup.</dd>
               <dt>Pocket Pivots</dt><dd>Up-day volume exceeds the highest down-day volume of the prior 10 sessions, near a key MA. Signals stealth institutional buying.</dd>
               <dt>RS New High</dt><dd>Stock&rsquo;s RS line (price / SPY) is at its 20-day high &mdash; relative outperformance even if price hasn&rsquo;t broken out yet.</dd>
-              <dt>Base Breakouts</dt><dd>Tight base (volatility contraction) + price above 10-day prior high + volume &ge; 1.2x average. The classic breakout trigger.</dd>
-              <dt>Acc/Dist Days</dt><dd>Ratio of up-days-on-above-avg-volume to down-days over 20 sessions. High = institutional accumulation, low = distribution.</dd>
-              <dt>EMA21 Reclaim</dt><dd>Price crossed back above the 21-EMA in the last 3 days after spending 5+ days below it. Early momentum-shift signal.</dd>
+              <dt>Base Breakouts</dt><dd>Tight base (volatility contraction) + price broke above 10-day prior high in the last 3 sessions. The classic breakout trigger.</dd>
+              <dt>Acc/Dist Days</dt><dd>Filters to stocks with 60%+ accumulation ratio &mdash; institutional buying pressure outweighs selling over 20 sessions.</dd>
               <dt>20d High</dt><dd>Price is within 1% of its 20-day highest close. More actionable than 52-week high for short-term swing entries.</dd>
             </dl>
             <h4>Toolbar Controls</h4>
