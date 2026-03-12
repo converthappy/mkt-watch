@@ -356,21 +356,24 @@
       padding-top: 0;
     }
     .grid-toolbar {
-      display: flex; align-items: flex-end; gap: 4px;
+      display: flex; align-items: flex-end; gap: 6px;
       flex-wrap: nowrap; overflow-x: auto;
       position: sticky; top: 0; z-index: 10;
       background: var(--bg-secondary);
       margin: 0 -16px;
-      padding: 8px 16px;
+      padding: 16px 12px 5px;
       border-bottom: 1px solid var(--border-subtle);
     }
-    .grid-toolbar .topbar-label { width: 100%; font-size: 9px; line-height: 1; margin-bottom: 2px; opacity: 0.6; }
+    .grid-toolbar .topbar-label { font-size: 9px; line-height: 1; color: var(--text-tertiary); font-weight: 500; letter-spacing: 0.3px; }
     .grid-toolbar .separator { display: none; }
-    .grid-toolbar .btn-group { display: flex; flex-wrap: wrap; align-items: center; gap: 2px; }
+    .grid-toolbar .btn-group { display: flex; flex-direction: column; align-items: flex-start; gap: 1px; flex-shrink: 0; white-space: nowrap; }
     .grid-toolbar select {
       background: var(--bg-tertiary); color: var(--text-primary);
-      border: 1px solid var(--border-medium); border-radius: 4px;
-      padding: 3px 6px; font-size: 11px; font-family: inherit;
+      border: 1px solid var(--border-medium); border-radius: 3px;
+      padding: 3px 4px; font-size: 11px; font-family: inherit;
+    }
+    .grid-toolbar .btn {
+      padding: 3px 8px; font-size: 11px;
     }
     .grid-tile {
       background: var(--bg-secondary);
@@ -462,13 +465,14 @@
       font-size: var(--fs-sm); font-weight: 600;
       padding: 6px 10px;
       display: flex; justify-content: space-between; align-items: center;
-      position: sticky; top: 37px; z-index: 5;
-      background: var(--bg-primary);
+      position: sticky; top: 55px; z-index: 5;
+      background: var(--bg-secondary);
       margin: -2px -12px 0;
       border-width: 2px 2px 0 2px;
       border-style: solid;
       border-color: inherit;
       border-radius: 8px 8px 0 0;
+      box-shadow: 0 -8px 0 var(--bg-secondary);
     }
     .grid-group-header .count {
       font-size: var(--fs-xs); font-weight: 400; opacity: 0.6;
@@ -1724,6 +1728,7 @@
     let gridChartMode = 'candle'; // 'line' | 'candle'
     let gridSectorFilter = 'all';
     let gridRange = '3M'; // '1M' | '3M' | '6M'
+    let gridTimeframe = 'daily'; // 'daily' | '3d' | 'weekly'
     let gridFilterQuadrant = 'all'; // 'all' | 'leading' | 'improving' | 'weakening' | 'lagging'
     let gridFilterMomentum = 'nearEma21'; // 'all' | 'bullish' | 'bearish' | 'crossing' | 'nearEma8' | 'nearEma21'
     let gridFavorites = new Set(JSON.parse(localStorage.getItem('gridFavorites') || '[]'));
@@ -1732,7 +1737,7 @@
     let gridShowEma21 = true;
     let gridShowMa50 = false;
     let gridHighlightIndicators = false;
-    let rotationBenchmark = 'sector'; // 'sector' | 'spy' | 'absolute'
+    let rotationBenchmark = 'spy'; // 'sector' | 'spy' | 'absolute'
     let gridSortBy = 'rsRating'; // 'default' | 'rsRating' | 'swingScore' | 'ret1d' | 'rsiDelta' | 'ma50Dist'
     let stockNamesMap = {};
     fetch('data/stock_names.json').then(r => r.json()).then(d => { stockNamesMap = d; }).catch(() => {});
@@ -4611,6 +4616,9 @@
       const rangeBtns = ['1M','3M','6M','YTD','1Y'].map(r =>
         `<button class="btn${gridRange===r?' active':''}" onclick="setGridRange('${r}')">${r}</button>`
       ).join('');
+      const tfBtns = [['daily','D'],['3d','3D'],['weekly','W']].map(([v,l]) =>
+        `<button class="btn${gridTimeframe===v?' active':''}" onclick="setGridTimeframe('${v}')">${l}</button>`
+      ).join('');
 
       // Quadrant filter
       const quadOpts = [['all','All'],['leading','Leading'],['improving','Improving'],['weakening','Weakening'],['lagging','Lagging']].map(([v,l]) =>
@@ -4641,7 +4649,9 @@
           <select onchange="setGridSort(this.value)">${sortOpts}</select>
         </div>
         <div class="separator"></div>
-        <div class="btn-group"><span class="topbar-label">Range</span>${rangeBtns}</div>
+        <div class="btn-group"><span class="topbar-label">Range</span><span>${rangeBtns}</span></div>
+        <div class="separator"></div>
+        <div class="btn-group"><span class="topbar-label">TF</span><span>${tfBtns}</span></div>
         <div class="separator"></div>
         <div class="btn-group"><span class="topbar-label">Columns</span>
           <select onchange="setGridColumns(+this.value)">${colOpts}</select>
@@ -4792,104 +4802,130 @@
         if (prices[i] != null) { lastIdx = i; break; }
       }
 
-      const sparkStart = getRangeStartDate(gridRange, data.dates);
-      const sparkIdx = findStartIndex(data.dates, sparkStart);
       const ohlcSym = data.ohlc && data.ohlc[sym];
       const volSym = data.volume && data.volume[sym];
 
-      // Price data
+      // Build full daily OHLC/volume arrays up to lastIdx
+      const dailyOhlcArr = [], dailyVolArr = [];
+      for (let i = 0; i <= lastIdx; i++) {
+        dailyOhlcArr.push({
+          o: ohlcSym && ohlcSym.o && ohlcSym.o[i] != null ? ohlcSym.o[i] : prices[i],
+          h: ohlcSym && ohlcSym.h && ohlcSym.h[i] != null ? ohlcSym.h[i] : prices[i],
+          l: ohlcSym && ohlcSym.l && ohlcSym.l[i] != null ? ohlcSym.l[i] : prices[i],
+          c: prices[i],
+        });
+        dailyVolArr.push(volSym ? (volSym[i] || 0) : 0);
+      }
+
+      // Resample if non-daily timeframe
+      const factor = gridTimeframe === 'weekly' ? 5 : gridTimeframe === '3d' ? 3 : 1;
+      let tfPrices, tfOhlc, tfVol;
+      if (factor > 1) {
+        const dailySlice = prices.slice(0, lastIdx + 1);
+        const resampled = resampleOHLCV(dailySlice, dailyOhlcArr, dailyVolArr, factor);
+        tfPrices = resampled.prices;
+        tfOhlc = resampled.ohlc;
+        tfVol = resampled.volume;
+      } else {
+        tfPrices = prices.slice(0, lastIdx + 1);
+        tfOhlc = dailyOhlcArr;
+        tfVol = dailyVolArr;
+      }
+
+      const tfLen = tfPrices.length;
+
+      // Compute EMAs on resampled close prices
       const ema8Full = [], ema21Full = [], ma50Full = [];
       let e8v = null, e21v = null;
       const k8 = 2 / 9, k21 = 2 / 22;
-      for (let i = 0; i <= lastIdx; i++) {
-        if (prices[i] != null) {
-          e8v = e8v == null ? prices[i] : prices[i] * k8 + e8v * (1 - k8);
-          e21v = e21v == null ? prices[i] : prices[i] * k21 + e21v * (1 - k21);
+      for (let i = 0; i < tfLen; i++) {
+        if (tfPrices[i] != null) {
+          e8v = e8v == null ? tfPrices[i] : tfPrices[i] * k8 + e8v * (1 - k8);
+          e21v = e21v == null ? tfPrices[i] : tfPrices[i] * k21 + e21v * (1 - k21);
         }
         ema8Full[i] = e8v;
         ema21Full[i] = e21v;
-        // MA50 (SMA)
         if (i >= 49) {
           let sum50 = 0, cnt50 = 0;
-          for (let j = i - 49; j <= i; j++) { if (prices[j] != null) { sum50 += prices[j]; cnt50++; } }
+          for (let j = i - 49; j <= i; j++) { if (tfPrices[j] != null) { sum50 += tfPrices[j]; cnt50++; } }
           ma50Full[i] = cnt50 > 0 ? sum50 / cnt50 : null;
         } else {
           ma50Full[i] = null;
         }
       }
-      const sparkEma8 = [], sparkEma21 = [], sparkMa50 = [];
 
+      // Map sparkIdx into resampled index space
+      const sparkStart = getRangeStartDate(gridRange, data.dates);
+      const dailySparkIdx = findStartIndex(data.dates, sparkStart);
+      const tfSparkIdx = factor > 1 ? Math.floor(dailySparkIdx / factor) : dailySparkIdx;
+
+      // Slice spark arrays from resampled start index
+      const sparkEma8 = [], sparkEma21 = [], sparkMa50 = [];
       const sparkPrices = [];
       const sparkOhlc = [];
       const sparkVol = [];
-      for (let i = sparkIdx; i <= lastIdx; i++) {
-        if (prices[i] != null) {
-          sparkPrices.push(prices[i]);
+      for (let i = tfSparkIdx; i < tfLen; i++) {
+        if (tfPrices[i] != null) {
+          sparkPrices.push(tfPrices[i]);
           sparkEma8.push(ema8Full[i]);
           sparkEma21.push(ema21Full[i]);
           sparkMa50.push(ma50Full[i]);
-          sparkOhlc.push({
-            o: ohlcSym && ohlcSym.o && ohlcSym.o[i] != null ? ohlcSym.o[i] : prices[i],
-            h: ohlcSym && ohlcSym.h && ohlcSym.h[i] != null ? ohlcSym.h[i] : prices[i],
-            l: ohlcSym && ohlcSym.l && ohlcSym.l[i] != null ? ohlcSym.l[i] : prices[i],
-            c: prices[i],
-          });
-          sparkVol.push(volSym ? (volSym[i] || 0) : 0);
+          sparkOhlc.push(tfOhlc[i] || { o: tfPrices[i], h: tfPrices[i], l: tfPrices[i], c: tfPrices[i] });
+          sparkVol.push(tfVol[i] || 0);
         }
       }
 
-      // RSI
+      // RSI on resampled close prices
       const rsiPeriod = 14;
-      const validForRsi = [];
-      const validForRsiIdx = [];
-      for (let i = 0; i <= rangeEnd; i++) {
-        if (prices[i] != null) { validForRsi.push(prices[i]); validForRsiIdx.push(i); }
+      const validClose = [];
+      for (let i = 0; i < tfLen; i++) {
+        if (tfPrices[i] != null) validClose.push({ idx: i, val: tfPrices[i] });
       }
-      const rsiSeries = [];
-      if (validForRsi.length > rsiPeriod) {
+      const rsiByIdx = new Map();
+      if (validClose.length > rsiPeriod) {
         let avgGain = 0, avgLoss = 0;
         for (let i = 1; i <= rsiPeriod; i++) {
-          const change = validForRsi[i] - validForRsi[i - 1];
+          const change = validClose[i].val - validClose[i - 1].val;
           if (change > 0) avgGain += change; else avgLoss -= change;
         }
         avgGain /= rsiPeriod; avgLoss /= rsiPeriod;
-        for (let i = 0; i <= rsiPeriod; i++) rsiSeries.push(null);
-        rsiSeries[rsiPeriod] = avgLoss === 0 ? 100 : 100 - (100 / (1 + avgGain / avgLoss));
-        for (let i = rsiPeriod + 1; i < validForRsi.length; i++) {
-          const change = validForRsi[i] - validForRsi[i - 1];
+        rsiByIdx.set(validClose[rsiPeriod].idx, avgLoss === 0 ? 100 : 100 - (100 / (1 + avgGain / avgLoss)));
+        for (let i = rsiPeriod + 1; i < validClose.length; i++) {
+          const change = validClose[i].val - validClose[i - 1].val;
           avgGain = (avgGain * (rsiPeriod - 1) + (change > 0 ? change : 0)) / rsiPeriod;
           avgLoss = (avgLoss * (rsiPeriod - 1) + (change < 0 ? -change : 0)) / rsiPeriod;
-          rsiSeries[i] = avgLoss === 0 ? 100 : 100 - (100 / (1 + avgGain / avgLoss));
+          rsiByIdx.set(validClose[i].idx, avgLoss === 0 ? 100 : 100 - (100 / (1 + avgGain / avgLoss)));
         }
       }
       const sparkRsi = [];
-      for (let i = 0; i < validForRsiIdx.length; i++) {
-        if (validForRsiIdx[i] >= sparkIdx && rsiSeries[i] != null) sparkRsi.push(rsiSeries[i]);
+      for (let i = tfSparkIdx; i < tfLen; i++) {
+        if (tfPrices[i] != null && rsiByIdx.has(i)) sparkRsi.push(rsiByIdx.get(i));
       }
 
-      // AO
+      // AO on resampled OHLC median prices
       const aoMedian = [];
-      for (let i = 0; i < validForRsiIdx.length; i++) {
-        const oi = validForRsiIdx[i];
-        if (ohlcSym && ohlcSym.h && ohlcSym.l && ohlcSym.h[oi] != null && ohlcSym.l[oi] != null) {
-          aoMedian.push((ohlcSym.h[oi] + ohlcSym.l[oi]) / 2);
+      for (let i = 0; i < validClose.length; i++) {
+        const oi = validClose[i].idx;
+        const bar = tfOhlc[oi];
+        if (bar && bar.h != null && bar.l != null) {
+          aoMedian.push({ idx: oi, val: (bar.h + bar.l) / 2 });
         } else {
-          aoMedian.push(validForRsi[i]);
+          aoMedian.push({ idx: oi, val: validClose[i].val });
         }
       }
-      const aoSeries = [];
+      const aoByIdx = new Map();
       if (aoMedian.length >= 34) {
         for (let i = 0; i < aoMedian.length; i++) {
-          if (i < 33) { aoSeries.push(null); continue; }
+          if (i < 33) continue;
           let sum5 = 0, sum34 = 0;
-          for (let j = i - 4; j <= i; j++) sum5 += aoMedian[j];
-          for (let j = i - 33; j <= i; j++) sum34 += aoMedian[j];
-          aoSeries.push(sum5 / 5 - sum34 / 34);
+          for (let j = i - 4; j <= i; j++) sum5 += aoMedian[j].val;
+          for (let j = i - 33; j <= i; j++) sum34 += aoMedian[j].val;
+          aoByIdx.set(aoMedian[i].idx, sum5 / 5 - sum34 / 34);
         }
       }
       const sparkAo = [];
-      for (let i = 0; i < validForRsiIdx.length; i++) {
-        if (validForRsiIdx[i] >= sparkIdx && aoSeries[i] != null) sparkAo.push(aoSeries[i]);
+      for (let i = tfSparkIdx; i < tfLen; i++) {
+        if (tfPrices[i] != null && aoByIdx.has(i)) sparkAo.push(aoByIdx.get(i));
       }
 
       // ── Draw price canvas ──
@@ -5055,8 +5091,8 @@
         rCtx.scale(rDpr, rDpr);
         const rW = rsiCanvas.clientWidth, rH = rsiCanvas.clientHeight;
         const rPad = 3;
-        // Auto-scale: find data min/max and add 10% padding, clamped to 0-100
-        let rMin = Math.min(...sparkRsi), rMax = Math.max(...sparkRsi);
+        // Auto-scale: find data min/max, always include 50 midpoint, add padding, clamp 0-100
+        let rMin = Math.min(...sparkRsi, 50), rMax = Math.max(...sparkRsi, 50);
         const rRange = rMax - rMin || 10;
         rMin = Math.max(0, rMin - rRange * 0.15);
         rMax = Math.min(100, rMax + rRange * 0.15);
@@ -5141,6 +5177,11 @@
 
     function setGridRange(r) {
       gridRange = r;
+      buildGridView();
+    }
+
+    function setGridTimeframe(tf) {
+      gridTimeframe = tf;
       buildGridView();
     }
 
@@ -5381,6 +5422,45 @@
         }
       }
       return result;
+    }
+
+    // Resample daily OHLCV arrays into coarser timeframes (factor=3 for 3-day, 5 for weekly)
+    // Aggregates backward from end so the most recent bar is always complete
+    function resampleOHLCV(dailyPrices, dailyOhlc, dailyVol, factor) {
+      const n = dailyPrices.length;
+      if (n === 0) return { prices: [], ohlc: [], volume: [] };
+      const bars = [];
+      for (let end = n - 1; end >= 0; end -= factor) {
+        const start = Math.max(0, end - factor + 1);
+        let o = null, h = -Infinity, l = Infinity, c = null, v = 0, hasData = false;
+        for (let i = start; i <= end; i++) {
+          if (dailyPrices[i] == null) continue;
+          hasData = true;
+          if (o === null) o = dailyOhlc[i] ? dailyOhlc[i].o : dailyPrices[i];
+          const hi = dailyOhlc[i] ? dailyOhlc[i].h : dailyPrices[i];
+          const lo = dailyOhlc[i] ? dailyOhlc[i].l : dailyPrices[i];
+          if (hi > h) h = hi;
+          if (lo < l) l = lo;
+          c = dailyPrices[i];
+          v += dailyVol[i] || 0;
+        }
+        if (hasData) bars.push({ o, h, l, c, v });
+        else bars.push(null);
+      }
+      bars.reverse();
+      const rPrices = [], rOhlc = [], rVol = [];
+      for (const bar of bars) {
+        if (bar) {
+          rPrices.push(bar.c);
+          rOhlc.push({ o: bar.o, h: bar.h, l: bar.l, c: bar.c });
+          rVol.push(bar.v);
+        } else {
+          rPrices.push(null);
+          rOhlc.push(null);
+          rVol.push(0);
+        }
+      }
+      return { prices: rPrices, ohlc: rOhlc, volume: rVol };
     }
 
     // Sample every 5th trading day to get weekly prices
