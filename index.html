@@ -452,6 +452,7 @@
     .grid-quadrant-section .grid-tiles-grid {
       display: grid;
       gap: 8px;
+      justify-content: center;
     }
     .grid-group-header {
       font-size: var(--fs-sm); font-weight: 600;
@@ -1718,7 +1719,7 @@
     let gridColumns = 4;
     let gridChartMode = 'candle'; // 'line' | 'candle'
     let gridSectorFilter = 'all';
-    let gridRange = '6M'; // '1M' | '3M' | '6M'
+    let gridRange = '3M'; // '1M' | '3M' | '6M'
     let gridFilterQuadrant = 'all'; // 'all' | 'leading' | 'improving' | 'weakening' | 'lagging'
     let gridFilterMomentum = 'all'; // 'all' | 'bullish' | 'bearish' | 'crossing' | 'nearEma8' | 'nearEma21'
     let gridFavorites = new Set(JSON.parse(localStorage.getItem('gridFavorites') || '[]'));
@@ -1728,7 +1729,7 @@
     let gridShowMa50 = false;
     let gridHighlightIndicators = false;
     let rotationBenchmark = 'sector'; // 'sector' | 'spy' | 'absolute'
-    let gridSortBy = 'default'; // 'default' | 'rsRating' | 'swingScore' | 'ret1d' | 'rsiDelta' | 'ma50Dist'
+    let gridSortBy = 'rsRating'; // 'default' | 'rsRating' | 'swingScore' | 'ret1d' | 'rsiDelta' | 'ma50Dist'
     let stockNamesMap = {};
     fetch('data/stock_names.json').then(r => r.json()).then(d => { stockNamesMap = d; }).catch(() => {});
     let currentRange = '3M';
@@ -4666,7 +4667,7 @@
         <span style="font-size:var(--fs-sm);color:var(--text-quaternary)">${filtered.length} stocks</span>
       </div>`;
 
-      const sparkH = gridChartMode === 'candle' ? 280 : 180;
+      const sparkH = gridChartMode === 'candle' ? 200 : 140;
 
       const fmtRet = (v, label) => {
         if (v == null) return '';
@@ -4732,7 +4733,7 @@
         const sortLabels = { rsRating: 'RS Rating', swingScore: 'Swing Score', ret1d: '1D Return', rsiDelta: 'RSI Delta (5-bar)', ma50Dist: 'MA50 Distance (ATR)', relVolume: 'Relative Volume', near52w: '52-Week High', volContract: 'Volatility Contraction', pullback: 'Pullbacks', pocketPivot: 'Pocket Pivots' };
         html += `<div class="grid-quadrant-section" style="border-color:var(--border-medium)">`;
         html += `<div class="grid-group-header" style="color:var(--text-secondary)">Sorted by ${sortLabels[gridSortBy]} <span class="count">${allItems.length}</span></div>`;
-        html += `<div class="grid-tiles-grid" style="grid-template-columns:repeat(${gridColumns}, 1fr)">`;
+        html += `<div class="grid-tiles-grid" style="grid-template-columns:repeat(${gridColumns}, 260px)">`;
         for (const s of allItems) {
           const qColor = tc[QUADRANT_META[s.quadrant].colorVar];
           html += renderTile(s, qColor);
@@ -4747,7 +4748,7 @@
           const qColor = tc[meta.colorVar];
           html += `<div class="grid-quadrant-section" style="border-color:${qColor}66">`;
           html += `<div class="grid-group-header" style="color:${qColor}">\u25CF ${meta.label} <span class="count">${items.length}</span></div>`;
-          html += `<div class="grid-tiles-grid" style="grid-template-columns:repeat(${gridColumns}, 1fr)">`;
+          html += `<div class="grid-tiles-grid" style="grid-template-columns:repeat(${gridColumns}, 260px)">`;
           for (const s of items) html += renderTile(s, qColor);
           html += `</div></div>`;
         }
@@ -4953,7 +4954,7 @@
           for (const b of bars) { allMin = Math.min(allMin, b.l); allMax = Math.max(allMax, b.h); }
           const range = allMax - allMin || 1;
           const pad = 4;
-          const fillRatio = bars.length < 40 ? 0.92 : bars.length < 80 ? 0.85 : 0.7;
+          const fillRatio = bars.length < 40 ? 0.85 : bars.length < 80 ? 0.78 : 0.65;
           const barW = Math.max(1, (w / bars.length) * fillRatio);
           const gap = w / bars.length;
           for (let i = 0; i < bars.length; i++) {
