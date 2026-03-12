@@ -458,7 +458,7 @@
     }
     .grid-quadrant-section .grid-tiles-grid {
       display: grid;
-      gap: 12px;
+      gap: 18px;
       justify-content: center;
     }
     .grid-group-header {
@@ -1763,7 +1763,8 @@
     let gridShowMa50 = false;
     let gridHighlightIndicators = false;
     let rotationBenchmark = 'spy'; // 'sector' | 'spy' | 'absolute'
-    let gridSortBy = 'rsRating'; // 'default' | 'rsRating' | 'swingScore' | 'ret1d' | 'rsiDelta' | 'ma50Dist'
+    let gridSortBy = 'rsRating';
+    let gridSecondaryRS = false; // secondary sort by RS Rating within primary sort
     let stockNamesMap = {};
     fetch('data/stock_names.json').then(r => r.json()).then(d => { stockNamesMap = d; }).catch(() => {});
     let currentRange = '3M';
@@ -4398,13 +4399,14 @@
             if (e21 != null) { ema21Dist = ((last - e21) / e21) * 100; nearEma21 = ema21Dist >= 0 && ema21Dist <= 5; }
           }
           // Compute returns (1D, 5D, 1M, 3M)
-          let ret1d = null, ret5d = null, ret1m = null, ret3m = null;
+          let ret1d = null, ret5d = null, ret2w = null, ret1m = null, ret3m = null;
           if (last != null) {
             const validPrices = [];
             for (let i = 0; i < len; i++) { if (prices[i] != null) validPrices.push(prices[i]); }
             const vLen = validPrices.length;
             if (vLen >= 2) ret1d = ((last - validPrices[vLen - 2]) / validPrices[vLen - 2]) * 100;
             if (vLen >= 6) ret5d = ((last - validPrices[vLen - 6]) / validPrices[vLen - 6]) * 100;
+            if (vLen >= 11) ret2w = ((last - validPrices[vLen - 11]) / validPrices[vLen - 11]) * 100;
             if (vLen >= 22) ret1m = ((last - validPrices[vLen - 22]) / validPrices[vLen - 22]) * 100;
             if (vLen >= 65) ret3m = ((last - validPrices[vLen - 65]) / validPrices[vLen - 65]) * 100;
           }
@@ -4484,12 +4486,24 @@
             const priceFlat = ret1m != null && ret1m <= 2;
             rsLeading = rsRising && priceFlat;
           }
-          // Pullback detection: strong stock pulling back to EMA with RSI cooling
+          // Pullback detection: strong stock that has pulled back from recent high to EMA support
           let isPullback = false;
           if (last != null && swing.rsRating != null && swing.rsRating >= 60 && (swing.rotation === 2 || swing.rotation === 1)) {
             const nearMA = (ema8Dist != null && ema8Dist >= -3 && ema8Dist <= 1) || (ema21Dist != null && ema21Dist >= -3 && ema21Dist <= 2);
             const rsiCooled = rsiDelta != null && rsiDelta < 0;
-            isPullback = nearMA && rsiCooled;
+            // Must have actually pulled back: price down 3-15% from 20-day high
+            let drawdown = null;
+            if (len >= 20) {
+              const recent20 = prices.slice(-20).filter(p => p != null);
+              if (recent20.length >= 10) {
+                const high20 = Math.max(...recent20);
+                drawdown = ((last - high20) / high20) * 100;
+              }
+            }
+            const minDraw = adrPct != null ? -Math.max(adrPct, 3) : -3;
+            const hasPulledBack = drawdown != null && drawdown <= minDraw && drawdown >= -15;
+            const notExtended = ret1m == null || ret1m < 40;
+            isPullback = nearMA && rsiCooled && hasPulledBack && notExtended;
           }
           // Volatility contraction: recent ATR shrinking vs historical
           let volContraction = false;
@@ -4554,7 +4568,7 @@
               }
             }
           }
-          stocks.push({ sym, panelIndex: pi, sectorName, data: d, rsRating: swing.rsRating != null ? swing.rsRating : null, rotation: swing.rotation || null, swingScore: swing.total != null ? swing.total : null, nearEma8, nearEma21, ema8Dist, ema21Dist, ret1d, ret5d, ret1m, ret3m, rsiDelta, ma50Dist, adrPct, rsLeading, isPullback, volContraction, near52wHigh, at52wHigh, relVolume, pocketPivot });
+          stocks.push({ sym, panelIndex: pi, sectorName, data: d, rsRating: swing.rsRating != null ? swing.rsRating : null, rotation: swing.rotation || null, swingScore: swing.total != null ? swing.total : null, nearEma8, nearEma21, ema8Dist, ema21Dist, ret1d, ret5d, ret2w, ret1m, ret3m, rsiDelta, ma50Dist, adrPct, rsLeading, isPullback, volContraction, near52wHigh, at52wHigh, relVolume, pocketPivot });
         }
       }
 
@@ -4640,7 +4654,7 @@
       }
 
       // Sort-by dropdown
-      const sortOpts = [['default','Quadrant'],['rsRating','RS Rating'],['swingScore','Swing Score'],['ret1d','1D Return'],['rsiDelta','RSI Delta'],['ma50Dist','MA50 (ATR)'],['relVolume','Rel Volume'],['near52w','52w High'],['volContract','Tight'],['pullback','Pullbacks'],['pocketPivot','Pocket Pivots']].map(([v,l]) =>
+      const sortOpts = [['default','Quadrant'],['rsRating','RS Rating'],['swingScore','Swing Score'],['ret1d','1D Perf'],['ret5d','1W Perf'],['ret2w','2W Perf'],['ret1m','1M Perf'],['ret3m','3M Perf'],['rsiDelta','RSI Delta'],['ma50Dist','MA50 (ATR)'],['relVolume','Rel Volume'],['near52w','52w High'],['volContract','Tight'],['pullback','Pullbacks'],['pocketPivot','Pocket Pivots']].map(([v,l]) =>
         `<option value="${v}"${gridSortBy===v?' selected':''}>${l}</option>`
       ).join('');
 
@@ -4689,7 +4703,7 @@
         </div>
         <div class="separator"></div>
         <div class="btn-group"><span class="topbar-label">Sort</span>
-          <select onchange="setGridSort(this.value)">${sortOpts}</select>
+          <span style="display:flex;gap:3px;align-items:center"><select onchange="setGridSort(this.value)">${sortOpts}</select><button class="btn${gridSecondaryRS ? ' active' : ''}" onclick="toggleGridSecondaryRS()" title="Secondary sort by RS Rating">+RS</button></span>
         </div>
         <div class="separator"></div>
         <div class="btn-group"><span class="topbar-label">Range</span><span>${rangeBtns}</span></div>
@@ -4786,13 +4800,21 @@
 
       if (gridSortBy !== 'default') {
         // Flat sorted list
-        const sortKey = { rsRating: s => s.rsRating ?? -1, swingScore: s => s.swingScore ?? -1, ret1d: s => s.ret1d ?? -999, rsiDelta: s => s.rsiDelta ?? -999, ma50Dist: s => s.ma50Dist ?? -999, relVolume: s => s.relVolume ?? -1, near52w: s => s.at52wHigh ? 2 : s.near52wHigh ? 1 : 0, volContract: s => s.volContraction ? 1 : 0, pullback: s => s.isPullback ? 1 : 0, pocketPivot: s => s.pocketPivot ? 1 : 0 }[gridSortBy];
-        const allItems = [];
+        const sortKey = { rsRating: s => s.rsRating ?? -1, swingScore: s => s.swingScore ?? -1, ret1d: s => s.ret1d ?? -999, ret5d: s => s.ret5d ?? -999, ret2w: s => s.ret2w ?? -999, ret1m: s => s.ret1m ?? -999, ret3m: s => s.ret3m ?? -999, rsiDelta: s => s.rsiDelta ?? -999, ma50Dist: s => s.ma50Dist ?? -999, relVolume: s => s.relVolume ?? -1, near52w: s => s.at52wHigh ? 2 : s.near52wHigh ? 1 : 0, volContract: s => s.volContraction ? 1 : 0, pullback: s => s.isPullback ? 1 : 0, pocketPivot: s => s.pocketPivot ? 1 : 0 }[gridSortBy];
+        let allItems = [];
         for (const q of QUADRANT_ORDER) allItems.push(...groups[q]);
-        allItems.sort((a, b) => sortKey(b) - sortKey(a));
-        const sortLabels = { rsRating: 'RS Rating', swingScore: 'Swing Score', ret1d: '1D Return', rsiDelta: 'RSI Delta (5-bar)', ma50Dist: 'MA50 Distance (ATR)', relVolume: 'Relative Volume', near52w: '52-Week High', volContract: 'Volatility Contraction', pullback: 'Pullbacks', pocketPivot: 'Pocket Pivots' };
+        // Binary sorts: filter to matching items only
+        const binaryFilter = { near52w: s => s.at52wHigh || s.near52wHigh, volContract: s => s.volContraction, pullback: s => s.isPullback, pocketPivot: s => s.pocketPivot }[gridSortBy];
+        if (binaryFilter) allItems = allItems.filter(binaryFilter);
+        if (gridSecondaryRS && gridSortBy !== 'rsRating') {
+          allItems.sort((a, b) => (b.rsRating ?? -1) - (a.rsRating ?? -1));
+        } else {
+          allItems.sort((a, b) => sortKey(b) - sortKey(a));
+        }
+        const sortLabels = { rsRating: 'RS Rating', swingScore: 'Swing Score', ret1d: '1D Performance', ret5d: '1W Performance', ret2w: '2W Performance', ret1m: '1M Performance', ret3m: '3M Performance', rsiDelta: 'RSI Delta (5-bar)', ma50Dist: 'MA50 Distance (ATR)', relVolume: 'Relative Volume', near52w: '52-Week High', volContract: 'Volatility Contraction', pullback: 'Pullbacks', pocketPivot: 'Pocket Pivots' };
         html += `<div class="grid-quadrant-section" style="border-color:var(--border-medium)">`;
-        html += `<div class="grid-group-header" style="color:var(--text-secondary)">Sorted by ${sortLabels[gridSortBy]} <span class="count">${allItems.length}</span></div>`;
+        const rsTag = gridSecondaryRS && gridSortBy !== 'rsRating' ? ' → RS Rating' : '';
+        html += `<div class="grid-group-header" style="color:var(--text-secondary)">${binaryFilter ? '' : 'Sorted by '}${sortLabels[gridSortBy]}${rsTag} <span class="count">${allItems.length}</span></div>`;
         html += `<div class="grid-tiles-grid" style="grid-template-columns:repeat(${gridColumns}, 260px)">`;
         for (const s of allItems) {
           const qColor = tc[QUADRANT_META[s.quadrant].colorVar];
@@ -5288,6 +5310,11 @@
 
     function setGridSort(val) {
       gridSortBy = val;
+      buildGridView();
+    }
+
+    function toggleGridSecondaryRS() {
+      gridSecondaryRS = !gridSecondaryRS;
       buildGridView();
     }
 
