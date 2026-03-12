@@ -330,6 +330,10 @@
       font-family: inherit;
     }
     .srrg-chart-btn:hover { background: var(--interactive-bg-hover); color: var(--text-primary); }
+    .srrg-fav-btn { background: transparent; border: none; cursor: pointer; font-size: 16px; color: var(--text-quaternary); padding: 0 2px; line-height: 1; transition: color 0.15s; }
+    .srrg-fav-btn:hover { color: var(--text-secondary); }
+    .srrg-fav-btn.active { color: var(--text-positive, #4dd8b4); }
+    .rrg-legend-fav { font-size: 10px; color: var(--text-positive, #4dd8b4); margin-left: -2px; flex-shrink: 0; }
     .srrg-spark-toggle {
       padding: 2px 6px; border: 1px solid var(--border-medium); background: transparent;
       color: var(--text-quaternary); cursor: pointer; font-size: var(--fs-xs); font-family: inherit;
@@ -351,19 +355,21 @@
       padding-top: 0;
     }
     .grid-toolbar {
-      display: flex; align-items: center; gap: 8px;
+      display: flex; align-items: flex-end; gap: 4px;
       flex-wrap: nowrap; overflow-x: auto;
       position: sticky; top: 0; z-index: 10;
       background: var(--bg-primary);
       margin: 0 -12px;
-      padding: 8px 12px;
+      padding: 6px 12px;
       border-bottom: 1px solid var(--border-subtle);
     }
-    .grid-toolbar .btn-group { display: flex; align-items: center; gap: 2px; }
+    .grid-toolbar .topbar-label { width: 100%; font-size: 8px; line-height: 1; margin-bottom: 2px; opacity: 0.7; }
+    .grid-toolbar .separator { display: none; }
+    .grid-toolbar .btn-group { display: flex; flex-wrap: wrap; align-items: center; gap: 2px; }
     .grid-toolbar select {
       background: var(--bg-tertiary); color: var(--text-primary);
       border: 1px solid var(--border-medium); border-radius: 4px;
-      padding: 3px 6px; font-size: var(--fs-sm); font-family: inherit;
+      padding: 2px 4px; font-size: var(--fs-sm); font-family: inherit;
     }
     .grid-tile {
       background: #000000;
@@ -1709,7 +1715,7 @@
     let tvChartInstances = null; // { main, rsi, ao } Lightweight Charts for TV modal
     let tvChartSymbol = null;    // currently displayed symbol in TV modal
     let infoPanelChartMode = 'line'; // 'line' | 'candle' for info panel sparkline
-    let gridColumns = 6;
+    let gridColumns = 4;
     let gridChartMode = 'candle'; // 'line' | 'candle'
     let gridSectorFilter = 'all';
     let gridRange = '6M'; // '1M' | '3M' | '6M'
@@ -1718,7 +1724,7 @@
     let gridFavorites = new Set(JSON.parse(localStorage.getItem('gridFavorites') || '[]'));
     let gridShowFavorites = false;
     let gridShowEma8 = false;
-    let gridShowEma21 = false;
+    let gridShowEma21 = true;
     let gridShowMa50 = false;
     let gridHighlightIndicators = false;
     let rotationBenchmark = 'sector'; // 'sector' | 'spy' | 'absolute'
@@ -3457,7 +3463,7 @@
       { key: '12M', label: '1Y' },
     ];
 
-    let sectorsSortCol = 3;
+    let sectorsSortCol = 1;
     let sectorsSortAsc = false;
     let stocksSortCol = 3;
     let stocksSortAsc = false;
@@ -4660,7 +4666,7 @@
         <span style="font-size:var(--fs-sm);color:var(--text-quaternary)">${filtered.length} stocks</span>
       </div>`;
 
-      const sparkH = gridChartMode === 'candle' ? 180 : 100;
+      const sparkH = gridChartMode === 'candle' ? 280 : 180;
 
       const fmtRet = (v, label) => {
         if (v == null) return '';
@@ -5136,23 +5142,39 @@
       buildGridView();
     }
 
-    function toggleGridFav(sym, btn) {
-      const tile = btn.closest('.grid-tile');
-      if (gridFavorites.has(sym)) {
-        gridFavorites.delete(sym);
-        tile.classList.remove('favorited');
-        btn.textContent = '\u2606';
-      } else {
-        gridFavorites.add(sym);
-        tile.classList.add('favorited');
-        btn.textContent = '\u2605';
-      }
+    function toggleFavorite(sym) {
+      if (gridFavorites.has(sym)) { gridFavorites.delete(sym); } else { gridFavorites.add(sym); }
       localStorage.setItem('gridFavorites', JSON.stringify([...gridFavorites]));
+      return gridFavorites.has(sym);
+    }
+
+    function toggleGridFav(sym, btn) {
+      const isFav = toggleFavorite(sym);
+      const tile = btn.closest('.grid-tile');
+      tile.classList.toggle('favorited', isFav);
+      btn.textContent = isFav ? '\u2605' : '\u2606';
       const toolbar = document.querySelector('.grid-toolbar');
       if (toolbar) {
         const favBtn = toolbar.querySelector('button[onclick="toggleGridFavorites()"]');
         if (favBtn) favBtn.innerHTML = `\u2733 Favorites${gridFavorites.size ? ' (' + gridFavorites.size + ')' : ''}`;
       }
+    }
+
+    function toggleInfoPanelFav(sym, btn) {
+      const isFav = toggleFavorite(sym);
+      btn.textContent = isFav ? '\u2605' : '\u2606';
+      btn.classList.toggle('active', isFav);
+      updateSidebarFavStar(sym, isFav);
+    }
+
+    function updateSidebarFavStar(sym, isFav) {
+      const item = document.querySelector(`.rrg-legend-item[data-sym="${sym}"]`);
+      if (!item) return;
+      let star = item.querySelector('.rrg-legend-fav');
+      if (isFav) {
+        if (!star) { star = document.createElement('span'); star.className = 'rrg-legend-fav'; item.querySelector('.rrg-legend-dot').after(star); }
+        star.textContent = '\u2605';
+      } else if (star) { star.remove(); }
     }
 
     function toggleGridFavorites() {
@@ -6232,6 +6254,19 @@
 
       const divergence = divergenceCache[sym] || null;
 
+      // ADR% = (SMA(High, 14) / SMA(Low, 14) - 1) * 100
+      let adrPct = null;
+      const ohlcSymAdr = data.ohlc && data.ohlc[sym];
+      if (ohlcSymAdr && ohlcSymAdr.h && ohlcSymAdr.l) {
+        let hSum = 0, lSum = 0, adrN = 0;
+        for (let i = rangeEnd; i >= 0 && adrN < 14; i--) {
+          if (ohlcSymAdr.h[i] != null && ohlcSymAdr.l[i] != null) {
+            hSum += ohlcSymAdr.h[i]; lSum += ohlcSymAdr.l[i]; adrN++;
+          }
+        }
+        if (adrN > 0 && lSum > 0) adrPct = ((hSum / adrN) / (lSum / adrN) - 1) * 100;
+      }
+
       // 3M price series for sparkline
       const sparkStart = getRangeStartDate('3M', data.dates);
       const sparkIdx = findStartIndex(data.dates, sparkStart);
@@ -6316,7 +6351,7 @@
       const ao = sparkAo.length > 0 ? sparkAo[sparkAo.length - 1] : null;
 
       const sectorName = SECTOR_SHORT_NAMES[data.baseSymbol] || data.title.replace(/^\d+\.\s*/, '');
-      return { returns, pctFrom50MA, pctFromEma8, pctFromEma21, rsRating, divergence, sparkPrices, sparkOhlc, rsi, sparkRsi, ao, sparkAo, sectorName };
+      return { returns, pctFrom50MA, pctFromEma8, pctFromEma21, rsRating, divergence, adrPct, sparkPrices, sparkOhlc, rsi, sparkRsi, ao, sparkAo, sectorName };
     }
 
     function showStockInfoPanel(sym) {
@@ -6334,7 +6369,8 @@
       const sectionTitle = (t) => `<div class="modal-stats-divider"></div><div style="font-size:var(--fs-sm);color:var(--text-quaternary);text-transform:uppercase;letter-spacing:0.5px;padding:2px 0 1px">${t}</div>`;
 
       let rows = '';
-      rows += `<div class="modal-stats-header"><span class="modal-stats-sym">${sym}</span><div style="font-size:var(--fs-sm);color:var(--text-quaternary);margin-top:1px">${stats.sectorName}</div></div>`;
+      const isFav = gridFavorites.has(sym);
+      rows += `<div class="modal-stats-header"><span class="modal-stats-sym">${sym}</span><button class="srrg-fav-btn${isFav ? ' active' : ''}" onclick="event.stopPropagation();toggleInfoPanelFav('${sym}',this)">${isFav ? '\u2605' : '\u2606'}</button><div style="font-size:var(--fs-sm);color:var(--text-quaternary);margin-top:1px;margin-left:auto">${stats.sectorName}</div></div>`;
 
       // Multi-timeframe returns
       rows += sectionTitle('Returns');
@@ -6349,11 +6385,14 @@
       rows += `<div class="modal-stats-row"><span class="modal-stats-label">% from 50MA</span><span class="modal-stats-value${cls(stats.pctFrom50MA)}">${fmt(stats.pctFrom50MA)}</span></div>`;
 
       // Momentum
-      if (stats.rsRating != null || stats.divergence) {
+      if (stats.rsRating != null || stats.divergence || stats.adrPct != null) {
         rows += sectionTitle('Momentum');
         if (stats.rsRating != null) {
           const rsCls = stats.rsRating >= 50 ? ' positive' : ' negative';
           rows += `<div class="modal-stats-row"><span class="modal-stats-label">RS Rating</span><span class="modal-stats-value${rsCls}">${stats.rsRating.toFixed(0)}</span></div>`;
+        }
+        if (stats.adrPct != null) {
+          rows += `<div class="modal-stats-row"><span class="modal-stats-label">ADR%</span><span class="modal-stats-value">${stats.adrPct.toFixed(2)}%</span></div>`;
         }
         if (stats.divergence) {
           const divText = stats.divergence === 'bullish' ? '\u25B2 Bullish' : '\u25BC Bearish';
@@ -7225,8 +7264,9 @@
           const isActive = activeSym === s.sym;
           const itemCls = 'rrg-legend-item' + (isBullishCross ? ' rrg-actionable' : '') + (isActive ? ' rrg-active' : '');
 
+          const sFav = gridFavorites.has(s.sym);
           html += `<div class="${itemCls}" data-sym="${s.sym}">
-            <span class="rrg-legend-dot" style="background:${s.color}"></span>
+            <span class="rrg-legend-dot" style="background:${s.color}"></span>${sFav ? '<span class="rrg-legend-fav">\u2605</span>' : ''}
             <span class="rrg-legend-sym">${s.sym}</span>
             <span class="rrg-heading" style="color:${arrowColor}">${s.arrow}</span>
             <span class="rrg-legend-tags">${s.isCrossing ? `<span class="rrg-crossing" style="color:${qColor};background:${qColor}22">NEW</span><span class="rrg-from" style="color:${tc[QUADRANT_META[s.prevQ].colorVar]}">from ${QUADRANT_META[s.prevQ].short}</span>` : ''}${s.nearEma21 ? '<span class="rrg-ema-tag">E21</span>' : ''}${s.nearEma8 ? '<span class="rrg-ema-tag">E8</span>' : ''}</span>
