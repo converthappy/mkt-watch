@@ -342,6 +342,30 @@
     .srrg-spark-toggle:hover { color: var(--text-secondary); }
     .srrg-spark-toggle.active { background: var(--interactive-bg); color: var(--text-primary); border-color: var(--interactive-border); }
 
+    /* ── Grid Info Modal ── */
+    .grid-info-overlay {
+      display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+      background: var(--overlay-backdrop); z-index: 1001; justify-content: center; align-items: center; padding: 20px;
+    }
+    .grid-info-overlay.visible { display: flex; }
+    .grid-info-box {
+      width: 640px; max-width: 95vw; max-height: 85vh; background: var(--surface-modal);
+      border: 1px solid var(--border-medium); border-radius: 8px; display: flex; flex-direction: column; overflow: hidden;
+    }
+    .grid-info-header {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 10px 16px; background: var(--bg-quaternary); border-bottom: 1px solid var(--border-medium);
+    }
+    .grid-info-header h3 { margin: 0; font-size: 13px; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.3px; }
+    .grid-info-body { padding: 16px; overflow-y: auto; font-size: 12px; color: var(--text-secondary); line-height: 1.6; }
+    .grid-info-body h4 { margin: 14px 0 6px; font-size: 12px; font-weight: 700; color: var(--text-primary); text-transform: uppercase; letter-spacing: 0.5px; }
+    .grid-info-body h4:first-child { margin-top: 0; }
+    .grid-info-body dl { margin: 0 0 8px; padding: 0; }
+    .grid-info-body dt { font-weight: 600; color: var(--text-primary); margin-top: 6px; }
+    .grid-info-body dd { margin: 1px 0 0 12px; color: var(--text-tertiary); }
+    .grid-info-btn { background: none; border: none; cursor: pointer; color: var(--text-quaternary); font-size: 15px; padding: 2px 4px; line-height: 1; transition: color 0.15s; }
+    .grid-info-btn:hover { color: var(--text-primary); }
+
     /* ── Grid View (comfort pass — revert this block to restore old look) ── */
     .grid-view-container {
       display: none;
@@ -4375,6 +4399,9 @@
         computeAllSwingScores();
       }
 
+      // SPY prices for RS line computation
+      const spyPricesRef = panelDataCache[0] && panelDataCache[0].prices['SPY'];
+
       // Collect stocks with metadata
       const stocks = [];
       for (let pi = 1; pi < PANEL_COUNT; pi++) {
@@ -4568,7 +4595,83 @@
               }
             }
           }
-          stocks.push({ sym, panelIndex: pi, sectorName, data: d, rsRating: swing.rsRating != null ? swing.rsRating : null, rotation: swing.rotation || null, swingScore: swing.total != null ? swing.total : null, nearEma8, nearEma21, ema8Dist, ema21Dist, ret1d, ret5d, ret2w, ret1m, ret3m, rsiDelta, ma50Dist, adrPct, rsLeading, isPullback, volContraction, near52wHigh, at52wHigh, relVolume, pocketPivot });
+          // RS Line New High: price/SPY ratio at 20-day high
+          let rsLineNewHigh = false;
+          if (spyPricesRef && last != null && len >= 20 && spyPricesRef.length >= len) {
+            let rsMax = -Infinity;
+            const rsCurr = last / (spyPricesRef[len - 1] || 1);
+            for (let i = len - 20; i < len; i++) {
+              if (i < 0 || prices[i] == null || spyPricesRef[i] == null || spyPricesRef[i] === 0) continue;
+              rsMax = Math.max(rsMax, prices[i] / spyPricesRef[i]);
+            }
+            if (rsMax > -Infinity) rsLineNewHigh = rsCurr >= rsMax * 0.99;
+          }
+          // Base Breakout: tight base + price > 10d prior high + volume > 1.2x avg
+          let isBaseBreakout = false;
+          if (volContraction && last != null && len >= 12) {
+            let priorHigh = -Infinity;
+            for (let i = len - 12; i < len - 1; i++) {
+              if (i >= 0 && prices[i] != null) priorHigh = Math.max(priorHigh, prices[i]);
+            }
+            isBaseBreakout = priorHigh > -Infinity && last > priorHigh && relVolume != null && relVolume >= 1.2;
+          }
+          // Accumulation Days: ratio of up-on-volume vs down-on-volume over 20 sessions
+          let accDayRatio = null;
+          if (volArr && len >= 21) {
+            let volSum50 = 0, volN50 = 0;
+            for (let i = Math.max(0, len - 51); i < len - 1; i++) {
+              if (volArr[i] != null) { volSum50 += volArr[i]; volN50++; }
+            }
+            const avgVol50 = volN50 > 0 ? volSum50 / volN50 : 0;
+            if (avgVol50 > 0) {
+              let accDays = 0, distDays = 0;
+              for (let i = len - 20; i < len; i++) {
+                if (i < 1 || prices[i] == null || prices[i-1] == null || volArr[i] == null) continue;
+                if (volArr[i] > avgVol50) {
+                  if (prices[i] > prices[i-1]) accDays++;
+                  else if (prices[i] < prices[i-1]) distDays++;
+                }
+              }
+              const total = accDays + distDays;
+              accDayRatio = total > 0 ? accDays / total : null;
+            }
+          }
+          // EMA21 Reclaim: crossed above EMA21 in last 3 days after 5+ days below
+          let isEma21Reclaim = false;
+          if (last != null && len >= 30) {
+            const k21 = 2 / 22;
+            const ema21Arr = [];
+            let ema21v = null;
+            for (let i = 0; i < len; i++) {
+              if (prices[i] == null) { ema21Arr.push(null); continue; }
+              ema21v = ema21v == null ? prices[i] : prices[i] * k21 + ema21v * (1 - k21);
+              ema21Arr.push(ema21v);
+            }
+            // Check last 3 bars for crossover
+            for (let ci = len - 3; ci < len; ci++) {
+              if (ci < 1 || prices[ci] == null || prices[ci-1] == null || ema21Arr[ci] == null || ema21Arr[ci-1] == null) continue;
+              if (prices[ci] > ema21Arr[ci] && prices[ci-1] <= ema21Arr[ci-1]) {
+                // Verify 5+ consecutive days below before crossover
+                let belowCount = 0;
+                for (let bi = ci - 1; bi >= 0; bi--) {
+                  if (prices[bi] == null || ema21Arr[bi] == null) break;
+                  if (prices[bi] <= ema21Arr[bi]) belowCount++;
+                  else break;
+                }
+                if (belowCount >= 5) { isEma21Reclaim = true; break; }
+              }
+            }
+          }
+          // New 20-Day High: price within 1% of 20-day highest close
+          let isNew20dHigh = false;
+          if (last != null && len >= 20) {
+            let high20 = -Infinity;
+            for (let i = len - 20; i < len; i++) {
+              if (i >= 0 && prices[i] != null) high20 = Math.max(high20, prices[i]);
+            }
+            if (high20 > -Infinity) isNew20dHigh = last >= high20 * 0.99;
+          }
+          stocks.push({ sym, panelIndex: pi, sectorName, data: d, rsRating: swing.rsRating != null ? swing.rsRating : null, rotation: swing.rotation || null, swingScore: swing.total != null ? swing.total : null, nearEma8, nearEma21, ema8Dist, ema21Dist, ret1d, ret5d, ret2w, ret1m, ret3m, rsiDelta, ma50Dist, adrPct, rsLeading, isPullback, volContraction, near52wHigh, at52wHigh, relVolume, pocketPivot, rsLineNewHigh, isBaseBreakout, accDayRatio, isEma21Reclaim, isNew20dHigh });
         }
       }
 
@@ -4654,7 +4757,7 @@
       }
 
       // Sort-by dropdown
-      const sortOpts = [['default','Quadrant'],['rsRating','RS Rating'],['swingScore','Swing Score'],['ret1d','1D Perf'],['ret5d','1W Perf'],['ret2w','2W Perf'],['ret1m','1M Perf'],['ret3m','3M Perf'],['rsiDelta','RSI Delta'],['ma50Dist','MA50 (ATR)'],['relVolume','Rel Volume'],['near52w','52w High'],['volContract','Tight'],['pullback','Pullbacks'],['pocketPivot','Pocket Pivots']].map(([v,l]) =>
+      const sortOpts = [['default','Quadrant'],['rsRating','RS Rating'],['swingScore','Swing Score'],['ret1d','1D Perf'],['ret5d','1W Perf'],['ret2w','2W Perf'],['ret1m','1M Perf'],['ret3m','3M Perf'],['rsiDelta','RSI Delta'],['ma50Dist','MA50 (ATR)'],['relVolume','Rel Volume'],['near52w','52w High'],['volContract','Tight'],['pullback','Pullbacks'],['pocketPivot','Pocket Pivots'],['rsLineHigh','RS New High'],['baseBreakout','Base Breakouts'],['accDays','Acc/Dist Days'],['ema21Reclaim','EMA21 Reclaim'],['new20dHigh','20d High']].map(([v,l]) =>
         `<option value="${v}"${gridSortBy===v?' selected':''}>${l}</option>`
       ).join('');
 
@@ -4735,6 +4838,7 @@
         <div class="separator"></div>
         <button class="btn${gridShowFavorites?' active':''}" onclick="toggleGridFavorites()" style="white-space:nowrap;${gridShowFavorites?'color:var(--text-positive,#4dd8b4)':''}">&#9733; Favorites${gridFavorites.size?' ('+gridFavorites.size+')':''}</button>
         <div class="separator"></div>
+        <button class="grid-info-btn" onclick="toggleGridInfoModal()" title="Filter &amp; sort guide">&#9432;</button>
         <span style="font-size:var(--fs-sm);color:var(--text-quaternary)">${filtered.length} stocks</span>
       </div>`;
 
@@ -4772,6 +4876,11 @@
         const highTag = gridSortBy !== 'near52w' ? (s.at52wHigh ? `<span style="font-size:9px;font-weight:600;padding:1px 4px;border-radius:3px;color:var(--text-positive,#4dd8b4);background:rgba(77,216,180,0.12)">52w Hi</span>` : s.near52wHigh ? `<span style="font-size:9px;font-weight:600;padding:1px 4px;border-radius:3px;color:var(--text-tertiary);background:rgba(255,255,255,0.06)">Nr 52w</span>` : '') : '';
         const rVolTag = s.relVolume != null && s.relVolume >= 1.5 ? `<span style="font-size:9px;font-weight:600;padding:1px 4px;border-radius:3px;color:${s.ret1d >= 0 ? 'var(--text-positive,#4dd8b4)' : 'var(--text-negative,#f0616d)'};background:${s.ret1d >= 0 ? 'rgba(77,216,180,0.12)' : 'rgba(240,97,109,0.12)'}">Vol ${s.relVolume.toFixed(1)}x</span>` : '';
         const ppTag = s.pocketPivot && gridSortBy !== 'pocketPivot' ? `<span style="font-size:9px;font-weight:700;padding:1px 4px;border-radius:3px;color:#2a82da;background:rgba(42,130,218,0.15);border:1px solid rgba(42,130,218,0.3)">PP</span>` : '';
+        const rsHiTag = s.rsLineNewHigh && gridSortBy !== 'rsLineHigh' ? `<span style="font-size:9px;font-weight:600;padding:1px 4px;border-radius:3px;color:#e8b730;background:rgba(232,183,48,0.12)">RS Hi</span>` : '';
+        const boTag = s.isBaseBreakout && gridSortBy !== 'baseBreakout' ? `<span style="font-size:9px;font-weight:700;padding:1px 4px;border-radius:3px;color:#00c9a7;background:rgba(0,201,167,0.12);border:1px solid rgba(0,201,167,0.3)">BO</span>` : '';
+        const accTag = s.accDayRatio != null && s.accDayRatio >= 0.6 ? `<span style="font-size:9px;font-weight:600;padding:1px 4px;border-radius:3px;color:var(--text-positive,#4dd8b4);background:rgba(77,216,180,0.12)">Acc ${Math.round(s.accDayRatio * 100)}%</span>` : s.accDayRatio != null && s.accDayRatio <= 0.4 ? `<span style="font-size:9px;font-weight:600;padding:1px 4px;border-radius:3px;color:var(--text-negative,#f0616d);background:rgba(240,97,109,0.12)">Dist ${Math.round(s.accDayRatio * 100)}%</span>` : '';
+        const e21ReclaimTag = s.isEma21Reclaim && gridSortBy !== 'ema21Reclaim' ? `<span style="font-size:9px;font-weight:600;padding:1px 4px;border-radius:3px;color:#5bc0de;background:rgba(91,192,222,0.12)">E21 Reclaim</span>` : '';
+        const new20dTag = s.isNew20dHigh && gridSortBy !== 'new20dHigh' ? `<span style="font-size:9px;font-weight:600;padding:1px 4px;border-radius:3px;color:#c8e64d;background:rgba(200,230,77,0.12)">20d Hi</span>` : '';
         const retHtml = `<div class="grid-tile-returns">${fmtRet(s.ret1d,'1D')}${fmtRet(s.ret5d,'5D')}${fmtRet(s.ret1m,'1M')}${fmtRet(s.ret3m,'3M')}</div>`;
         const isFav = gridFavorites.has(s.sym);
         const noHighlight = gridSortBy !== 'default';
@@ -4784,7 +4893,7 @@
             </div>
             <div style="display:flex;align-items:center;gap:3px">${momentumTag}${rsTag}</div>
           </div>
-          <div class="grid-tile-tags">${rotTag}${crossingTag}${fromTag}${emaTags}${adrTag}${rsLeadTag}${pullbackTag}${tightTag}${highTag}${rVolTag}${ppTag}</div>
+          <div class="grid-tile-tags">${rotTag}${crossingTag}${fromTag}${emaTags}${adrTag}${rsLeadTag}${pullbackTag}${tightTag}${highTag}${rVolTag}${ppTag}${rsHiTag}${boTag}${accTag}${e21ReclaimTag}${new20dTag}</div>
           ${retHtml}
           <div class="grid-spark-wrap">
             <canvas class="grid-spark" height="${sparkH}" style="height:${sparkH}px"></canvas>
@@ -4800,18 +4909,18 @@
 
       if (gridSortBy !== 'default') {
         // Flat sorted list
-        const sortKey = { rsRating: s => s.rsRating ?? -1, swingScore: s => s.swingScore ?? -1, ret1d: s => s.ret1d ?? -999, ret5d: s => s.ret5d ?? -999, ret2w: s => s.ret2w ?? -999, ret1m: s => s.ret1m ?? -999, ret3m: s => s.ret3m ?? -999, rsiDelta: s => s.rsiDelta ?? -999, ma50Dist: s => s.ma50Dist ?? -999, relVolume: s => s.relVolume ?? -1, near52w: s => s.at52wHigh ? 2 : s.near52wHigh ? 1 : 0, volContract: s => s.volContraction ? 1 : 0, pullback: s => s.isPullback ? 1 : 0, pocketPivot: s => s.pocketPivot ? 1 : 0 }[gridSortBy];
+        const sortKey = { rsRating: s => s.rsRating ?? -1, swingScore: s => s.swingScore ?? -1, ret1d: s => s.ret1d ?? -999, ret5d: s => s.ret5d ?? -999, ret2w: s => s.ret2w ?? -999, ret1m: s => s.ret1m ?? -999, ret3m: s => s.ret3m ?? -999, rsiDelta: s => s.rsiDelta ?? -999, ma50Dist: s => s.ma50Dist ?? -999, relVolume: s => s.relVolume ?? -1, near52w: s => s.at52wHigh ? 2 : s.near52wHigh ? 1 : 0, volContract: s => s.volContraction ? 1 : 0, pullback: s => s.isPullback ? 1 : 0, pocketPivot: s => s.pocketPivot ? 1 : 0, rsLineHigh: s => s.rsLineNewHigh ? 1 : 0, baseBreakout: s => s.isBaseBreakout ? 1 : 0, accDays: s => s.accDayRatio ?? -1, ema21Reclaim: s => s.isEma21Reclaim ? 1 : 0, new20dHigh: s => s.isNew20dHigh ? 1 : 0 }[gridSortBy];
         let allItems = [];
         for (const q of QUADRANT_ORDER) allItems.push(...groups[q]);
         // Binary sorts: filter to matching items only
-        const binaryFilter = { near52w: s => s.at52wHigh || s.near52wHigh, volContract: s => s.volContraction, pullback: s => s.isPullback, pocketPivot: s => s.pocketPivot }[gridSortBy];
+        const binaryFilter = { near52w: s => s.at52wHigh || s.near52wHigh, volContract: s => s.volContraction, pullback: s => s.isPullback, pocketPivot: s => s.pocketPivot, rsLineHigh: s => s.rsLineNewHigh, baseBreakout: s => s.isBaseBreakout, ema21Reclaim: s => s.isEma21Reclaim, new20dHigh: s => s.isNew20dHigh }[gridSortBy];
         if (binaryFilter) allItems = allItems.filter(binaryFilter);
         if (gridSecondaryRS && gridSortBy !== 'rsRating') {
           allItems.sort((a, b) => (b.rsRating ?? -1) - (a.rsRating ?? -1));
         } else {
           allItems.sort((a, b) => sortKey(b) - sortKey(a));
         }
-        const sortLabels = { rsRating: 'RS Rating', swingScore: 'Swing Score', ret1d: '1D Performance', ret5d: '1W Performance', ret2w: '2W Performance', ret1m: '1M Performance', ret3m: '3M Performance', rsiDelta: 'RSI Delta (5-bar)', ma50Dist: 'MA50 Distance (ATR)', relVolume: 'Relative Volume', near52w: '52-Week High', volContract: 'Volatility Contraction', pullback: 'Pullbacks', pocketPivot: 'Pocket Pivots' };
+        const sortLabels = { rsRating: 'RS Rating', swingScore: 'Swing Score', ret1d: '1D Performance', ret5d: '1W Performance', ret2w: '2W Performance', ret1m: '1M Performance', ret3m: '3M Performance', rsiDelta: 'RSI Delta (5-bar)', ma50Dist: 'MA50 Distance (ATR)', relVolume: 'Relative Volume', near52w: '52-Week High', volContract: 'Volatility Contraction', pullback: 'Pullbacks', pocketPivot: 'Pocket Pivots', rsLineHigh: 'RS Line New High', baseBreakout: 'Base Breakouts', accDays: 'Accumulation / Distribution Days', ema21Reclaim: 'EMA21 Reclaim', new20dHigh: 'New 20-Day High' };
         html += `<div class="grid-quadrant-section" style="border-color:var(--border-medium)">`;
         const rsTag = gridSecondaryRS && gridSortBy !== 'rsRating' ? ' → RS Rating' : '';
         html += `<div class="grid-group-header" style="color:var(--text-secondary)">${binaryFilter ? '' : 'Sorted by '}${sortLabels[gridSortBy]}${rsTag} <span class="count">${allItems.length}</span></div>`;
@@ -5325,7 +5434,65 @@
       else if (currentView === 'grid') buildGridView();
     }
 
-    // Close grid info panel on Escape or outside click
+    // ── Grid Info Modal ──
+    function toggleGridInfoModal() {
+      let el = document.getElementById('grid-info-modal');
+      if (!el) {
+        el = document.createElement('div');
+        el.id = 'grid-info-modal';
+        el.className = 'grid-info-overlay';
+        el.onclick = (e) => { if (e.target === el) el.classList.remove('visible'); };
+        el.innerHTML = `<div class="grid-info-box" onclick="event.stopPropagation()">
+          <div class="grid-info-header">
+            <h3>Grid Filters &amp; Sort Guide</h3>
+            <button class="modal-close" onclick="document.getElementById('grid-info-modal').classList.remove('visible')">Close (Esc)</button>
+          </div>
+          <div class="grid-info-body">
+            <h4>Momentum Filters</h4>
+            <dl>
+              <dt>Bullish</dt><dd>RRG momentum heading is bullish (improving relative strength).</dd>
+              <dt>Bearish</dt><dd>RRG momentum heading is bearish (declining relative strength).</dd>
+              <dt>Crossing</dt><dd>Stock moved to a different RRG quadrant in the most recent period.</dd>
+              <dt>Near EMA8</dt><dd>Price is 0-3% above its 8-period EMA &mdash; short-term support zone.</dd>
+              <dt>Near EMA21</dt><dd>Price is 0-5% above its 21-period EMA &mdash; intermediate support zone.</dd>
+            </dl>
+            <h4>Sort / Filter Options</h4>
+            <dl>
+              <dt>Quadrant (default)</dt><dd>Groups stocks by RRG quadrant: Leading, Improving, Weakening, Lagging.</dd>
+              <dt>RS Rating</dt><dd>Composite relative-strength percentile (0-99) vs all tracked stocks.</dd>
+              <dt>Swing Score</dt><dd>Multi-factor score combining RS, trend, and momentum for swing-trade readiness.</dd>
+              <dt>1D / 1W / 2W / 1M / 3M Perf</dt><dd>Raw price return over the selected lookback period.</dd>
+              <dt>RSI Delta</dt><dd>5-bar change in RSI &mdash; positive = building momentum, negative = fading.</dd>
+              <dt>MA50 (ATR)</dt><dd>Distance from the 50-day MA measured in ATR units. Shows how extended or mean-reverting a stock is.</dd>
+              <dt>Rel Volume</dt><dd>Today&rsquo;s volume divided by the 50-day average volume.</dd>
+              <dt>52w High</dt><dd>Filters to stocks at or within 5% of their 52-week high.</dd>
+              <dt>Tight</dt><dd>Volatility contraction &mdash; recent range has narrowed vs the prior period, often precedes a breakout.</dd>
+              <dt>Pullbacks</dt><dd>Stock is pulling back toward a rising moving average &mdash; potential buy-the-dip setup.</dd>
+              <dt>Pocket Pivots</dt><dd>Up-day volume exceeds the highest down-day volume of the prior 10 sessions, near a key MA. Signals stealth institutional buying.</dd>
+              <dt>RS New High</dt><dd>Stock&rsquo;s RS line (price / SPY) is at its 20-day high &mdash; relative outperformance even if price hasn&rsquo;t broken out yet.</dd>
+              <dt>Base Breakouts</dt><dd>Tight base (volatility contraction) + price above 10-day prior high + volume &ge; 1.2x average. The classic breakout trigger.</dd>
+              <dt>Acc/Dist Days</dt><dd>Ratio of up-days-on-above-avg-volume to down-days over 20 sessions. High = institutional accumulation, low = distribution.</dd>
+              <dt>EMA21 Reclaim</dt><dd>Price crossed back above the 21-EMA in the last 3 days after spending 5+ days below it. Early momentum-shift signal.</dd>
+              <dt>20d High</dt><dd>Price is within 1% of its 20-day highest close. More actionable than 52-week high for short-term swing entries.</dd>
+            </dl>
+            <h4>Toolbar Controls</h4>
+            <dl>
+              <dt>+RS</dt><dd>When active, applies RS Rating as a secondary sort within the selected filter.</dd>
+              <dt>RSI/AO</dt><dd>Toggle visibility of the RSI and Awesome Oscillator sub-charts on each tile.</dd>
+              <dt>Bench</dt><dd>Benchmark for rotation &amp; RS: vs Sector ETF, vs SPY, or Absolute (no benchmark).</dd>
+            </dl>
+          </div>
+        </div>`;
+        document.body.appendChild(el);
+      }
+      el.classList.toggle('visible');
+    }
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        const infoModal = document.getElementById('grid-info-modal');
+        if (infoModal && infoModal.classList.contains('visible')) { infoModal.classList.remove('visible'); return; }
+      }
+    });
 
     // ── Relative Rotation Graph (RRG) ──
     // RS-Ratio: rolling relative strength of sector vs benchmark, normalized to 100
