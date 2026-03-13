@@ -373,7 +373,7 @@
       overflow: auto;
       padding: 16px 16px 120px;
       position: relative;
-      background: var(--bg-tertiary);
+      background: #2a2a2e;
     }
     .grid-view-container.active {
       display: block;
@@ -382,14 +382,14 @@
     .grid-view-container.active::after {
       content: ''; position: fixed; bottom: 0; left: 0;
       width: 100%; height: 90px;
-      background: linear-gradient(to bottom, transparent, color-mix(in srgb, var(--bg-tertiary) 60%, transparent) 50%, var(--bg-tertiary));
+      background: linear-gradient(to bottom, transparent, color-mix(in srgb, #2a2a2e 60%, transparent) 50%, #2a2a2e);
       pointer-events: none; z-index: 9;
     }
     .grid-toolbar {
       display: flex; align-items: flex-end; gap: 6px;
       flex-wrap: nowrap; overflow-x: auto;
       position: sticky; top: 0; z-index: 10;
-      background: var(--bg-tertiary);
+      background: #2a2a2e;
       margin: 0 -16px;
       padding: 16px 12px 5px;
       border-bottom: 1px solid var(--border-subtle);
@@ -417,8 +417,8 @@
       padding: 3px 8px; font-size: 11px;
     }
     .grid-tile {
-      background: var(--bg-secondary);
-      border: 1px solid var(--border-medium);
+      background: #232326;
+      border: 1px solid #38383d;
       border-radius: 8px;
       padding: 14px 16px; position: relative;
       overflow: hidden;
@@ -510,23 +510,97 @@
       padding: 6px 10px;
       display: flex; justify-content: space-between; align-items: center;
       position: sticky; top: 55px; z-index: 5;
-      background: var(--bg-tertiary);
+      background: #2a2a2e;
       margin: -2px -12px 0;
       border-width: 2px 2px 0 2px;
       border-style: solid;
       border-color: inherit;
       border-radius: 8px 8px 0 0;
-      box-shadow: 0 -8px 0 var(--bg-tertiary);
+      box-shadow: 0 -8px 0 #2a2a2e;
     }
     .grid-group-header::after {
       content: ''; position: absolute; left: 0; top: 100%; width: 100%; height: 90px;
-      background: linear-gradient(to bottom, var(--bg-tertiary) 0%, color-mix(in srgb, var(--bg-tertiary) 60%, transparent) 40%, transparent 100%);
+      background: linear-gradient(to bottom, #2a2a2e 0%, color-mix(in srgb, #2a2a2e 60%, transparent) 40%, transparent 100%);
       pointer-events: none; opacity: 0; transition: opacity 0.5s ease-out;
     }
     .grid-view-container.scrolled .grid-group-header::after { opacity: 1; }
     .grid-group-header .count {
       font-size: var(--fs-xs); font-weight: 400; opacity: 0.6;
     }
+
+    /* Low-strain (eye comfort) overrides */
+    .grid-view-container.low-strain { background: #1B1F26; }
+    .grid-view-container.low-strain.active::after {
+      background: linear-gradient(to bottom, transparent, color-mix(in srgb, #1B1F26 60%, transparent) 50%, #1B1F26);
+    }
+    .grid-view-container.low-strain .grid-toolbar { background: #1B1F26; }
+    .grid-view-container.low-strain .grid-group-header {
+      background: #1B1F26; box-shadow: 0 -8px 0 #1B1F26;
+    }
+    .grid-view-container.low-strain .grid-group-header::after {
+      background: linear-gradient(to bottom, #1B1F26 0%, color-mix(in srgb, #1B1F26 60%, transparent) 40%, transparent 100%);
+    }
+    .grid-view-container.low-strain .grid-tile {
+      background: #222831; border-color: rgba(255,255,255,0.06);
+    }
+    .grid-view-container.low-strain .grid-tile-sym { color: #D1D5DB; }
+    .grid-view-container.low-strain .grid-tile-sector { color: #6B7280; }
+    .grid-view-container.low-strain .grid-tile-label { color: #6B7280; }
+    .grid-view-container.low-strain .grid-tile-tags {
+      visibility: hidden; transition: visibility 0s 0.2s, opacity 0.2s ease; opacity: 0;
+    }
+    .grid-view-container.low-strain .grid-tile-returns {
+      visibility: hidden; transition: visibility 0s 0.2s, opacity 0.2s ease; opacity: 0;
+    }
+    .grid-view-container.low-strain .grid-tile:hover .grid-tile-tags,
+    .grid-view-container.low-strain .grid-tile:hover .grid-tile-returns {
+      visibility: visible; opacity: 1; transition: visibility 0s, opacity 0.2s ease;
+    }
+    .grid-view-container.low-strain .grid-tile-tags span {
+      color: #9CA3AF !important; background: rgba(156,163,175,0.08) !important;
+      border-color: rgba(156,163,175,0.12) !important;
+      font-size: 10px !important; font-weight: 600 !important;
+      padding: 1px 4px !important; border-radius: 3px !important;
+    }
+    .grid-view-container.low-strain .grid-tile-returns .ret-label {
+      color: #6B7280 !important;
+    }
+    .grid-view-container.low-strain .grid-tile-returns .ret-pair span:not(.ret-label) {
+      color: #B0B7C3 !important;
+    }
+    .grid-view-container.low-strain .grid-rsi,
+    .grid-view-container.low-strain .grid-ao { opacity: 0.7; }
+
+    /* Sectors view — low-strain overrides */
+    #sectors-view.low-strain .sector-grid { background: #1B1F26; gap: 5px; }
+    #sectors-view.low-strain .sector-grid-toolbar { background: #1B1F26; }
+    #sectors-view.low-strain .sector-tile { background: #222831; }
+    #sectors-view.low-strain .sector-tile:hover { background: #2A303B; }
+    #sectors-view.low-strain .sector-tile-header { border-bottom-color: rgba(255,255,255,0.06); }
+    #sectors-view.low-strain .sector-tile-header .tile-name { color: #D1D5DB; }
+    #sectors-view.low-strain .sector-tile-header .tile-sym { color: #6B7280; }
+    #sectors-view.low-strain .sector-tile-header .tile-color { opacity: 0.5; }
+    #sectors-view.low-strain .sector-tile-header .tile-rs-tag { opacity: 0.6; }
+    #sectors-view.low-strain .sector-tile-header .tile-mom { opacity: 0.5; }
+    #sectors-view.low-strain .sector-tile-row .row-label { color: #6B7280; }
+    #sectors-view.low-strain .sector-tile-row .row-vs { opacity: 0.7; }
+    #sectors-view.low-strain .sector-tile-row.active-sort { background: rgba(255,200,50,0.04); }
+    #sectors-view.low-strain .market-health-card {
+      background: #222831; border-color: rgba(255,255,255,0.06);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    }
+    #sectors-view.low-strain .market-health-table td:first-child { color: #D1D5DB; }
+    #sectors-view.low-strain .mh-cat-box {
+      background: #1B1F26; border-color: rgba(255,255,255,0.06);
+    }
+    #sectors-view.low-strain .mh-cat-label { color: #9CA3AF; }
+    #sectors-view.low-strain .risk-green,
+    #sectors-view.low-strain .risk-yellow,
+    #sectors-view.low-strain .risk-amber,
+    #sectors-view.low-strain .risk-orange,
+    #sectors-view.low-strain .risk-red { opacity: 0.7; }
+    #sectors-view.low-strain .mh-sig-arrow { opacity: 0.7; }
+    #sectors-view.low-strain .tile-breadth-bar { background: rgba(255,255,255,0.06); }
 
     .tv-chart-panel {
       display: none;
@@ -1511,6 +1585,8 @@
       <button class="btn screenshot-btn" onclick="captureScreenshot()" title="Copy screenshot to clipboard">Screenshot</button>
       <div class="separator"></div>
       <button class="btn theme-toggle-btn" onclick="toggleTheme()" title="Toggle light/dark theme" id="theme-toggle">&#9790;</button>
+      <button class="btn theme-toggle-btn" onclick="toggleGridLowStrain()" title="Eye comfort mode" id="eye-comfort-toggle">&#9737;</button>
+      <script>if(JSON.parse(localStorage.getItem('gridLowStrain')||'false'))document.getElementById('eye-comfort-toggle').classList.add('active');</script>
     </div>
   </div>
   <div class="screenshot-toast" id="screenshot-toast"></div>
@@ -1812,6 +1888,7 @@
     let gridShowEma21 = true;
     let gridShowMa50 = false;
     let gridHighlightIndicators = false;
+    let gridLowStrain = JSON.parse(localStorage.getItem('gridLowStrain') || 'false');
     let rotationBenchmark = 'spy'; // 'sector' | 'spy' | 'absolute'
     let gridSortBy = 'rsRating';
     let gridSecondaryRS = false; // secondary sort by RS Rating within primary sort
@@ -3633,6 +3710,12 @@
     // Brighter colors for stocks table on black background
     function pctTextColorBright(pct) {
       const isLight = document.documentElement.classList.contains('light');
+      if (gridLowStrain) {
+        if (pct == null) return '#6B7280';
+        if (pct > 0.5) return '#6A9FCA';
+        if (pct < -0.5) return '#CC8844';
+        return '#6B7280';
+      }
       if (pct == null) return isLight ? '#9ca3af' : '#555';
       if (pct > 0.5) return isLight ? '#059669' : '#6dbdb5';
       if (pct < -0.5) return isLight ? '#dc2626' : '#c75460';
@@ -3921,6 +4004,7 @@
       html += '</div>'; // end .sector-grid
 
       container.innerHTML = html;
+      container.classList.toggle('low-strain', gridLowStrain);
     }
 
     function sortSectors(colIndex) {
@@ -4759,17 +4843,18 @@
       let filtered = stocks;
       if (gridShowFavorites) {
         filtered = filtered.filter(s => gridFavorites.has(s.sym));
-      }
-      if (gridFilterQuadrant !== 'all') {
-        filtered = filtered.filter(s => s.quadrant === gridFilterQuadrant);
-      }
-      if (gridFilterMomentum !== 'all') {
-        if (gridFilterMomentum === 'bullish') filtered = filtered.filter(s => s.signal === 'bullish');
-        else if (gridFilterMomentum === 'bearish') filtered = filtered.filter(s => s.signal === 'bearish');
-        else if (gridFilterMomentum === 'crossing') filtered = filtered.filter(s => s.isCrossing);
-        else if (gridFilterMomentum === 'nearEma8') filtered = filtered.filter(s => s.nearEma8);
-        else if (gridFilterMomentum === 'nearEma21') filtered = filtered.filter(s => s.nearEma21);
-        else if (gridFilterMomentum === 'ema21Reclaim') filtered = filtered.filter(s => s.isEma21Reclaim);
+      } else {
+        if (gridFilterQuadrant !== 'all') {
+          filtered = filtered.filter(s => s.quadrant === gridFilterQuadrant);
+        }
+        if (gridFilterMomentum !== 'all') {
+          if (gridFilterMomentum === 'bullish') filtered = filtered.filter(s => s.signal === 'bullish');
+          else if (gridFilterMomentum === 'bearish') filtered = filtered.filter(s => s.signal === 'bearish');
+          else if (gridFilterMomentum === 'crossing') filtered = filtered.filter(s => s.isCrossing);
+          else if (gridFilterMomentum === 'nearEma8') filtered = filtered.filter(s => s.nearEma8);
+          else if (gridFilterMomentum === 'nearEma21') filtered = filtered.filter(s => s.nearEma21);
+          else if (gridFilterMomentum === 'ema21Reclaim') filtered = filtered.filter(s => s.isEma21Reclaim);
+        }
       }
 
       // ── Group by quadrant ──
@@ -4829,15 +4914,15 @@
         </div>
         <div class="separator"></div>
         <div class="btn-group"><span class="topbar-label">Quadrant</span>
-          <select onchange="setGridFilter('quadrant',this.value)">${quadOpts}</select>
+          <select onchange="setGridFilter('quadrant',this.value)"${gridShowFavorites?' disabled style="opacity:0.4"':''}>${quadOpts}</select>
         </div>
         <div class="separator"></div>
         <div class="btn-group"><span class="topbar-label">Momentum</span>
-          <select onchange="setGridFilter('momentum',this.value)">${momOpts}</select>
+          <select onchange="setGridFilter('momentum',this.value)"${gridShowFavorites?' disabled style="opacity:0.4"':''}>${momOpts}</select>
         </div>
         <div class="separator"></div>
         <div class="btn-group"><span class="topbar-label">Sort</span>
-          <span style="display:flex;gap:3px;align-items:center"><select onchange="setGridSort(this.value)">${sortOpts}</select><button class="btn${gridSecondaryRS ? ' active' : ''}" onclick="toggleGridSecondaryRS()" title="Secondary sort by RS Rating">+RS</button></span>
+          <span style="display:flex;gap:3px;align-items:center"><select onchange="setGridSort(this.value)"${gridShowFavorites?' disabled style="opacity:0.4"':''}>${sortOpts}</select><button class="btn${gridSecondaryRS ? ' active' : ''}" onclick="toggleGridSecondaryRS()" title="Secondary sort by RS Rating"${gridShowFavorites?' disabled style="opacity:0.4"':''}>+RS</button></span>
         </div>
         <div class="separator"></div>
         <div class="btn-group"><span class="topbar-label">Range</span><span>${rangeBtns}</span></div>
@@ -4873,7 +4958,9 @@
         <span style="font-size:var(--fs-sm);color:var(--text-quaternary)">${filtered.length} stocks</span>
       </div><div class="grid-fade"></div>`;
 
-      const sparkH = gridChartMode === 'candle' ? 240 : 170;
+      const sparkH = gridChartMode === 'candle'
+        ? (gridLowStrain ? 276 : 240)
+        : (gridLowStrain ? 195 : 170);
 
       const fmtRet = (v, label) => {
         if (v == null) return '';
@@ -4912,7 +4999,9 @@
         const accTag = s.accDayRatio != null && s.accDayRatio >= 0.6 ? `<span style="font-size:10px;font-weight:600;padding:1px 4px;border-radius:3px;color:var(--text-positive,#6dbdb5);background:rgba(109,189,181,0.08)">Acc ${Math.round(s.accDayRatio * 100)}%</span>` : s.accDayRatio != null && s.accDayRatio <= 0.4 ? `<span style="font-size:10px;font-weight:600;padding:1px 4px;border-radius:3px;color:var(--text-negative,#c75460);background:rgba(199,84,96,0.08)">Dist ${Math.round(s.accDayRatio * 100)}%</span>` : '';
         const e21ReclaimTag = s.isEma21Reclaim && gridFilterMomentum !== 'ema21Reclaim' ? `<span style="font-size:10px;font-weight:600;padding:1px 4px;border-radius:3px;color:#5bc0de;background:rgba(91,192,222,0.08)">E21 Reclaim</span>` : '';
         const new20dTag = s.isNew20dHigh && gridSortBy !== 'new20dHigh' ? `<span style="font-size:10px;font-weight:600;padding:1px 4px;border-radius:3px;color:#c8e64d;background:rgba(200,230,77,0.08)">20d Hi</span>` : '';
-        const retHtml = `<div class="grid-tile-returns">${fmtRet(s.ret1d,'1D')}${fmtRet(s.ret5d,'5D')}${fmtRet(s.ret1m,'1M')}${fmtRet(s.ret3m,'3M')}</div>`;
+        let tagsHtml, retHtml;
+        tagsHtml = `<div class="grid-tile-tags">${rotTag}${crossingTag}${fromTag}${emaTags}${adrTag}${rsLeadTag}${pullbackTag}${tightTag}${highTag}${rVolTag}${ppTag}${rsHiTag}${boTag}${accTag}${e21ReclaimTag}${new20dTag}</div>`;
+        retHtml = `<div class="grid-tile-returns">${fmtRet(s.ret1d,'1D')}${fmtRet(s.ret5d,'5D')}${fmtRet(s.ret1m,'1M')}${fmtRet(s.ret3m,'3M')}</div>`;
         const isFav = gridFavorites.has(s.sym);
         const noHighlight = gridSortBy !== 'default';
         const tileClasses = ['grid-tile', isFav && 'favorited', !noHighlight && s.rsLeading && 'rs-leading', !noHighlight && s.isPullback && 'pullback', !noHighlight && s.pocketPivot && 'pocket-pivot'].filter(Boolean).join(' ');
@@ -4924,7 +5013,7 @@
             </div>
             <div style="display:flex;align-items:center;gap:3px">${momentumTag}${rsTag}</div>
           </div>
-          <div class="grid-tile-tags">${rotTag}${crossingTag}${fromTag}${emaTags}${adrTag}${rsLeadTag}${pullbackTag}${tightTag}${highTag}${rVolTag}${ppTag}${rsHiTag}${boTag}${accTag}${e21ReclaimTag}${new20dTag}</div>
+          ${tagsHtml}
           ${retHtml}
           <div class="grid-spark-wrap">
             <canvas class="grid-spark" height="${sparkH}" style="height:${sparkH}px"></canvas>
@@ -4961,6 +5050,18 @@
           html += renderTile(s, qColor);
         }
         html += `</div></div>`;
+      } else if (gridShowFavorites) {
+        // Favorites: flat list, no quadrant grouping
+        let allItems = [];
+        for (const q of QUADRANT_ORDER) allItems.push(...groups[q]);
+        html += `<div class="grid-quadrant-section" style="border-color:var(--border-medium)">`;
+        html += `<div class="grid-group-header" style="color:var(--text-secondary)">Favorites <span class="count">${allItems.length}</span></div>`;
+        html += `<div class="grid-tiles-grid" style="grid-template-columns:repeat(${gridColumns}, 260px)">`;
+        for (const s of allItems) {
+          const qColor = tc[QUADRANT_META[s.quadrant].colorVar];
+          html += renderTile(s, qColor);
+        }
+        html += `</div></div>`;
       } else {
         // Default: quadrant grouped
         for (const q of QUADRANT_ORDER) {
@@ -4978,6 +5079,7 @@
 
       container.innerHTML = html;
       container.classList.toggle('highlight-indicators', gridHighlightIndicators);
+      container.classList.toggle('low-strain', gridLowStrain);
       container.classList.remove('scrolled');
       let scrollTopBtn = document.getElementById('grid-scroll-top');
       if (!scrollTopBtn) {
@@ -5014,6 +5116,14 @@
 
     function drawGridTileCharts(tile, sym, data) {
       const tc = getThemeColors();
+      const lc = gridLowStrain ? {
+        bullish: '#6A9FCA', bearish: '#CC8844',
+        ema: 'rgba(160,170,185,0.55)',
+        volBar: 'rgba(75,85,99,0.35)',
+        ppBar: 'rgba(42,130,218,0.35)',
+        rsiAbove: '#D1D5DB', rsiBelow: '#7C8BA1',
+        aoUp: 'rgba(170,180,195,0.75)', aoDown: 'rgba(105,115,130,0.7)'
+      } : null;
       const prices = data.prices[sym];
       if (!prices) return;
 
@@ -5203,9 +5313,9 @@
               const bh = (sparkVol[i] / maxVol) * volZoneH;
               const isUp = sparkOhlc[i] ? sparkOhlc[i].c >= sparkOhlc[i].o : (i > 0 ? sparkPrices[i] >= sparkPrices[i-1] : true);
               if (ppBars.has(i)) {
-                ctx.fillStyle = 'rgba(42,130,218,0.7)';
+                ctx.fillStyle = lc ? lc.ppBar : 'rgba(42,130,218,0.7)';
               } else {
-                ctx.fillStyle = isUp ? 'rgba(109,189,181,0.35)' : 'rgba(199,84,96,0.35)';
+                ctx.fillStyle = lc ? lc.volBar : (isUp ? 'rgba(109,189,181,0.35)' : 'rgba(199,84,96,0.35)');
               }
               ctx.fillRect(vGap * i + vGap / 2 - vBarW / 2, volBase - bh, vBarW, bh);
             }
@@ -5218,13 +5328,14 @@
           for (const b of bars) { allMin = Math.min(allMin, b.l); allMax = Math.max(allMax, b.h); }
           const range = allMax - allMin || 1;
           const pad = 36;
-          const fillRatio = bars.length < 40 ? 0.85 : bars.length < 80 ? 0.78 : 0.65;
+          let fillRatio = bars.length < 40 ? 0.85 : bars.length < 80 ? 0.78 : 0.65;
+          let gap = w / bars.length;
+          if (lc) { fillRatio *= 1.1; }
           const barW = Math.max(1, (w / bars.length) * fillRatio);
-          const gap = w / bars.length;
           for (let i = 0; i < bars.length; i++) {
             const b = bars[i];
             const isUp = b.c >= b.o;
-            const bodyColor = isUp ? tc.semanticBullish : tc.semanticBearish;
+            const bodyColor = lc ? (isUp ? lc.bullish : lc.bearish) : (isUp ? tc.semanticBullish : tc.semanticBearish);
             const cx = gap * i + gap / 2;
             const toY = chartToY;
             const oY = toY(b.o), cY = toY(b.c);
@@ -5247,7 +5358,7 @@
           const range = max - min || 1;
           const pad = 30;
           const isUp = sp[sp.length - 1] >= sp[0];
-          const color = isUp ? tc.semanticBullish : tc.semanticBearish;
+          const color = lc ? (isUp ? lc.bullish : lc.bearish) : (isUp ? tc.semanticBullish : tc.semanticBearish);
           ctx.strokeStyle = color; ctx.lineWidth = 1.5;
           ctx.beginPath();
           for (let i = 0; i < sp.length; i++) {
@@ -5267,7 +5378,7 @@
         const n = sparkPrices.length;
         if (n > 1) {
           if (gridShowEma21) {
-            ctx.strokeStyle = 'rgba(42,130,218,0.7)';
+            ctx.strokeStyle = lc ? lc.ema : 'rgba(42,130,218,0.7)';
             ctx.lineWidth = 0.75;
             ctx.beginPath();
             for (let i = 0; i < n; i++) {
@@ -5334,9 +5445,9 @@
           rCtx.beginPath(); rCtx.moveTo(0, toY(30)); rCtx.lineTo(rW, toY(30)); rCtx.stroke();
         }
         const lastRsi = sparkRsi[sparkRsi.length - 1];
-        const rsiColor = lastRsi >= 50 ? tc.semanticBullish : tc.semanticBearish;
+        const rsiColor = lc ? (lastRsi >= 50 ? lc.rsiAbove : lc.rsiBelow) : (lastRsi >= 50 ? tc.semanticBullish : tc.semanticBearish);
         rCtx.setLineDash([]);
-        rCtx.strokeStyle = rsiColor; rCtx.lineWidth = 1.5;
+        rCtx.strokeStyle = rsiColor; rCtx.lineWidth = lc ? 1 : 1.5;
         rCtx.beginPath();
         for (let i = 0; i < sparkRsi.length; i++) {
           const x = (i / (sparkRsi.length - 1)) * rW;
@@ -5374,7 +5485,7 @@
           const val = sparkAo[i];
           const barH = (Math.abs(val) / aMax) * (aH / 2 - aPad);
           const rising = i === 0 ? val >= 0 : val >= sparkAo[i - 1];
-          aCtx.fillStyle = rising ? tc.semanticBullish : tc.semanticBearish;
+          aCtx.fillStyle = lc ? (rising ? lc.aoUp : lc.aoDown) : (rising ? tc.semanticBullish : tc.semanticBearish);
           if (val >= 0) { aCtx.fillRect(x, zeroY - barH, barW, barH); }
           else { aCtx.fillRect(x, zeroY, barW, barH); }
         }
@@ -5462,6 +5573,15 @@
     function toggleGridHighlight() {
       gridHighlightIndicators = !gridHighlightIndicators;
       buildGridView();
+    }
+
+    function toggleGridLowStrain() {
+      gridLowStrain = !gridLowStrain;
+      localStorage.setItem('gridLowStrain', JSON.stringify(gridLowStrain));
+      const btn = document.getElementById('eye-comfort-toggle');
+      if (btn) btn.classList.toggle('active', gridLowStrain);
+      if (currentView === 'sectors') buildSectorsView();
+      else if (currentView === 'grid') buildGridView();
     }
 
     function setGridSort(val) {
