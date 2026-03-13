@@ -33,7 +33,7 @@
 
       /* Semantic */
       --semantic-bullish: #26a69a;
-      --semantic-bearish: #ef5350;
+      --semantic-bearish: #c75460;
       --semantic-neutral: #ff9800;
       --semantic-weakening: #5d606b;
 
@@ -71,7 +71,7 @@
       --ai-header-gradient: linear-gradient(135deg, rgba(41,98,255,0.08), rgba(66,165,245,0.04));
       --ai-item-bg: rgba(42, 46, 57, 0.3);
       --ai-bullish-bg: rgba(38,166,154,0.06);
-      --ai-bearish-bg: rgba(239,83,80,0.06);
+      --ai-bearish-bg: rgba(199,84,96,0.06);
       --ai-neutral-bg: rgba(255,152,0,0.06);
       --ai-ticker-bg: rgba(41,98,255,0.15);
       --ai-blockquote-bg: rgba(41,98,255,0.06);
@@ -117,7 +117,7 @@
       --interactive-border: #d1d5db;
 
       --semantic-bullish: #10b981;
-      --semantic-bearish: #ef4444;
+      --semantic-bearish: #c75460;
       --semantic-neutral: #f59e0b;
       --semantic-weakening: #9ca3af;
 
@@ -149,7 +149,7 @@
       --ai-header-gradient: linear-gradient(135deg, rgba(37,99,235,0.06), rgba(59,130,246,0.03));
       --ai-item-bg: rgba(0, 0, 0, 0.03);
       --ai-bullish-bg: rgba(16,185,129,0.06);
-      --ai-bearish-bg: rgba(239,68,68,0.06);
+      --ai-bearish-bg: rgba(199,84,96,0.06);
       --ai-neutral-bg: rgba(245,158,11,0.06);
       --ai-ticker-bg: rgba(37,99,235,0.1);
       --ai-blockquote-bg: rgba(37,99,235,0.04);
@@ -1394,7 +1394,7 @@
     }
     .swing-score.high { background: rgba(77,216,180,0.2); color: #4dd8b4; }
     .swing-score.mid  { background: rgba(200,180,60,0.2); color: #c4a24d; }
-    .swing-score.low  { background: rgba(240,97,109,0.2); color: #f0616d; }
+    .swing-score.low  { background: rgba(199,84,96,0.2); color: #c75460; }
 
     /* Signal badges */
     .swing-signal {
@@ -1403,7 +1403,7 @@
       letter-spacing: 0.3px;
     }
     .swing-signal.bullish { background: rgba(77,216,180,0.15); color: #4dd8b4; }
-    .swing-signal.bearish { background: rgba(240,97,109,0.15); color: #f0616d; }
+    .swing-signal.bearish { background: rgba(199,84,96,0.15); color: #c75460; }
     .swing-signal.watch   { background: rgba(196,162,77,0.15); color: #c4a24d; }
 
     /* Rotation stage pill */
@@ -1835,7 +1835,7 @@
       1: { label: 'Accumulation', color: '#4dd8b4' },
       2: { label: 'Markup',       color: '#6ba3d6' },
       3: { label: 'Distribution', color: '#e07c5a' },
-      4: { label: 'Decline',      color: '#f0616d' },
+      4: { label: 'Decline',      color: '#c75460' },
     };
 
     let swingScoreCache = {};
@@ -3635,7 +3635,7 @@
       const isLight = document.documentElement.classList.contains('light');
       if (pct == null) return isLight ? '#9ca3af' : '#555';
       if (pct > 0.5) return isLight ? '#059669' : '#4dd8b4';
-      if (pct < -0.5) return isLight ? '#dc2626' : '#f0616d';
+      if (pct < -0.5) return isLight ? '#dc2626' : '#c75460';
       return isLight ? '#9ca3af' : '#555';
     }
 
@@ -4331,7 +4331,7 @@
       html += `<div class="swing-summary-stat"><span class="label">Avg Score</span><span class="value">${avgScore}</span></div>`;
       html += `<div class="swing-summary-stat"><span class="label">Bullish</span><span class="value" style="color:#4dd8b4">${buyCount}</span></div>`;
       html += `<div class="swing-summary-stat"><span class="label">Watch</span><span class="value" style="color:#c4a24d">${watchCount}</span></div>`;
-      html += `<div class="swing-summary-stat"><span class="label">Bearish</span><span class="value" style="color:#f0616d">${sellCount}</span></div>`;
+      html += `<div class="swing-summary-stat"><span class="label">Bearish</span><span class="value" style="color:#c75460">${sellCount}</span></div>`;
       for (let st = 1; st <= 4; st++) {
         html += `<div class="swing-summary-stat"><span class="label">${ROTATION_STAGES[st].label}</span><span class="value" style="color:${ROTATION_STAGES[st].color}">${stageCounts[st]}</span></div>`;
       }
@@ -4892,8 +4892,8 @@
         const rotStage = s.rotation ? ROTATION_STAGES[s.rotation] : null;
         const rotTag = rotStage ? `<span class="grid-tile-rotation" style="background:${rotStage.color}22;color:${rotStage.color}">${rotStage.label}</span>` : '';
         const emaTags = (s.nearEma21 ? '<span class="rrg-ema-tag">E21</span>' : '') + (s.nearEma8 ? '<span class="rrg-ema-tag">E8</span>' : '');
-        const rsColor = s.rsRating != null ? (s.rsRating >= 50 ? 'var(--text-positive,#4dd8b4)' : 'var(--text-negative,#f0616d)') : '';
-        const rsBg = s.rsRating != null ? (s.rsRating >= 50 ? 'rgba(77,216,180,0.12)' : 'rgba(240,97,109,0.12)') : '';
+        const rsColor = s.rsRating != null ? (s.rsRating >= 50 ? 'var(--text-positive,#4dd8b4)' : 'var(--text-negative,#c75460)') : '';
+        const rsBg = s.rsRating != null ? (s.rsRating >= 50 ? 'rgba(77,216,180,0.12)' : 'rgba(199,84,96,0.12)') : '';
         const rsTag = s.rsRating != null ? `<span style="font-size:9px;font-weight:600;padding:1px 4px;border-radius:3px;color:${rsColor};background:${rsBg}">RS ${s.rsRating}</span>` : '';
         const arrowColor = s.signal === 'bullish' ? tc.semanticBullish : s.signal === 'bearish' ? tc.semanticBearish : tc.textQuaternary;
         const momentumTag = s.arrow ? `<span style="font-size:11px;font-weight:700;color:${arrowColor}">${s.arrow}</span>` : '';
@@ -4905,11 +4905,11 @@
         const pullbackTag = s.isPullback && gridSortBy !== 'pullback' ? `<span style="font-size:9px;font-weight:600;padding:1px 4px;border-radius:3px;color:#9b7db8;background:rgba(155,125,184,0.12)">Pullback</span>` : '';
         const tightTag = s.volContraction && gridSortBy !== 'volContract' ? `<span style="font-size:9px;font-weight:600;padding:1px 4px;border-radius:3px;color:#b48efa;background:rgba(180,142,250,0.12)">Tight</span>` : '';
         const highTag = gridSortBy !== 'near52w' ? (s.at52wHigh ? `<span style="font-size:9px;font-weight:600;padding:1px 4px;border-radius:3px;color:var(--text-positive,#4dd8b4);background:rgba(77,216,180,0.12)">52w Hi</span>` : s.near52wHigh ? `<span style="font-size:9px;font-weight:600;padding:1px 4px;border-radius:3px;color:var(--text-tertiary);background:rgba(255,255,255,0.06)">Nr 52w</span>` : '') : '';
-        const rVolTag = s.relVolume != null && s.relVolume >= 1.5 ? `<span style="font-size:9px;font-weight:600;padding:1px 4px;border-radius:3px;color:${s.ret1d >= 0 ? 'var(--text-positive,#4dd8b4)' : 'var(--text-negative,#f0616d)'};background:${s.ret1d >= 0 ? 'rgba(77,216,180,0.12)' : 'rgba(240,97,109,0.12)'}">Vol ${s.relVolume.toFixed(1)}x</span>` : '';
+        const rVolTag = s.relVolume != null && s.relVolume >= 1.5 ? `<span style="font-size:9px;font-weight:600;padding:1px 4px;border-radius:3px;color:${s.ret1d >= 0 ? 'var(--text-positive,#4dd8b4)' : 'var(--text-negative,#c75460)'};background:${s.ret1d >= 0 ? 'rgba(77,216,180,0.12)' : 'rgba(199,84,96,0.12)'}">Vol ${s.relVolume.toFixed(1)}x</span>` : '';
         const ppTag = s.pocketPivot && gridSortBy !== 'pocketPivot' ? `<span style="font-size:9px;font-weight:700;padding:1px 4px;border-radius:3px;color:#2a82da;background:rgba(42,130,218,0.15);border:1px solid rgba(42,130,218,0.3)">PP</span>` : '';
         const rsHiTag = s.rsLineNewHigh && gridSortBy !== 'rsLineHigh' ? `<span style="font-size:9px;font-weight:600;padding:1px 4px;border-radius:3px;color:#e8b730;background:rgba(232,183,48,0.12)">RS Hi</span>` : '';
         const boTag = s.isBaseBreakout && gridSortBy !== 'baseBreakout' ? `<span style="font-size:9px;font-weight:700;padding:1px 4px;border-radius:3px;color:#00c9a7;background:rgba(0,201,167,0.12);border:1px solid rgba(0,201,167,0.3)">BO</span>` : '';
-        const accTag = s.accDayRatio != null && s.accDayRatio >= 0.6 ? `<span style="font-size:9px;font-weight:600;padding:1px 4px;border-radius:3px;color:var(--text-positive,#4dd8b4);background:rgba(77,216,180,0.12)">Acc ${Math.round(s.accDayRatio * 100)}%</span>` : s.accDayRatio != null && s.accDayRatio <= 0.4 ? `<span style="font-size:9px;font-weight:600;padding:1px 4px;border-radius:3px;color:var(--text-negative,#f0616d);background:rgba(240,97,109,0.12)">Dist ${Math.round(s.accDayRatio * 100)}%</span>` : '';
+        const accTag = s.accDayRatio != null && s.accDayRatio >= 0.6 ? `<span style="font-size:9px;font-weight:600;padding:1px 4px;border-radius:3px;color:var(--text-positive,#4dd8b4);background:rgba(77,216,180,0.12)">Acc ${Math.round(s.accDayRatio * 100)}%</span>` : s.accDayRatio != null && s.accDayRatio <= 0.4 ? `<span style="font-size:9px;font-weight:600;padding:1px 4px;border-radius:3px;color:var(--text-negative,#c75460);background:rgba(199,84,96,0.12)">Dist ${Math.round(s.accDayRatio * 100)}%</span>` : '';
         const e21ReclaimTag = s.isEma21Reclaim && gridFilterMomentum !== 'ema21Reclaim' ? `<span style="font-size:9px;font-weight:600;padding:1px 4px;border-radius:3px;color:#5bc0de;background:rgba(91,192,222,0.12)">E21 Reclaim</span>` : '';
         const new20dTag = s.isNew20dHigh && gridSortBy !== 'new20dHigh' ? `<span style="font-size:9px;font-weight:600;padding:1px 4px;border-radius:3px;color:#c8e64d;background:rgba(200,230,77,0.12)">20d Hi</span>` : '';
         const retHtml = `<div class="grid-tile-returns">${fmtRet(s.ret1d,'1D')}${fmtRet(s.ret5d,'5D')}${fmtRet(s.ret1m,'1M')}${fmtRet(s.ret3m,'3M')}</div>`;
@@ -5205,7 +5205,7 @@
               if (ppBars.has(i)) {
                 ctx.fillStyle = 'rgba(42,130,218,0.7)';
               } else {
-                ctx.fillStyle = isUp ? 'rgba(77,216,180,0.35)' : 'rgba(240,97,109,0.35)';
+                ctx.fillStyle = isUp ? 'rgba(77,216,180,0.35)' : 'rgba(199,84,96,0.35)';
               }
               ctx.fillRect(vGap * i + vGap / 2 - vBarW / 2, volBase - bh, vBarW, bh);
             }
@@ -5326,7 +5326,7 @@
         }
         // 30/70 overbought/oversold zones
         if (70 <= rMax && 70 >= rMin) {
-          rCtx.strokeStyle = 'rgba(240,97,109,0.15)'; rCtx.lineWidth = 0.5;
+          rCtx.strokeStyle = 'rgba(199,84,96,0.15)'; rCtx.lineWidth = 0.5;
           rCtx.beginPath(); rCtx.moveTo(0, toY(70)); rCtx.lineTo(rW, toY(70)); rCtx.stroke();
         }
         if (30 >= rMin && 30 <= rMax) {
