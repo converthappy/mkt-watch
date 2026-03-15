@@ -528,6 +528,55 @@
       font-size: var(--fs-xs); font-weight: 400; opacity: 0.6;
     }
 
+    /* Filter panel popover */
+    .grid-filter-panel {
+      display: none; position: fixed; z-index: 200;
+      background: var(--surface-secondary, #2a2a2e); border: 1px solid var(--border-medium, rgba(255,255,255,0.1));
+      border-radius: 8px; padding: 14px 16px; min-width: 500px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+    }
+    .grid-filter-panel.visible { display: flex; gap: 16px; flex-wrap: wrap; }
+    .grid-filter-panel .filter-group { flex: 1; min-width: 140px; }
+    .grid-filter-panel .filter-group-title {
+      font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;
+      color: var(--text-tertiary, #888); margin-bottom: 8px; padding-bottom: 5px;
+      border-bottom: 1px solid var(--border-medium, rgba(255,255,255,0.06));
+    }
+    .grid-filter-panel label {
+      display: flex; align-items: center; gap: 6px; padding: 3px 0; cursor: pointer;
+      font-size: 13px; color: var(--text-secondary, #ccc); white-space: nowrap;
+    }
+    .grid-filter-panel label:hover { color: var(--text-primary, #fff); }
+    .grid-filter-panel input[type="checkbox"] {
+      width: 14px; height: 14px; margin: 0; accent-color: #6ba3d6; cursor: pointer;
+    }
+    .grid-filter-panel .filter-group-numeric label {
+      display: flex; align-items: center; justify-content: space-between; gap: 8px;
+      font-size: 13px; color: var(--text-secondary, #ccc); padding: 3px 0;
+    }
+    .filter-num-input {
+      width: 56px; padding: 3px 6px; font-size: 12px; border-radius: 4px;
+      border: 1px solid var(--border-medium, rgba(255,255,255,0.15));
+      background: var(--surface-primary, #1a1a1e); color: var(--text-primary, #fff);
+      text-align: center; outline: none;
+    }
+    .filter-num-input:focus { border-color: #6ba3d6; }
+    .filter-num-input::-webkit-inner-spin-button,
+    .filter-num-input::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+    .filter-num-input { -moz-appearance: textfield; }
+    .filter-num-input::placeholder { color: var(--text-quaternary, #555); }
+    .grid-filter-panel .filter-clear {
+      font-size: 12px; color: var(--text-quaternary, #666); cursor: pointer; margin-top: 4px;
+      text-align: center; padding-top: 6px; border-top: 1px solid var(--border-medium, rgba(255,255,255,0.06));
+      width: 100%; flex-basis: 100%;
+    }
+    .grid-filter-panel .filter-clear:hover { color: var(--text-secondary, #ccc); }
+    .grid-filter-count {
+      font-size: 9px; font-weight: 700; background: #6ba3d6; color: #fff;
+      border-radius: 8px; padding: 0 4px; margin-left: 3px; min-width: 14px;
+      display: inline-block; text-align: center; line-height: 14px;
+    }
+
     /* Low-strain (eye comfort) overrides */
     .grid-view-container.low-strain { background: #1B1F26; }
     .grid-view-container.low-strain.active::after {
@@ -1881,7 +1930,7 @@
     let gridRange = '3M'; // '1M' | '3M' | '6M'
     let gridTimeframe = 'daily'; // 'daily' | '3d' | 'weekly'
     let gridFilterQuadrant = 'all'; // 'all' | 'leading' | 'improving' | 'weakening' | 'lagging'
-    let gridFilterMomentum = 'nearEma21'; // 'all' | 'bullish' | 'bearish' | 'crossing' | 'nearEma8' | 'nearEma21'
+    let gridFilterMomentum = 'all'; // kept for backwards compat but unused
     let gridFavorites = new Set(JSON.parse(localStorage.getItem('gridFavorites') || '[]'));
     let gridShowFavorites = false;
     let gridShowEma8 = false;
@@ -1892,6 +1941,13 @@
     let rotationBenchmark = 'spy'; // 'sector' | 'spy' | 'absolute'
     let gridSortBy = 'rsRating';
     let gridSecondaryRS = false; // secondary sort by RS Rating within primary sort
+    let gridStockLookup = {};
+    let gridActiveFilters = (function() {
+      const raw = JSON.parse(localStorage.getItem('gridActiveFilters') || '{"signals":[],"momentum":[],"quality":[]}');
+      return { signals: new Set(raw.signals || []), momentum: new Set(raw.momentum || []), quality: new Set(raw.quality || []) };
+    })();
+    let gridMinAdr = JSON.parse(localStorage.getItem('gridMinAdr') || 'null');
+    let gridMinRS = JSON.parse(localStorage.getItem('gridMinRS') || 'null');
     let stockNamesMap = {};
     fetch('data/stock_names.json').then(r => r.json()).then(d => { stockNamesMap = d; }).catch(() => {});
     let currentRange = '3M';
@@ -4785,7 +4841,299 @@
             }
             if (high20 > -Infinity) isNew20dHigh = last >= high20 * 0.99;
           }
-          stocks.push({ sym, panelIndex: pi, sectorName, data: d, rsRating: swing.rsRating != null ? swing.rsRating : null, rotation: swing.rotation || null, swingScore: swing.total != null ? swing.total : null, nearEma8, nearEma21, ema8Dist, ema21Dist, ret1d, ret5d, ret2w, ret1m, ret3m, rsiDelta, ma50Dist, adrPct, rsLeading, isPullback, volContraction, near52wHigh, at52wHigh, relVolume, pocketPivot, rsLineNewHigh, isBaseBreakout, accDayRatio, isEma21Reclaim, isNew20dHigh });
+          // ── RSI Bullish Divergence ──
+          // Valid div: two swing lows in price where price makes lower low but RSI
+          // makes higher low, with RSI in oversold zone (< 40). Ignore noise near 50.
+          // Swing low = bar whose low is the lowest low in a ±3 bar window.
+          let rsiDivergence = false, rsiDivTroughBarOffset = null;
+          if (last != null && len >= 40) {
+            const rsiP = 14;
+            // Build per-bar RSI array aligned to prices (index 0 = null padding)
+            const fullRsi = new Array(len).fill(null);
+            let rGains = 0, rLosses = 0;
+            for (let i = 1; i < len; i++) {
+              if (prices[i] == null || prices[i-1] == null) continue;
+              const chg = prices[i] - prices[i-1];
+              if (i <= rsiP) {
+                if (chg > 0) rGains += chg; else rLosses -= chg;
+                if (i === rsiP) {
+                  rGains /= rsiP; rLosses /= rsiP;
+                  fullRsi[i] = rLosses === 0 ? 100 : 100 - 100 / (1 + rGains / rLosses);
+                }
+              } else {
+                rGains = (rGains * (rsiP - 1) + (chg > 0 ? chg : 0)) / rsiP;
+                rLosses = (rLosses * (rsiP - 1) + (chg < 0 ? -chg : 0)) / rsiP;
+                fullRsi[i] = rLosses === 0 ? 100 : 100 - 100 / (1 + rGains / rLosses);
+              }
+            }
+            // RSI uses closes — swing lows on closing prices
+            const swingRadius = 3;
+            const lookback = 30;
+            const searchStart = Math.max(swingRadius, len - lookback);
+            const swingLows = [];
+            for (let i = searchStart; i < len - swingRadius; i++) {
+              if (prices[i] == null || fullRsi[i] == null) continue;
+              let isSwing = true;
+              for (let j = i - swingRadius; j <= i + swingRadius; j++) {
+                if (j === i) continue;
+                if (prices[j] != null && prices[j] < prices[i]) { isSwing = false; break; }
+              }
+              if (isSwing && fullRsi[i] < 40) {
+                swingLows.push({ barIdx: i, price: prices[i], rsi: fullRsi[i] });
+              }
+            }
+            // Check most recent pair: price lower low, RSI higher low
+            if (swingLows.length >= 2) {
+              const t1 = swingLows[swingLows.length - 2];
+              const t2 = swingLows[swingLows.length - 1];
+              // Minimum separation of 5 bars between troughs
+              if (t2.barIdx - t1.barIdx >= 5 && t2.price < t1.price && t2.rsi > t1.rsi) {
+                let valid = true;
+                for (let k = t1.barIdx + 1; k < t2.barIdx; k++) {
+                  // Price undercut invalidates structure
+                  if (prices[k] != null && prices[k] < t2.price) { valid = false; break; }
+                  // RSI crossing above 50 between troughs invalidates the div
+                  if (fullRsi[k] != null && fullRsi[k] >= 50) { valid = false; break; }
+                }
+                // Confirmation: price must close above the highest close
+                // between the two troughs (breaks the interim reaction high)
+                if (valid) {
+                  let interimHigh = -Infinity;
+                  for (let k = t1.barIdx + 1; k < t2.barIdx; k++) {
+                    if (prices[k] != null && prices[k] > interimHigh) interimHigh = prices[k];
+                  }
+                  let confirmed = false;
+                  for (let k = t2.barIdx + 1; k < len; k++) {
+                    if (prices[k] != null && prices[k] > interimHigh) { confirmed = true; break; }
+                  }
+                  if (confirmed) {
+                    rsiDivergence = true;
+                    rsiDivTroughBarOffset = len - 1 - t2.barIdx;
+                  }
+                }
+              }
+            }
+          }
+          // ── RSI Bearish Divergence ──
+          // Two swing highs in price where price makes higher high but RSI
+          // makes lower high, with RSI in overbought zone (> 60).
+          let rsiBearDiv = false, rsiBearDivPending = false, rsiBearDivTroughBarOffset = null;
+          if (last != null && len >= 40) {
+            const rsiP = 14;
+            const fullRsiBear = new Array(len).fill(null);
+            let rGains = 0, rLosses = 0;
+            for (let i = 1; i < len; i++) {
+              if (prices[i] == null || prices[i-1] == null) continue;
+              const chg = prices[i] - prices[i-1];
+              if (i <= rsiP) {
+                if (chg > 0) rGains += chg; else rLosses -= chg;
+                if (i === rsiP) {
+                  rGains /= rsiP; rLosses /= rsiP;
+                  fullRsiBear[i] = rLosses === 0 ? 100 : 100 - 100 / (1 + rGains / rLosses);
+                }
+              } else {
+                rGains = (rGains * (rsiP - 1) + (chg > 0 ? chg : 0)) / rsiP;
+                rLosses = (rLosses * (rsiP - 1) + (chg < 0 ? -chg : 0)) / rsiP;
+                fullRsiBear[i] = rLosses === 0 ? 100 : 100 - 100 / (1 + rGains / rLosses);
+              }
+            }
+            const swingRadius = 3;
+            const lookback = 50;
+            const searchStart = Math.max(swingRadius, len - lookback);
+            const swingHighs = [];
+            for (let i = searchStart; i < len; i++) {
+              if (prices[i] == null || fullRsiBear[i] == null) continue;
+              let isSwing = true;
+              for (let j = i - swingRadius; j <= Math.min(i + swingRadius, len - 1); j++) {
+                if (j === i) continue;
+                if (prices[j] != null && prices[j] > prices[i]) { isSwing = false; break; }
+              }
+              if (isSwing && fullRsiBear[i] >= 55) {
+                swingHighs.push({ barIdx: i, price: prices[i], rsi: fullRsiBear[i] });
+              }
+            }
+            if (swingHighs.length >= 2) {
+              const t1 = swingHighs[swingHighs.length - 2];
+              const t2 = swingHighs[swingHighs.length - 1];
+              if (t2.barIdx - t1.barIdx >= 5 && t2.price > t1.price && t2.rsi < t1.rsi) {
+                let valid = true;
+                for (let k = t1.barIdx + 1; k < t2.barIdx; k++) {
+                  if (prices[k] != null && prices[k] > t2.price) { valid = false; break; }
+                  if (fullRsiBear[k] != null && fullRsiBear[k] < 45) { valid = false; break; }
+                }
+                if (valid) {
+                  rsiBearDivPending = true;
+                  rsiBearDivTroughBarOffset = len - 1 - t2.barIdx;
+                  let interimLow = Infinity;
+                  for (let k = t1.barIdx + 1; k < t2.barIdx; k++) {
+                    if (prices[k] != null && prices[k] < interimLow) interimLow = prices[k];
+                  }
+                  for (let k = t2.barIdx + 1; k < len; k++) {
+                    if (prices[k] != null && prices[k] < interimLow) { rsiBearDiv = true; break; }
+                  }
+                }
+              }
+            }
+          }
+          // ── AO Bullish Divergence ──
+          // Valid div: two swing lows in price where price makes lower low but the
+          // corresponding AO value makes a higher low. AO must be negative at both
+          // troughs (bearish momentum zone — divs above zero are noise).
+          let aoDivergence = false, aoDivTroughBarOffset = null;
+          const ohlcSymDiv = d.ohlc && d.ohlc[sym];
+          if (last != null && len >= 50) {
+            const medians = [];
+            for (let i = 0; i < len; i++) {
+              const h = ohlcSymDiv && ohlcSymDiv.h && ohlcSymDiv.h[i] != null ? ohlcSymDiv.h[i] : prices[i];
+              const l = ohlcSymDiv && ohlcSymDiv.l && ohlcSymDiv.l[i] != null ? ohlcSymDiv.l[i] : prices[i];
+              medians.push(h != null && l != null ? (h + l) / 2 : null);
+            }
+            const fullAo = new Array(len).fill(null);
+            for (let i = 33; i < len; i++) {
+              if (medians[i] == null) continue;
+              let s5 = 0, s34 = 0, ok = true;
+              for (let j = i - 4; j <= i; j++) { if (medians[j] == null) { ok = false; break; } s5 += medians[j]; }
+              if (!ok) continue;
+              for (let j = i - 33; j <= i; j++) { if (medians[j] == null) { ok = false; break; } s34 += medians[j]; }
+              if (ok) fullAo[i] = s5 / 5 - s34 / 34;
+            }
+            const getLow = (i) => ohlcSymDiv && ohlcSymDiv.l && ohlcSymDiv.l[i] != null ? ohlcSymDiv.l[i] : prices[i];
+            const swingRadius = 3;
+            const lookback = 30;
+            const searchStart = Math.max(swingRadius, len - lookback);
+            const swingLows = [];
+            for (let i = searchStart; i < len - swingRadius; i++) {
+              const lo = getLow(i);
+              if (lo == null || fullAo[i] == null) continue;
+              let isSwing = true;
+              for (let j = i - swingRadius; j <= i + swingRadius; j++) {
+                if (j === i) continue;
+                const jLo = getLow(j);
+                if (jLo != null && jLo < lo) { isSwing = false; break; }
+              }
+              // AO must be negative — divergences above zero are meaningless
+              if (isSwing && fullAo[i] < 0) {
+                swingLows.push({ barIdx: i, price: lo, ao: fullAo[i] });
+              }
+            }
+            if (swingLows.length >= 2) {
+              const t1 = swingLows[swingLows.length - 2];
+              const t2 = swingLows[swingLows.length - 1];
+              if (t2.barIdx - t1.barIdx >= 5 && t2.price < t1.price && t2.ao > t1.ao) {
+                let valid = true;
+                for (let k = t1.barIdx + 1; k < t2.barIdx; k++) {
+                  const kLo = getLow(k);
+                  // Price undercut invalidates structure
+                  if (kLo != null && kLo < t2.price) { valid = false; break; }
+                  // AO crossing above zero between troughs invalidates the div
+                  if (fullAo[k] != null && fullAo[k] >= 0) { valid = false; break; }
+                }
+                // Confirmation: price must close above the highest high
+                // between the two troughs (breaks the interim reaction high)
+                if (valid) {
+                  let interimHigh = -Infinity;
+                  for (let k = t1.barIdx + 1; k < t2.barIdx; k++) {
+                    const kHi = ohlcSymDiv && ohlcSymDiv.h && ohlcSymDiv.h[k] != null ? ohlcSymDiv.h[k] : prices[k];
+                    if (kHi != null && kHi > interimHigh) interimHigh = kHi;
+                  }
+                  let confirmed = false;
+                  for (let k = t2.barIdx + 1; k < len; k++) {
+                    if (prices[k] != null && prices[k] > interimHigh) { confirmed = true; break; }
+                  }
+                  if (confirmed) {
+                    aoDivergence = true;
+                    aoDivTroughBarOffset = len - 1 - t2.barIdx;
+                  }
+                }
+              }
+            }
+          }
+          // ── AO Bearish Divergence ──
+          // Two swing highs in price (OHLC highs) where price makes higher high but
+          // AO makes lower high. AO must be positive at both peaks.
+          let aoBearDiv = false, aoBearDivPending = false, aoBearDivTroughBarOffset = null;
+          if (last != null && len >= 50) {
+            const mediansBear = [];
+            for (let i = 0; i < len; i++) {
+              const h = ohlcSymDiv && ohlcSymDiv.h && ohlcSymDiv.h[i] != null ? ohlcSymDiv.h[i] : prices[i];
+              const l = ohlcSymDiv && ohlcSymDiv.l && ohlcSymDiv.l[i] != null ? ohlcSymDiv.l[i] : prices[i];
+              mediansBear.push(h != null && l != null ? (h + l) / 2 : null);
+            }
+            const fullAoBear = new Array(len).fill(null);
+            for (let i = 33; i < len; i++) {
+              if (mediansBear[i] == null) continue;
+              let s5 = 0, s34 = 0, ok = true;
+              for (let j = i - 4; j <= i; j++) { if (mediansBear[j] == null) { ok = false; break; } s5 += mediansBear[j]; }
+              if (!ok) continue;
+              for (let j = i - 33; j <= i; j++) { if (mediansBear[j] == null) { ok = false; break; } s34 += mediansBear[j]; }
+              if (ok) fullAoBear[i] = s5 / 5 - s34 / 34;
+            }
+            const getHigh = (i) => ohlcSymDiv && ohlcSymDiv.h && ohlcSymDiv.h[i] != null ? ohlcSymDiv.h[i] : prices[i];
+            const swingRadius = 3;
+            const lookback = 50;
+            const searchStart = Math.max(swingRadius, len - lookback);
+            const swingHighs = [];
+            for (let i = searchStart; i < len; i++) {
+              const hi = getHigh(i);
+              if (hi == null || fullAoBear[i] == null) continue;
+              let isSwing = true;
+              for (let j = i - swingRadius; j <= Math.min(i + swingRadius, len - 1); j++) {
+                if (j === i) continue;
+                const jHi = getHigh(j);
+                if (jHi != null && jHi > hi) { isSwing = false; break; }
+              }
+              if (isSwing && fullAoBear[i] > 0) {
+                swingHighs.push({ barIdx: i, price: hi, ao: fullAoBear[i] });
+              }
+            }
+            if (swingHighs.length >= 2) {
+              const t1 = swingHighs[swingHighs.length - 2];
+              const t2 = swingHighs[swingHighs.length - 1];
+              if (t2.barIdx - t1.barIdx >= 5 && t2.price > t1.price && t2.ao < t1.ao) {
+                let valid = true;
+                for (let k = t1.barIdx + 1; k < t2.barIdx; k++) {
+                  const kHi = getHigh(k);
+                  if (kHi != null && kHi > t2.price) { valid = false; break; }
+                  if (fullAoBear[k] != null && fullAoBear[k] < 0) { valid = false; break; }
+                }
+                if (valid) {
+                  aoBearDivPending = true;
+                  aoBearDivTroughBarOffset = len - 1 - t2.barIdx;
+                  let interimLow = Infinity;
+                  for (let k = t1.barIdx + 1; k < t2.barIdx; k++) {
+                    const kLo = ohlcSymDiv && ohlcSymDiv.l && ohlcSymDiv.l[k] != null ? ohlcSymDiv.l[k] : prices[k];
+                    if (kLo != null && kLo < interimLow) interimLow = kLo;
+                  }
+                  for (let k = t2.barIdx + 1; k < len; k++) {
+                    if (prices[k] != null && prices[k] < interimLow) { aoBearDiv = true; break; }
+                  }
+                }
+              }
+            }
+          }
+          // Higher Lows: 3+ consecutive higher lows in last 15 bars, above EMA21
+          let higherLows = false;
+          if (last != null && len >= 15) {
+            const ohlcHL = d.ohlc && d.ohlc[sym];
+            const e21Final = (function() { const k = 2 / 22; let e = null; for (let i = 0; i < len; i++) { if (prices[i] != null) e = e == null ? prices[i] : prices[i] * k + e * (1 - k); } return e; })();
+            if (e21Final != null && last > e21Final) {
+              const startHL = Math.max(0, len - 15);
+              const lows = [];
+              for (let i = startHL; i < len; i++) {
+                const lo = ohlcHL && ohlcHL.l && ohlcHL.l[i] != null ? ohlcHL.l[i] : prices[i];
+                if (lo != null) lows.push(lo);
+              }
+              if (lows.length >= 3) {
+                let consecutive = 1;
+                for (let i = lows.length - 1; i >= 1; i--) {
+                  if (lows[i] > lows[i-1]) consecutive++;
+                  else break;
+                }
+                if (consecutive >= 3) higherLows = true;
+              }
+            }
+          }
+          stocks.push({ sym, panelIndex: pi, sectorName, data: d, rsRating: swing.rsRating != null ? swing.rsRating : null, rotation: swing.rotation || null, swingScore: swing.total != null ? swing.total : null, nearEma8, nearEma21, ema8Dist, ema21Dist, ret1d, ret5d, ret2w, ret1m, ret3m, rsiDelta, ma50Dist, adrPct, rsLeading, isPullback, volContraction, near52wHigh, at52wHigh, relVolume, pocketPivot, rsLineNewHigh, isBaseBreakout, accDayRatio, isEma21Reclaim, isNew20dHigh, rsiDivergence, rsiDivTroughBarOffset, aoDivergence, aoDivTroughBarOffset, rsiBearDiv, rsiBearDivPending, rsiBearDivTroughBarOffset, aoBearDiv, aoBearDivPending, aoBearDivTroughBarOffset, higherLows });
         }
       }
 
@@ -4839,6 +5187,10 @@
         }
       });
 
+      // Populate stock lookup for chart drawing
+      gridStockLookup = {};
+      stocks.forEach(s => gridStockLookup[s.sym] = s);
+
       // ── Apply filters ──
       let filtered = stocks;
       if (gridShowFavorites) {
@@ -4847,13 +5199,50 @@
         if (gridFilterQuadrant !== 'all') {
           filtered = filtered.filter(s => s.quadrant === gridFilterQuadrant);
         }
-        if (gridFilterMomentum !== 'all') {
-          if (gridFilterMomentum === 'bullish') filtered = filtered.filter(s => s.signal === 'bullish');
-          else if (gridFilterMomentum === 'bearish') filtered = filtered.filter(s => s.signal === 'bearish');
-          else if (gridFilterMomentum === 'crossing') filtered = filtered.filter(s => s.isCrossing);
-          else if (gridFilterMomentum === 'nearEma8') filtered = filtered.filter(s => s.nearEma8);
-          else if (gridFilterMomentum === 'nearEma21') filtered = filtered.filter(s => s.nearEma21);
-          else if (gridFilterMomentum === 'ema21Reclaim') filtered = filtered.filter(s => s.isEma21Reclaim);
+        // Multi-select filter panel: OR within groups, AND between groups
+        const hasSignals = gridActiveFilters.signals.size > 0;
+        const hasMomentum = gridActiveFilters.momentum.size > 0;
+        const hasQuality = gridActiveFilters.quality.size > 0;
+        if (hasSignals) {
+          filtered = filtered.filter(s => {
+            const f = gridActiveFilters.signals;
+            return (!f.has('pocketPivot') || s.pocketPivot) &&
+                   (!f.has('baseBreakout') || s.isBaseBreakout) &&
+                   (!f.has('rsNewHigh') || s.rsLineNewHigh) &&
+                   (!f.has('rsLeading') || s.rsLeading) &&
+                   (!f.has('rsiDiv') || s.rsiDivergence || s.rsiBearDiv || s.rsiBearDivPending) &&
+                   (!f.has('aoDiv') || s.aoDivergence || s.aoBearDiv || s.aoBearDivPending) &&
+                   (!f.has('ema21Reclaim') || s.isEma21Reclaim) &&
+                   (!f.has('new20dHigh') || s.isNew20dHigh);
+          });
+        }
+        if (hasMomentum) {
+          filtered = filtered.filter(s => {
+            const f = gridActiveFilters.momentum;
+            return (!f.has('bullish') || s.signal === 'bullish') &&
+                   (!f.has('bearish') || s.signal === 'bearish') &&
+                   (!f.has('crossing') || s.isCrossing) &&
+                   (!f.has('nearEma8') || s.nearEma8) &&
+                   (!f.has('nearEma21') || s.nearEma21) &&
+                   (!f.has('higherLows') || s.higherLows);
+          });
+        }
+        if (hasQuality) {
+          filtered = filtered.filter(s => {
+            const f = gridActiveFilters.quality;
+            return (!f.has('tight') || s.volContraction) &&
+                   (!f.has('pullback') || s.isPullback) &&
+                   (!f.has('near52w') || (s.at52wHigh || s.near52wHigh)) &&
+                   (!f.has('highVol') || s.relVolume >= 1.5) &&
+                   (!f.has('accumulation') || s.accDayRatio >= 0.6);
+          });
+        }
+        // Numeric min-value filters
+        if (gridMinAdr != null) {
+          filtered = filtered.filter(s => s.adrPct != null && s.adrPct >= gridMinAdr);
+        }
+        if (gridMinRS != null) {
+          filtered = filtered.filter(s => s.rsRating != null && s.rsRating >= gridMinRS);
         }
       }
 
@@ -4873,7 +5262,7 @@
       }
 
       // Sort-by dropdown
-      const sortOpts = [['default','Quadrant'],['rsRating','RS Rating'],['swingScore','Swing Score'],['ret1d','1D Perf'],['ret5d','1W Perf'],['ret2w','2W Perf'],['ret1m','1M Perf'],['ret3m','3M Perf'],['rsiDelta','RSI Delta'],['ma50Dist','MA50 (ATR)'],['relVolume','Rel Volume'],['near52w','52w High'],['volContract','Tight'],['pullback','Pullbacks'],['pocketPivot','Pocket Pivots'],['rsLineHigh','RS New High'],['baseBreakout','Base Breakouts'],['accDays','Acc/Dist Days'],['new20dHigh','20d High']].map(([v,l]) =>
+      const sortOpts = [['default','Quadrant'],['rsRating','RS Rating'],['swingScore','Swing Score'],['ret1d','1D Perf'],['ret5d','1W Perf'],['ret2w','2W Perf'],['ret1m','1M Perf'],['ret3m','3M Perf'],['rsiDelta','RSI Delta'],['ma50Dist','MA50 (ATR)'],['relVolume','Rel Volume'],['accDays','Acc/Dist Days']].map(([v,l]) =>
         `<option value="${v}"${gridSortBy===v?' selected':''}>${l}</option>`
       ).join('');
 
@@ -4901,10 +5290,32 @@
         `<option value="${v}"${gridFilterQuadrant===v?' selected':''}>${l}</option>`
       ).join('');
 
-      // Momentum filter
-      const momOpts = [['all','All'],['bullish','Bullish'],['bearish','Bearish'],['crossing','Crossing'],['nearEma8','Near EMA8'],['nearEma21','Near EMA21'],['ema21Reclaim','EMA21 Reclaim']].map(([v,l]) =>
-        `<option value="${v}"${gridFilterMomentum===v?' selected':''}>${l}</option>`
-      ).join('');
+      // Filter panel state
+      const activeFilterCount = gridActiveFilters.signals.size + gridActiveFilters.momentum.size + gridActiveFilters.quality.size + (gridMinAdr != null ? 1 : 0) + (gridMinRS != null ? 1 : 0);
+      const chk = (group, key, label) => `<label><input type="checkbox" onchange="toggleGridFilter('${group}','${key}')"${gridActiveFilters[group].has(key)?' checked':''}> ${label}</label>`;
+      const filterPanelHtml = `<div class="grid-filter-panel" id="grid-filter-panel">
+        <div class="filter-group"><div class="filter-group-title">Signals</div>
+          ${chk('signals','pocketPivot','Pocket Pivot')}${chk('signals','baseBreakout','Base Breakout')}
+          ${chk('signals','rsNewHigh','RS New High')}${chk('signals','rsLeading','RS Leading')}
+          ${chk('signals','rsiDiv','RSI Divergence')}${chk('signals','aoDiv','AO Divergence')}
+          ${chk('signals','ema21Reclaim','EMA21 Reclaim')}${chk('signals','new20dHigh','20d High')}
+        </div>
+        <div class="filter-group"><div class="filter-group-title">Momentum</div>
+          ${chk('momentum','bullish','Bullish')}${chk('momentum','bearish','Bearish')}
+          ${chk('momentum','crossing','Crossing')}${chk('momentum','nearEma8','Near EMA8')}
+          ${chk('momentum','nearEma21','Near EMA21')}${chk('momentum','higherLows','Higher Lows')}
+        </div>
+        <div class="filter-group"><div class="filter-group-title">Quality</div>
+          ${chk('quality','tight','Tight Base')}${chk('quality','pullback','Pullback')}
+          ${chk('quality','near52w','Near 52w High')}${chk('quality','highVol','High Volume')}
+          ${chk('quality','accumulation','Accumulation')}
+        </div>
+        <div class="filter-group filter-group-numeric"><div class="filter-group-title">Min Values</div>
+          <label>ADR% <input type="number" class="filter-num-input" step="0.5" min="0" placeholder="\u2014" value="${gridMinAdr != null ? gridMinAdr : ''}" onchange="setGridMinAdr(this.value)" oninput="this.value = this.value.replace(/[^0-9.]/g,'')"></label>
+          <label>RS Rating <input type="number" class="filter-num-input" step="5" min="0" max="99" placeholder="\u2014" value="${gridMinRS != null ? gridMinRS : ''}" onchange="setGridMinRS(this.value)" oninput="this.value = this.value.replace(/[^0-9]/g,'')"></label>
+        </div>
+        <div class="filter-clear" onclick="clearAllGridFilters()">Clear All</div>
+      </div>`;
 
       const tc = getThemeColors();
 
@@ -4917,8 +5328,8 @@
           <select onchange="setGridFilter('quadrant',this.value)"${gridShowFavorites?' disabled style="opacity:0.4"':''}>${quadOpts}</select>
         </div>
         <div class="separator"></div>
-        <div class="btn-group"><span class="topbar-label">Momentum</span>
-          <select onchange="setGridFilter('momentum',this.value)"${gridShowFavorites?' disabled style="opacity:0.4"':''}>${momOpts}</select>
+        <div class="btn-group"><span class="topbar-label">Filters</span>
+          <button class="btn${activeFilterCount > 0 ? ' active' : ''}" onclick="toggleGridFilterPanel()" id="grid-filter-btn"${gridShowFavorites?' disabled style="opacity:0.4"':''}>Filters${activeFilterCount > 0 ? '<span class="grid-filter-count">' + activeFilterCount + '</span>' : ''}</button>
         </div>
         <div class="separator"></div>
         <div class="btn-group"><span class="topbar-label">Sort</span>
@@ -4956,7 +5367,7 @@
         <div class="separator"></div>
         <button class="grid-info-btn" onclick="toggleGridInfoModal()" title="Filter &amp; sort guide">&#9432;</button>
         <span style="font-size:var(--fs-sm);color:var(--text-quaternary)">${filtered.length} stocks</span>
-      </div><div class="grid-fade"></div>`;
+      </div>${filterPanelHtml}<div class="grid-fade"></div>`;
 
       const sparkH = gridChartMode === 'candle'
         ? (gridLowStrain ? 276 : 240)
@@ -4989,18 +5400,19 @@
         const adrHigh = s.adrPct != null && s.adrPct >= 4;
         const adrTag = s.adrPct != null ? `<span style="font-size:10px;font-weight:600;padding:1px 4px;border-radius:3px;color:${adrHigh ? 'var(--text-positive,#6dbdb5)' : 'var(--text-tertiary)'};background:${adrHigh ? 'rgba(109,189,181,0.08)' : 'rgba(255,255,255,0.04)'}">ADR ${s.adrPct.toFixed(1)}%</span>` : '';
         const rsLeadTag = s.rsLeading ? `<span style="font-size:10px;font-weight:600;padding:1px 4px;border-radius:3px;color:#f5a623;background:rgba(245,166,35,0.08)">RS Lead</span>` : '';
-        const pullbackTag = s.isPullback && gridSortBy !== 'pullback' ? `<span style="font-size:10px;font-weight:600;padding:1px 4px;border-radius:3px;color:#9b7db8;background:rgba(155,125,184,0.08)">Pullback</span>` : '';
-        const tightTag = s.volContraction && gridSortBy !== 'volContract' ? `<span style="font-size:10px;font-weight:600;padding:1px 4px;border-radius:3px;color:#b48efa;background:rgba(180,142,250,0.08)">Tight</span>` : '';
-        const highTag = gridSortBy !== 'near52w' ? (s.at52wHigh ? `<span style="font-size:10px;font-weight:600;padding:1px 4px;border-radius:3px;color:var(--text-positive,#6dbdb5);background:rgba(109,189,181,0.08)">52w Hi</span>` : s.near52wHigh ? `<span style="font-size:10px;font-weight:600;padding:1px 4px;border-radius:3px;color:var(--text-tertiary);background:rgba(255,255,255,0.04)">Nr 52w</span>` : '') : '';
+        const pullbackTag = s.isPullback ? `<span style="font-size:10px;font-weight:600;padding:1px 4px;border-radius:3px;color:#9b7db8;background:rgba(155,125,184,0.08)">Pullback</span>` : '';
+        const tightTag = s.volContraction ? `<span style="font-size:10px;font-weight:600;padding:1px 4px;border-radius:3px;color:#b48efa;background:rgba(180,142,250,0.08)">Tight</span>` : '';
+        const highTag = s.at52wHigh ? `<span style="font-size:10px;font-weight:600;padding:1px 4px;border-radius:3px;color:var(--text-positive,#6dbdb5);background:rgba(109,189,181,0.08)">52w Hi</span>` : s.near52wHigh ? `<span style="font-size:10px;font-weight:600;padding:1px 4px;border-radius:3px;color:var(--text-tertiary);background:rgba(255,255,255,0.04)">Nr 52w</span>` : '';
         const rVolTag = s.relVolume != null && s.relVolume >= 1.5 ? `<span style="font-size:10px;font-weight:600;padding:1px 4px;border-radius:3px;color:${s.ret1d >= 0 ? 'var(--text-positive,#6dbdb5)' : 'var(--text-negative,#c75460)'};background:${s.ret1d >= 0 ? 'rgba(109,189,181,0.08)' : 'rgba(199,84,96,0.08)'}">Vol ${s.relVolume.toFixed(1)}x</span>` : '';
-        const ppTag = s.pocketPivot && gridSortBy !== 'pocketPivot' ? `<span style="font-size:10px;font-weight:700;padding:1px 4px;border-radius:3px;color:#2a82da;background:rgba(42,130,218,0.08);border:1px solid rgba(42,130,218,0.2)">PP</span>` : '';
-        const rsHiTag = s.rsLineNewHigh && gridSortBy !== 'rsLineHigh' ? `<span style="font-size:10px;font-weight:600;padding:1px 4px;border-radius:3px;color:#e8b730;background:rgba(232,183,48,0.08)">RS Hi</span>` : '';
-        const boTag = s.isBaseBreakout && gridSortBy !== 'baseBreakout' ? `<span style="font-size:10px;font-weight:700;padding:1px 4px;border-radius:3px;color:#00c9a7;background:rgba(0,201,167,0.08);border:1px solid rgba(0,201,167,0.2)">BO</span>` : '';
+        const ppTag = s.pocketPivot ? `<span style="font-size:10px;font-weight:700;padding:1px 4px;border-radius:3px;color:#2a82da;background:rgba(42,130,218,0.08);border:1px solid rgba(42,130,218,0.2)">PP</span>` : '';
+        const rsHiTag = s.rsLineNewHigh ? `<span style="font-size:10px;font-weight:600;padding:1px 4px;border-radius:3px;color:#e8b730;background:rgba(232,183,48,0.08)">RS Hi</span>` : '';
+        const boTag = s.isBaseBreakout ? `<span style="font-size:10px;font-weight:700;padding:1px 4px;border-radius:3px;color:#00c9a7;background:rgba(0,201,167,0.08);border:1px solid rgba(0,201,167,0.2)">BO</span>` : '';
         const accTag = s.accDayRatio != null && s.accDayRatio >= 0.6 ? `<span style="font-size:10px;font-weight:600;padding:1px 4px;border-radius:3px;color:var(--text-positive,#6dbdb5);background:rgba(109,189,181,0.08)">Acc ${Math.round(s.accDayRatio * 100)}%</span>` : s.accDayRatio != null && s.accDayRatio <= 0.4 ? `<span style="font-size:10px;font-weight:600;padding:1px 4px;border-radius:3px;color:var(--text-negative,#c75460);background:rgba(199,84,96,0.08)">Dist ${Math.round(s.accDayRatio * 100)}%</span>` : '';
-        const e21ReclaimTag = s.isEma21Reclaim && gridFilterMomentum !== 'ema21Reclaim' ? `<span style="font-size:10px;font-weight:600;padding:1px 4px;border-radius:3px;color:#5bc0de;background:rgba(91,192,222,0.08)">E21 Reclaim</span>` : '';
-        const new20dTag = s.isNew20dHigh && gridSortBy !== 'new20dHigh' ? `<span style="font-size:10px;font-weight:600;padding:1px 4px;border-radius:3px;color:#c8e64d;background:rgba(200,230,77,0.08)">20d Hi</span>` : '';
+        const e21ReclaimTag = s.isEma21Reclaim ? `<span style="font-size:10px;font-weight:600;padding:1px 4px;border-radius:3px;color:#5bc0de;background:rgba(91,192,222,0.08)">E21 Reclaim</span>` : '';
+        const new20dTag = s.isNew20dHigh ? `<span style="font-size:10px;font-weight:600;padding:1px 4px;border-radius:3px;color:#c8e64d;background:rgba(200,230,77,0.08)">20d Hi</span>` : '';
+        const hlTag = s.higherLows ? `<span style="font-size:10px;font-weight:600;padding:1px 4px;border-radius:3px;color:#D4A843;background:rgba(212,168,67,0.08)">HL</span>` : '';
         let tagsHtml, retHtml;
-        tagsHtml = `<div class="grid-tile-tags">${rotTag}${crossingTag}${fromTag}${emaTags}${adrTag}${rsLeadTag}${pullbackTag}${tightTag}${highTag}${rVolTag}${ppTag}${rsHiTag}${boTag}${accTag}${e21ReclaimTag}${new20dTag}</div>`;
+        tagsHtml = `<div class="grid-tile-tags">${rotTag}${crossingTag}${fromTag}${emaTags}${adrTag}${rsLeadTag}${pullbackTag}${tightTag}${highTag}${rVolTag}${ppTag}${rsHiTag}${boTag}${accTag}${e21ReclaimTag}${new20dTag}${hlTag}</div>`;
         retHtml = `<div class="grid-tile-returns">${fmtRet(s.ret1d,'1D')}${fmtRet(s.ret5d,'5D')}${fmtRet(s.ret1m,'1M')}${fmtRet(s.ret3m,'3M')}</div>`;
         const isFav = gridFavorites.has(s.sym);
         const noHighlight = gridSortBy !== 'default';
@@ -5017,7 +5429,7 @@
           ${retHtml}
           <div class="grid-spark-wrap">
             <canvas class="grid-spark" height="${sparkH}" style="height:${sparkH}px"></canvas>
-            <div class="grid-spark-hover">${s.ema8Dist != null ? `<span style="color:${s.ema8Dist >= 0 ? tc.semanticBullish : tc.semanticBearish}">E8 ${s.ema8Dist >= 0 ? '+' : ''}${s.ema8Dist.toFixed(1)}%</span>` : ''}${s.ema21Dist != null ? `<span style="color:${s.ema21Dist >= 0 ? tc.semanticBullish : tc.semanticBearish}">E21 ${s.ema21Dist >= 0 ? '+' : ''}${s.ema21Dist.toFixed(1)}%</span>` : ''}</div>
+            <div class="grid-spark-hover">${s.ema8Dist != null ? `<span style="color:${s.ema8Dist >= 0 ? (gridLowStrain ? '#6A9FCA' : tc.semanticBullish) : (gridLowStrain ? '#CC8844' : tc.semanticBearish)}">E8 ${s.ema8Dist >= 0 ? '+' : ''}${s.ema8Dist.toFixed(1)}%</span>` : ''}${s.ema21Dist != null ? `<span style="color:${s.ema21Dist >= 0 ? (gridLowStrain ? '#6A9FCA' : tc.semanticBullish) : (gridLowStrain ? '#CC8844' : tc.semanticBearish)}">E21 ${s.ema21Dist >= 0 ? '+' : ''}${s.ema21Dist.toFixed(1)}%</span>` : ''}</div>
           </div>
           <div class="grid-tile-label">RSI <span class="grid-rsi-val"></span></div>
           <canvas class="grid-rsi" height="60" style="height:60px"></canvas>
@@ -5027,23 +5439,35 @@
         </div>`;
       };
 
+      // Build active filter summary for headers
+      const _filterNames = {
+        signals: { pocketPivot:'PP', baseBreakout:'Breakout', rsNewHigh:'RS High', rsLeading:'RS Lead', rsiDiv:'RSI Div', aoDiv:'AO Div', ema21Reclaim:'E21 Reclaim', new20dHigh:'20d Hi' },
+        momentum: { bullish:'Bull', bearish:'Bear', crossing:'Cross', nearEma8:'~E8', nearEma21:'~E21', higherLows:'HL' },
+        quality: { tight:'Tight', pullback:'PB', near52w:'52w', highVol:'HiVol', accumulation:'Acc' }
+      };
+      const _filterTags = [];
+      for (const g of ['signals','momentum','quality']) {
+        for (const k of gridActiveFilters[g]) { _filterTags.push(_filterNames[g][k] || k); }
+      }
+      if (gridMinAdr != null) _filterTags.push(`ADR\u2265${gridMinAdr}%`);
+      if (gridMinRS != null) _filterTags.push(`RS\u2265${gridMinRS}`);
+      const filterSummaryHtml = _filterTags.length > 0 ? ` <span style="font-size:12px;font-weight:400;opacity:0.55;margin-left:8px">\u2014 ${_filterTags.join(' \u00b7 ')}</span>` : '';
+
       if (gridSortBy !== 'default') {
-        // Flat sorted list
-        const sortKey = { rsRating: s => s.rsRating ?? -1, swingScore: s => s.swingScore ?? -1, ret1d: s => s.ret1d ?? -999, ret5d: s => s.ret5d ?? -999, ret2w: s => s.ret2w ?? -999, ret1m: s => s.ret1m ?? -999, ret3m: s => s.ret3m ?? -999, rsiDelta: s => s.rsiDelta ?? -999, ma50Dist: s => s.ma50Dist ?? -999, relVolume: s => s.relVolume ?? -1, near52w: s => s.at52wHigh ? 2 : s.near52wHigh ? 1 : 0, volContract: s => s.volContraction ? 1 : 0, pullback: s => s.isPullback ? 1 : 0, pocketPivot: s => s.pocketPivot ? 1 : 0, rsLineHigh: s => s.rsLineNewHigh ? 1 : 0, baseBreakout: s => s.isBaseBreakout ? 1 : 0, accDays: s => s.accDayRatio ?? -1, new20dHigh: s => s.isNew20dHigh ? 1 : 0 }[gridSortBy];
+        // Flat sorted list (numeric sorts only)
+        const sortKeyMap = { rsRating: s => s.rsRating ?? -1, swingScore: s => s.swingScore ?? -1, ret1d: s => s.ret1d ?? -999, ret5d: s => s.ret5d ?? -999, ret2w: s => s.ret2w ?? -999, ret1m: s => s.ret1m ?? -999, ret3m: s => s.ret3m ?? -999, rsiDelta: s => s.rsiDelta ?? -999, ma50Dist: s => s.ma50Dist ?? -999, relVolume: s => s.relVolume ?? -1, accDays: s => s.accDayRatio ?? -1 };
+        const sortKey = sortKeyMap[gridSortBy] || sortKeyMap.rsRating;
         let allItems = [];
         for (const q of QUADRANT_ORDER) allItems.push(...groups[q]);
-        // Binary sorts: filter to matching items only
-        const binaryFilter = { near52w: s => s.at52wHigh || s.near52wHigh, volContract: s => s.volContraction, pullback: s => s.isPullback, pocketPivot: s => s.pocketPivot, rsLineHigh: s => s.rsLineNewHigh, baseBreakout: s => s.isBaseBreakout, accDays: s => s.accDayRatio != null && s.accDayRatio >= 0.6, new20dHigh: s => s.isNew20dHigh }[gridSortBy];
-        if (binaryFilter) allItems = allItems.filter(binaryFilter);
         if (gridSecondaryRS && gridSortBy !== 'rsRating') {
           allItems.sort((a, b) => (b.rsRating ?? -1) - (a.rsRating ?? -1));
         } else {
           allItems.sort((a, b) => sortKey(b) - sortKey(a));
         }
-        const sortLabels = { rsRating: 'RS Rating', swingScore: 'Swing Score', ret1d: '1D Performance', ret5d: '1W Performance', ret2w: '2W Performance', ret1m: '1M Performance', ret3m: '3M Performance', rsiDelta: 'RSI Delta (5-bar)', ma50Dist: 'MA50 Distance (ATR)', relVolume: 'Relative Volume', near52w: '52-Week High', volContract: 'Volatility Contraction', pullback: 'Pullbacks', pocketPivot: 'Pocket Pivots', rsLineHigh: 'RS Line New High', baseBreakout: 'Base Breakouts', accDays: 'Accumulation / Distribution Days', new20dHigh: 'New 20-Day High' };
+        const sortLabels = { rsRating: 'RS Rating', swingScore: 'Swing Score', ret1d: '1D Performance', ret5d: '1W Performance', ret2w: '2W Performance', ret1m: '1M Performance', ret3m: '3M Performance', rsiDelta: 'RSI Delta (5-bar)', ma50Dist: 'MA50 Distance (ATR)', relVolume: 'Relative Volume', accDays: 'Accumulation / Distribution Days' };
         html += `<div class="grid-quadrant-section" style="border-color:var(--border-medium)">`;
-        const rsTag = gridSecondaryRS && gridSortBy !== 'rsRating' ? ' → RS Rating' : '';
-        html += `<div class="grid-group-header" style="color:var(--text-secondary)">${binaryFilter ? '' : 'Sorted by '}${sortLabels[gridSortBy]}${rsTag} <span class="count">${allItems.length}</span></div>`;
+        const rsTag = gridSecondaryRS && gridSortBy !== 'rsRating' ? ' \u2192 RS Rating' : '';
+        html += `<div class="grid-group-header" style="color:var(--text-secondary)">Sorted by ${sortLabels[gridSortBy]}${rsTag}${filterSummaryHtml} <span class="count">${allItems.length}</span></div>`;
         html += `<div class="grid-tiles-grid" style="grid-template-columns:repeat(${gridColumns}, 260px)">`;
         for (const s of allItems) {
           const qColor = tc[QUADRANT_META[s.quadrant].colorVar];
@@ -5064,6 +5488,9 @@
         html += `</div></div>`;
       } else {
         // Default: quadrant grouped
+        const totalFiltered = QUADRANT_ORDER.reduce((n, q) => n + groups[q].length, 0);
+        html += `<div style="padding:6px 10px 2px;font-size:14px;font-weight:600;color:var(--text-secondary);text-align:left;display:flex;justify-content:space-between;align-items:center">
+          <span>Sorted by Quadrant${filterSummaryHtml}</span><span style="font-size:12px;font-weight:400;opacity:0.6">${totalFiltered}</span></div>`;
         for (const q of QUADRANT_ORDER) {
           const items = groups[q];
           if (items.length === 0) continue;
@@ -5115,6 +5542,7 @@
     }
 
     function drawGridTileCharts(tile, sym, data) {
+      const stock = gridStockLookup[sym] || {};
       const tc = getThemeColors();
       const lc = gridLowStrain ? {
         bullish: '#6A9FCA', bearish: '#CC8844',
@@ -5257,6 +5685,169 @@
       const sparkAo = [];
       for (let i = tfSparkIdx; i < tfLen; i++) {
         if (tfPrices[i] != null && aoByIdx.has(i)) sparkAo.push(aoByIdx.get(i));
+      }
+
+      // ── Divergence detection on the current timeframe's resampled data ──
+      // Replaces the daily-only computation for tags + markers
+      let tfRsiDiv = false, tfRsiDivIdx = null;
+      let tfRsiBearDiv = false, tfRsiBearDivPending = false, tfRsiBearDivIdx = null;
+      let tfAoDiv = false, tfAoDivIdx = null;
+      let tfAoBearDiv = false, tfAoBearDivPending = false, tfAoBearDivIdx = null;
+      if (sparkPrices.length >= 20 && sparkRsi.length >= 20) {
+        // RSI divergence: swing lows on closing prices, RSI < 40, no cross above 50 between
+        const sr = 3, spLen = sparkPrices.length;
+        const rsiSwings = [];
+        for (let i = sr; i < spLen - sr; i++) {
+          if (sparkRsi[i] == null) continue;
+          let isSw = true;
+          for (let j = i - sr; j <= i + sr; j++) {
+            if (j !== i && sparkPrices[j] != null && sparkPrices[j] < sparkPrices[i]) { isSw = false; break; }
+          }
+          if (isSw && sparkRsi[i] < 40) rsiSwings.push({ idx: i, price: sparkPrices[i], rsi: sparkRsi[i] });
+        }
+        if (rsiSwings.length >= 2) {
+          const t1 = rsiSwings[rsiSwings.length - 2], t2 = rsiSwings[rsiSwings.length - 1];
+          if (t2.idx - t1.idx >= 5 && t2.price < t1.price && t2.rsi > t1.rsi) {
+            let ok = true;
+            for (let k = t1.idx + 1; k < t2.idx; k++) {
+              if (sparkPrices[k] != null && sparkPrices[k] < t2.price) { ok = false; break; }
+              if (sparkRsi[k] != null && sparkRsi[k] >= 50) { ok = false; break; }
+            }
+            if (ok) {
+              // Confirmation: price closes above highest close between troughs
+              let hi = -Infinity;
+              for (let k = t1.idx + 1; k < t2.idx; k++) if (sparkPrices[k] != null && sparkPrices[k] > hi) hi = sparkPrices[k];
+              for (let k = t2.idx + 1; k < spLen; k++) {
+                if (sparkPrices[k] != null && sparkPrices[k] > hi) { tfRsiDiv = true; tfRsiDivIdx = t2.idx; break; }
+              }
+            }
+          }
+        }
+      }
+      // RSI bearish divergence: swing highs on closing prices, RSI > 60, no cross below 50 between
+      if (sparkPrices.length >= 20 && sparkRsi.length >= 20) {
+        const sr = 3, spLen = sparkPrices.length;
+        const rsiSwingsHi = [];
+        for (let i = sr; i < spLen; i++) {
+          if (sparkRsi[i] == null) continue;
+          let isSw = true;
+          for (let j = i - sr; j <= Math.min(i + sr, spLen - 1); j++) {
+            if (j !== i && sparkPrices[j] != null && sparkPrices[j] > sparkPrices[i]) { isSw = false; break; }
+          }
+          if (isSw && sparkRsi[i] >= 55) rsiSwingsHi.push({ idx: i, price: sparkPrices[i], rsi: sparkRsi[i] });
+        }
+        if (rsiSwingsHi.length >= 2) {
+          const t1 = rsiSwingsHi[rsiSwingsHi.length - 2], t2 = rsiSwingsHi[rsiSwingsHi.length - 1];
+          if (t2.idx - t1.idx >= 5 && t2.price > t1.price && t2.rsi < t1.rsi) {
+            let ok = true;
+            for (let k = t1.idx + 1; k < t2.idx; k++) {
+              if (sparkPrices[k] != null && sparkPrices[k] > t2.price) { ok = false; break; }
+              if (sparkRsi[k] != null && sparkRsi[k] < 45) { ok = false; break; }
+            }
+            if (ok) {
+              tfRsiBearDivPending = true;
+              tfRsiBearDivIdx = t2.idx;
+              let lo = Infinity;
+              for (let k = t1.idx + 1; k < t2.idx; k++) if (sparkPrices[k] != null && sparkPrices[k] < lo) lo = sparkPrices[k];
+              for (let k = t2.idx + 1; k < spLen; k++) {
+                if (sparkPrices[k] != null && sparkPrices[k] < lo) { tfRsiBearDiv = true; break; }
+              }
+            }
+          }
+        }
+      }
+      if (sparkPrices.length >= 20 && sparkAo.length >= 20) {
+        // AO divergence: swing lows on OHLC lows, AO < 0, no cross above 0 between
+        const sr = 3, spLen = sparkPrices.length;
+        const aoSwings = [];
+        for (let i = sr; i < spLen - sr; i++) {
+          const lo = sparkOhlc[i] ? sparkOhlc[i].l : sparkPrices[i];
+          if (lo == null || i >= sparkAo.length || sparkAo[i] == null) continue;
+          let isSw = true;
+          for (let j = i - sr; j <= i + sr; j++) {
+            if (j === i) continue;
+            const jLo = sparkOhlc[j] ? sparkOhlc[j].l : sparkPrices[j];
+            if (jLo != null && jLo < lo) { isSw = false; break; }
+          }
+          if (isSw && sparkAo[i] < 0) aoSwings.push({ idx: i, price: lo, ao: sparkAo[i] });
+        }
+        if (aoSwings.length >= 2) {
+          const t1 = aoSwings[aoSwings.length - 2], t2 = aoSwings[aoSwings.length - 1];
+          if (t2.idx - t1.idx >= 5 && t2.price < t1.price && t2.ao > t1.ao) {
+            let ok = true;
+            for (let k = t1.idx + 1; k < t2.idx; k++) {
+              const kLo = sparkOhlc[k] ? sparkOhlc[k].l : sparkPrices[k];
+              if (kLo != null && kLo < t2.price) { ok = false; break; }
+              if (k < sparkAo.length && sparkAo[k] != null && sparkAo[k] >= 0) { ok = false; break; }
+            }
+            if (ok) {
+              let hi = -Infinity;
+              for (let k = t1.idx + 1; k < t2.idx; k++) {
+                const kHi = sparkOhlc[k] ? sparkOhlc[k].h : sparkPrices[k];
+                if (kHi != null && kHi > hi) hi = kHi;
+              }
+              for (let k = t2.idx + 1; k < spLen; k++) {
+                if (sparkPrices[k] != null && sparkPrices[k] > hi) { tfAoDiv = true; tfAoDivIdx = t2.idx; break; }
+              }
+            }
+          }
+        }
+      }
+      // AO bearish divergence: swing highs on OHLC highs, AO > 0, no cross below 0 between
+      if (sparkPrices.length >= 20 && sparkAo.length >= 20) {
+        const sr = 3, spLen = sparkPrices.length;
+        const aoSwingsHi = [];
+        for (let i = sr; i < spLen; i++) {
+          const hi = sparkOhlc[i] ? sparkOhlc[i].h : sparkPrices[i];
+          if (hi == null || i >= sparkAo.length || sparkAo[i] == null) continue;
+          let isSw = true;
+          for (let j = i - sr; j <= Math.min(i + sr, spLen - 1); j++) {
+            if (j === i) continue;
+            const jHi = sparkOhlc[j] ? sparkOhlc[j].h : sparkPrices[j];
+            if (jHi != null && jHi > hi) { isSw = false; break; }
+          }
+          if (isSw && sparkAo[i] > 0) aoSwingsHi.push({ idx: i, price: hi, ao: sparkAo[i] });
+        }
+        if (aoSwingsHi.length >= 2) {
+          const t1 = aoSwingsHi[aoSwingsHi.length - 2], t2 = aoSwingsHi[aoSwingsHi.length - 1];
+          if (t2.idx - t1.idx >= 5 && t2.price > t1.price && t2.ao < t1.ao) {
+            let ok = true;
+            for (let k = t1.idx + 1; k < t2.idx; k++) {
+              const kHi = sparkOhlc[k] ? sparkOhlc[k].h : sparkPrices[k];
+              if (kHi != null && kHi > t2.price) { ok = false; break; }
+              if (k < sparkAo.length && sparkAo[k] != null && sparkAo[k] < 0) { ok = false; break; }
+            }
+            if (ok) {
+              tfAoBearDivPending = true;
+              tfAoBearDivIdx = t2.idx;
+              let lo = Infinity;
+              for (let k = t1.idx + 1; k < t2.idx; k++) {
+                const kLo = sparkOhlc[k] ? sparkOhlc[k].l : sparkPrices[k];
+                if (kLo != null && kLo < lo) lo = kLo;
+              }
+              for (let k = t2.idx + 1; k < spLen; k++) {
+                if (sparkPrices[k] != null && sparkPrices[k] < lo) { tfAoBearDiv = true; break; }
+              }
+            }
+          }
+        }
+      }
+      // Update stock lookup + DOM tags to reflect current timeframe divergences
+      if (stock) {
+        stock.rsiDivergence = tfRsiDiv;
+        stock.aoDivergence = tfAoDiv;
+        stock.rsiBearDiv = tfRsiBearDiv;
+        stock.rsiBearDivPending = tfRsiBearDivPending;
+        stock.aoBearDiv = tfAoBearDiv;
+        stock.aoBearDivPending = tfAoBearDivPending;
+      }
+      const tagsEl = tile.querySelector('.grid-tile-tags');
+      if (tagsEl) {
+        tagsEl.querySelectorAll('.tf-div-tag').forEach(t => t.remove());
+        if (tfRsiDiv) tagsEl.insertAdjacentHTML('beforeend', '<span class="tf-div-tag" style="font-size:10px;font-weight:700;padding:1px 4px;border-radius:3px;color:#6A9FCA;background:rgba(106,159,202,0.08);border:1px solid rgba(106,159,202,0.2)">RSI Div</span>');
+        if (tfAoDiv) tagsEl.insertAdjacentHTML('beforeend', '<span class="tf-div-tag" style="font-size:10px;font-weight:700;padding:1px 4px;border-radius:3px;color:#6A9FCA;background:rgba(106,159,202,0.08);border:1px solid rgba(106,159,202,0.2)">AO Div</span>');
+        if (tfRsiBearDiv) tagsEl.insertAdjacentHTML('beforeend', '<span class="tf-div-tag" style="font-size:10px;font-weight:700;padding:1px 4px;border-radius:3px;color:#CC8844;background:rgba(204,136,68,0.08);border:1px solid rgba(204,136,68,0.2)">RSI Bear Div</span>');
+        if (tfAoBearDiv) tagsEl.insertAdjacentHTML('beforeend', '<span class="tf-div-tag" style="font-size:10px;font-weight:700;padding:1px 4px;border-radius:3px;color:#CC8844;background:rgba(204,136,68,0.08);border:1px solid rgba(204,136,68,0.2)">AO Bear Div</span>');
       }
 
       // ── Draw price canvas ──
@@ -5455,6 +6046,25 @@
           i === 0 ? rCtx.moveTo(x, y) : rCtx.lineTo(x, y);
         }
         rCtx.stroke();
+        // RSI bullish divergence marker (below the swing low)
+        if (tfRsiDiv && tfRsiDivIdx != null && tfRsiDivIdx >= 0 && tfRsiDivIdx < sparkRsi.length) {
+          const dx = (tfRsiDivIdx / (sparkRsi.length - 1)) * rW;
+          const dy = Math.min(rH - 4, toY(sparkRsi[tfRsiDivIdx]) + 5);
+          rCtx.fillStyle = '#6A9FCA';
+          rCtx.beginPath();
+          rCtx.arc(dx, dy, 3, 0, Math.PI * 2);
+          rCtx.fill();
+        }
+        // RSI bearish divergence marker (above the swing high)
+        if (tfRsiBearDivIdx != null && tfRsiBearDivIdx >= 0 && tfRsiBearDivIdx < sparkRsi.length && (tfRsiBearDiv || tfRsiBearDivPending)) {
+          const r = tfRsiBearDiv ? 3 : 2.5;
+          const dx = (tfRsiBearDivIdx / (sparkRsi.length - 1)) * rW;
+          const dy = Math.max(r + 1, toY(sparkRsi[tfRsiBearDivIdx]) - 5);
+          rCtx.fillStyle = '#CC8844';
+          rCtx.beginPath();
+          rCtx.arc(dx, dy, r, 0, Math.PI * 2);
+          rCtx.fill();
+        }
         // RSI value in label
         const rsiValEl = tile.querySelector('.grid-rsi-val');
         if (rsiValEl) {
@@ -5489,6 +6099,29 @@
           if (val >= 0) { aCtx.fillRect(x, zeroY - barH, barW, barH); }
           else { aCtx.fillRect(x, zeroY, barW, barH); }
         }
+        // AO bullish divergence marker (below the swing low bar)
+        if (tfAoDiv && tfAoDivIdx != null && tfAoDivIdx >= 0 && tfAoDivIdx < sparkAo.length) {
+          const dx = (tfAoDivIdx / sparkAo.length) * aW + barW / 2;
+          const aoVal = sparkAo[tfAoDivIdx];
+          const barY = aoVal >= 0 ? zeroY - (Math.abs(aoVal) / aMax) * (aH / 2 - aPad) : zeroY + (Math.abs(aoVal) / aMax) * (aH / 2 - aPad);
+          const dy = Math.max(4, Math.min(aH - 4, barY + 6));
+          aCtx.fillStyle = '#6A9FCA';
+          aCtx.beginPath();
+          aCtx.arc(dx, dy, 3, 0, Math.PI * 2);
+          aCtx.fill();
+        }
+        // AO bearish divergence marker (above the swing high bar)
+        if (tfAoBearDivIdx != null && tfAoBearDivIdx >= 0 && tfAoBearDivIdx < sparkAo.length && (tfAoBearDiv || tfAoBearDivPending)) {
+          const r = tfAoBearDiv ? 3 : 2.5;
+          const dx = (tfAoBearDivIdx / sparkAo.length) * aW + barW / 2;
+          const aoVal = sparkAo[tfAoBearDivIdx];
+          const barY = aoVal >= 0 ? zeroY - (Math.abs(aoVal) / aMax) * (aH / 2 - aPad) : zeroY + (Math.abs(aoVal) / aMax) * (aH / 2 - aPad);
+          const dy = Math.max(r + 1, Math.min(aH - r - 1, barY - 6));
+          aCtx.fillStyle = '#CC8844';
+          aCtx.beginPath();
+          aCtx.arc(dx, dy, r, 0, Math.PI * 2);
+          aCtx.fill();
+        }
       }
     }
 
@@ -5514,12 +6147,14 @@
 
     function setGridTimeframe(tf) {
       gridTimeframe = tf;
+      if (tf === 'daily') gridRange = '3M';
+      else if (tf === '3d') gridRange = '6M';
+      else if (tf === 'weekly') gridRange = '1Y';
       buildGridView();
     }
 
     function setGridFilter(type, val) {
       if (type === 'quadrant') gridFilterQuadrant = val;
-      else if (type === 'momentum') gridFilterMomentum = val;
       buildGridView();
     }
 
@@ -5594,6 +6229,85 @@
       buildGridView();
     }
 
+    function toggleGridFilter(group, key) {
+      const set = gridActiveFilters[group];
+      if (set.has(key)) set.delete(key); else set.add(key);
+      saveGridFilters();
+      buildGridView();
+      openGridFilterPanel();
+    }
+
+    function clearAllGridFilters() {
+      gridActiveFilters.signals.clear();
+      gridActiveFilters.momentum.clear();
+      gridActiveFilters.quality.clear();
+      gridMinAdr = null;
+      gridMinRS = null;
+      localStorage.removeItem('gridMinAdr');
+      localStorage.removeItem('gridMinRS');
+      saveGridFilters();
+      buildGridView();
+    }
+
+    function setGridMinAdr(val) {
+      const v = parseFloat(val);
+      gridMinAdr = (isNaN(v) || val === '') ? null : v;
+      localStorage.setItem('gridMinAdr', JSON.stringify(gridMinAdr));
+      buildGridView();
+      openGridFilterPanel();
+    }
+
+    function setGridMinRS(val) {
+      const v = parseInt(val, 10);
+      gridMinRS = (isNaN(v) || val === '') ? null : v;
+      localStorage.setItem('gridMinRS', JSON.stringify(gridMinRS));
+      buildGridView();
+      openGridFilterPanel();
+    }
+
+    function saveGridFilters() {
+      localStorage.setItem('gridActiveFilters', JSON.stringify({
+        signals: [...gridActiveFilters.signals],
+        momentum: [...gridActiveFilters.momentum],
+        quality: [...gridActiveFilters.quality]
+      }));
+    }
+
+    let _gridFilterCloseHandler = null;
+    function openGridFilterPanel() {
+      const panel = document.getElementById('grid-filter-panel');
+      const btn = document.getElementById('grid-filter-btn');
+      if (!panel || !btn) return;
+      const rect = btn.getBoundingClientRect();
+      panel.style.top = (rect.bottom + 4) + 'px';
+      panel.style.left = rect.left + 'px';
+      panel.classList.add('visible');
+      // Remove any stale listener before adding a fresh one
+      if (_gridFilterCloseHandler) document.removeEventListener('mousedown', _gridFilterCloseHandler);
+      _gridFilterCloseHandler = (e) => {
+        if (!panel.contains(e.target) && !btn.contains(e.target)) {
+          panel.classList.remove('visible');
+          document.removeEventListener('mousedown', _gridFilterCloseHandler);
+          _gridFilterCloseHandler = null;
+        }
+      };
+      // Use mousedown so it fires before the click is consumed
+      setTimeout(() => document.addEventListener('mousedown', _gridFilterCloseHandler), 0);
+    }
+    function toggleGridFilterPanel() {
+      const panel = document.getElementById('grid-filter-panel');
+      if (!panel) return;
+      if (panel.classList.contains('visible')) {
+        panel.classList.remove('visible');
+        if (_gridFilterCloseHandler) {
+          document.removeEventListener('mousedown', _gridFilterCloseHandler);
+          _gridFilterCloseHandler = null;
+        }
+      } else {
+        openGridFilterPanel();
+      }
+    }
+
     function setRotationBenchmark(val) {
       rotationBenchmark = val;
       swingScoreCache = {};
@@ -5615,38 +6329,53 @@
             <button class="modal-close" onclick="document.getElementById('grid-info-modal').classList.remove('visible')">Close (Esc)</button>
           </div>
           <div class="grid-info-body">
-            <h4>Momentum Filters</h4>
+            <h4>Filter Panel</h4>
+            <p style="margin:0 0 8px;color:var(--text-tertiary)">The Filters button opens a panel with three groups. Items within a group use OR logic; groups combine with AND logic.</p>
+            <h4>Signals</h4>
             <dl>
-              <dt>Bullish</dt><dd>RRG momentum heading is bullish (improving relative strength).</dd>
-              <dt>Bearish</dt><dd>RRG momentum heading is bearish (declining relative strength).</dd>
-              <dt>Crossing</dt><dd>Stock moved to a different RRG quadrant in the most recent period.</dd>
-              <dt>Near EMA8</dt><dd>Price is 0-3% above its 8-period EMA &mdash; short-term support zone.</dd>
-              <dt>Near EMA21</dt><dd>Price is 0-5% above its 21-period EMA &mdash; intermediate support zone.</dd>
-              <dt>EMA21 Reclaim</dt><dd>Price crossed back above the 21-EMA in the last 3 days after spending 5+ days below it. Early momentum-shift signal.</dd>
+              <dt>Pocket Pivot</dt><dd>Up-day volume exceeds the highest down-day volume of the prior 10 sessions, near a key MA.</dd>
+              <dt>Base Breakout</dt><dd>Tight base + price broke above 10-day prior high in the last 3 sessions.</dd>
+              <dt>RS New High</dt><dd>Stock&rsquo;s RS line (price / SPY) is at its 20-day high.</dd>
+              <dt>RS Leading</dt><dd>RS Rating climbing while price is flat or down &mdash; institutional accumulation signal.</dd>
+              <dt>RSI Divergence</dt><dd>Price makes a lower low but RSI makes a higher low &mdash; bullish divergence.</dd>
+              <dt>AO Divergence</dt><dd>Price makes a lower low but the Awesome Oscillator makes a higher low.</dd>
+              <dt>RSI Bear Div</dt><dd>Price makes a higher high but RSI makes a lower high &mdash; bearish divergence.</dd>
+              <dt>AO Bear Div</dt><dd>Price makes a higher high but the Awesome Oscillator makes a lower high &mdash; bearish divergence.</dd>
+              <dt>EMA21 Reclaim</dt><dd>Price crossed above EMA21 in the last 3 days after 5+ days below.</dd>
+              <dt>20d High</dt><dd>Price within 1% of its 20-day highest close.</dd>
             </dl>
-            <h4>Sort / Filter Options</h4>
+            <h4>Momentum</h4>
             <dl>
-              <dt>Quadrant (default)</dt><dd>Groups stocks by RRG quadrant: Leading, Improving, Weakening, Lagging.</dd>
-              <dt>RS Rating</dt><dd>Composite relative-strength percentile (0-99) vs all tracked stocks.</dd>
-              <dt>Swing Score</dt><dd>Multi-factor score combining RS, trend, and momentum for swing-trade readiness.</dd>
-              <dt>1D / 1W / 2W / 1M / 3M Perf</dt><dd>Raw price return over the selected lookback period.</dd>
-              <dt>RSI Delta</dt><dd>5-bar change in RSI &mdash; positive = building momentum, negative = fading.</dd>
-              <dt>MA50 (ATR)</dt><dd>Distance from the 50-day MA measured in ATR units. Shows how extended or mean-reverting a stock is.</dd>
-              <dt>Rel Volume</dt><dd>Today&rsquo;s volume divided by the 50-day average volume.</dd>
-              <dt>52w High</dt><dd>Filters to stocks at or within 5% of their 52-week high.</dd>
-              <dt>Tight</dt><dd>Volatility contraction &mdash; recent range has narrowed vs the prior period, often precedes a breakout.</dd>
-              <dt>Pullbacks</dt><dd>Stock is pulling back toward a rising moving average &mdash; potential buy-the-dip setup.</dd>
-              <dt>Pocket Pivots</dt><dd>Up-day volume exceeds the highest down-day volume of the prior 10 sessions, near a key MA. Signals stealth institutional buying.</dd>
-              <dt>RS New High</dt><dd>Stock&rsquo;s RS line (price / SPY) is at its 20-day high &mdash; relative outperformance even if price hasn&rsquo;t broken out yet.</dd>
-              <dt>Base Breakouts</dt><dd>Tight base (volatility contraction) + price broke above 10-day prior high in the last 3 sessions. The classic breakout trigger.</dd>
-              <dt>Acc/Dist Days</dt><dd>Filters to stocks with 60%+ accumulation ratio &mdash; institutional buying pressure outweighs selling over 20 sessions.</dd>
-              <dt>20d High</dt><dd>Price is within 1% of its 20-day highest close. More actionable than 52-week high for short-term swing entries.</dd>
+              <dt>Bullish / Bearish</dt><dd>RRG momentum heading direction.</dd>
+              <dt>Crossing</dt><dd>Stock moved to a different RRG quadrant in the most recent period.</dd>
+              <dt>Near EMA8</dt><dd>Price is 0-3% above its 8-period EMA.</dd>
+              <dt>Near EMA21</dt><dd>Price is 0-5% above its 21-period EMA.</dd>
+              <dt>Higher Lows</dt><dd>3+ consecutive higher daily lows in the last 15 bars, while above EMA21.</dd>
+            </dl>
+            <h4>Quality</h4>
+            <dl>
+              <dt>Tight Base</dt><dd>Volatility contraction &mdash; recent range narrowed vs prior period.</dd>
+              <dt>Pullback</dt><dd>Pulling back toward a rising moving average.</dd>
+              <dt>Near 52w High</dt><dd>At or within 5% of 52-week high.</dd>
+              <dt>High Volume</dt><dd>Relative volume &ge; 1.5x the 50-day average.</dd>
+              <dt>Accumulation</dt><dd>60%+ accumulation day ratio over 20 sessions.</dd>
+            </dl>
+            <h4>Sort Options</h4>
+            <dl>
+              <dt>Quadrant (default)</dt><dd>Groups by RRG quadrant: Leading, Improving, Weakening, Lagging.</dd>
+              <dt>RS Rating</dt><dd>Composite relative-strength percentile (0-99).</dd>
+              <dt>Swing Score</dt><dd>Multi-factor swing-trade readiness score.</dd>
+              <dt>Performance</dt><dd>1D / 1W / 2W / 1M / 3M raw price returns.</dd>
+              <dt>RSI Delta</dt><dd>5-bar change in RSI.</dd>
+              <dt>MA50 (ATR)</dt><dd>Distance from 50-day MA in ATR units.</dd>
+              <dt>Rel Volume</dt><dd>Today&rsquo;s volume / 50-day average.</dd>
+              <dt>Acc/Dist Days</dt><dd>Accumulation / distribution day ratio.</dd>
             </dl>
             <h4>Toolbar Controls</h4>
             <dl>
-              <dt>+RS</dt><dd>When active, applies RS Rating as a secondary sort within the selected filter.</dd>
-              <dt>RSI/AO</dt><dd>Toggle visibility of the RSI and Awesome Oscillator sub-charts on each tile.</dd>
-              <dt>Bench</dt><dd>Benchmark for rotation &amp; RS: vs Sector ETF, vs SPY, or Absolute (no benchmark).</dd>
+              <dt>+RS</dt><dd>Secondary sort by RS Rating within the selected sort.</dd>
+              <dt>RSI/AO</dt><dd>Toggle RSI and Awesome Oscillator sub-charts.</dd>
+              <dt>Bench</dt><dd>Benchmark: vs Sector ETF, vs SPY, or Absolute.</dd>
             </dl>
           </div>
         </div>`;
